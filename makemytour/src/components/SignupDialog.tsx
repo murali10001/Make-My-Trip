@@ -21,9 +21,12 @@ const SignupDialog = ({trigger}:any) => {
   const [password, setPassword] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [open, setopem] = useState(false);
+  const [authError, setAuthError] = useState("");
   const dispatch = useDispatch();
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    setAuthError("");
     if (isSignup) {
       try {
         const signin = await signup(
@@ -34,8 +37,11 @@ const SignupDialog = ({trigger}:any) => {
           password
         );
         dispatch(setUser(signin));
-      } catch (error) {
-        console.log(error);
+        setopem(false);
+        clearform();
+      } catch (error: any) {
+        console.error("Signup error handled:", error);
+        setAuthError(error?.message || "Signup failed. Please try again.");
       }
     } else {
       try {
@@ -43,8 +49,9 @@ const SignupDialog = ({trigger}:any) => {
         dispatch(setUser(data));
         setopem(false);
         clearform();
-      } catch (error) {
-        console.log(error);
+      } catch (error: any) {
+        console.error("Login error handled:", error);
+        setAuthError(error?.message || "Invalid email or password.");
       }
     }
   };
@@ -54,9 +61,10 @@ const SignupDialog = ({trigger}:any) => {
     setEmail("");
     setPassword("");
     setPhoneNumber("");
+    setAuthError("");
   };
   return (
-    <Dialog open={open} onOpenChange={setopem}>
+    <Dialog open={open} onOpenChange={(val) => { setopem(val); if (!val) clearform(); }}>
       <DialogTrigger asChild>
         {trigger}
       </DialogTrigger>
@@ -71,6 +79,12 @@ const SignupDialog = ({trigger}:any) => {
               : "Enter your credentials to access your account."}
           </DialogDescription>
         </DialogHeader>
+        {authError && (
+          <div className="p-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md flex items-center gap-2">
+            <span className="font-bold text-red-500">⚠️</span>
+            <span>{authError}</span>
+          </div>
+        )}
         <form onSubmit={handleAuth} className="space-y-4 py-4">
           {isSignup && (
             <div className="grid grid-cols-2 gap-4">
@@ -141,7 +155,7 @@ const SignupDialog = ({trigger}:any) => {
               <Button
                 variant="link"
                 className="p-0 text-blue-600"
-                onClick={() => setIsSignup(false)}
+                onClick={() => { setIsSignup(false); setAuthError(""); }}
               >
                 Login
               </Button>
@@ -152,7 +166,7 @@ const SignupDialog = ({trigger}:any) => {
               <Button
                 variant="link"
                 className="p-0 text-blue-600"
-                onClick={() => setIsSignup(true)}
+                onClick={() => { setIsSignup(true); setAuthError(""); }}
               >
                 Sign Up
               </Button>

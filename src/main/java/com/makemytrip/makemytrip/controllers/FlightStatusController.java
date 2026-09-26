@@ -4,11 +4,17 @@ import com.makemytrip.makemytrip.models.FlightStatus;
 import com.makemytrip.makemytrip.services.EmailService;
 import com.makemytrip.makemytrip.services.FlightStatusService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 @RestController
 @RequestMapping("/api/flight-status")
@@ -20,6 +26,34 @@ public class FlightStatusController {
 
     @Autowired
     private EmailService emailService;
+
+    private final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
+
+    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter streamFlightUpdates() {
+        SseEmitter emitter = new SseEmitter(1800000L); // 30 mins
+        emitters.add(emitter);
+        emitter.onCompletion(() -> emitters.remove(emitter));
+        emitter.onTimeout(() -> emitters.remove(emitter));
+        emitter.onError((e) -> emitters.remove(emitter));
+        try {
+            emitter.send(SseEmitter.event().name("connect").data("Connected to live flight status stream"));
+        } catch (IOException ignored) {}
+        return emitter;
+    }
+
+    public void broadcastUpdate(FlightStatus status) {
+        if (status == null) return;
+        List<SseEmitter> deadEmitters = new ArrayList<>();
+        for (SseEmitter emitter : emitters) {
+            try {
+                emitter.send(SseEmitter.event().name("flight-update").data(status));
+            } catch (Exception e) {
+                deadEmitters.add(emitter);
+            }
+        }
+        emitters.removeAll(deadEmitters);
+    }
 
     @GetMapping
     public ResponseEntity<List<FlightStatus>> getAllFlights(
@@ -47,6 +81,7 @@ public class FlightStatusController {
         String flightNumber = (String) payload.get("flightNumber");
         if (flightNumber == null || flightNumber.trim().isEmpty()) {
             FlightStatus randomUpdate = flightStatusService.triggerRandomSimulation();
+            broadcastUpdate(randomUpdate);
             return ResponseEntity.ok(randomUpdate);
         }
 
@@ -56,11 +91,21 @@ public class FlightStatusController {
         String revisedArrival = (String) payload.get("revisedArrival");
         String gate = (String) payload.get("gate");
         String terminal = (String) payload.get("terminal");
-        Integer estMins = payload.get("estimatedArrivalMinutes") != null ? (Integer) payload.get("estimatedArrivalMinutes") : null;
+        Object rawEst = payload.get("estimatedArrivalMinutes");
+        Integer estMins = null;
+        if(rawEst instanceof Number) {
+            estMins = ((Number) rawEst).intValue();
+        } else if (rawEst instanceof String) {
+            try {
+                estMins = Integer.parseInt((String) rawEst);
+            } catch (Exception e) {}
+        }
 
         FlightStatus updated = flightStatusService.updateFlightStatus(
             flightNumber, status, delayReason, revisedDeparture, revisedArrival, gate, terminal, estMins
         );
+
+        broadcastUpdate(updated);
 
         // Send email notification automatically if email provided
         String email = (String) payload.get("email");
@@ -74,6 +119,7 @@ public class FlightStatusController {
     @GetMapping("/simulate-random")
     public ResponseEntity<FlightStatus> triggerRandom() {
         FlightStatus updated = flightStatusService.triggerRandomSimulation();
+        broadcastUpdate(updated);
         return ResponseEntity.ok(updated);
     }
 
@@ -82,16 +128,16 @@ public class FlightStatusController {
         String flightNumber = payload.get("flightNumber");
         String email = payload.get("email");
 
-        if (flightNumber == null || flightNumber.isEmpty()) {
-            flightNumber = "AI-101";
-        }
-        if (email == null || email.isEmpty()) {
-            email = "user-test@makemytour.com";
+        if (flightNumber == null || flightNumber.trim().isEmpty() || email == null || email.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "flightNumber and email are required."));
         }
 
         Optional<FlightStatus> flightOpt = flightStatusService.getFlightByNumber(flightNumber);
-        FlightStatus flight = flightOpt.orElseGet(() -> flightStatusService.getAllFlights(null, null).get(0));
+        if (!flightOpt.isPresent()) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Flight status not found for flight number: " + flightNumber));
+        }
 
+        FlightStatus flight = flightOpt.get();
         Map<String, Object> result = emailService.sendFlightStatusEmailDetails(email, flight);
         result.put("flightNumber", flight.getFlightNumber());
         result.put("status", flight.getStatus());
@@ -101,3 +147,4 @@ public class FlightStatusController {
     }
 
 }
+

@@ -20,6 +20,9 @@ public class UserServices {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private NotificationService notificationService;
+
     public Users login(String email, String password) {
         Users user = userRepository.findByEmail(email);
         if (user != null && passwordEncoder.matches(password, user.getPassword())) {
@@ -36,7 +39,17 @@ public class UserServices {
         if (user.getRole() == null) {
             user.setRole("USER");
         }
-        return userRepository.save(user);
+        Users savedUser = userRepository.save(user);
+
+        // Dynamically create welcome notification in DB for new user
+        notificationService.createNotification(
+            savedUser.getId(),
+            "🎉 Welcome to MakeMyTour!",
+            "Welcome " + savedUser.getFirstName() + "! Explore flights, hotels, and exclusive travel deals.",
+            "welcome"
+        );
+
+        return savedUser;
     }
 
     public Users getUserByEmail(String email) {
@@ -54,6 +67,9 @@ public class UserServices {
             user.setFirstName(updatedUser.getFirstName());
             user.setLastName(updatedUser.getLastName());
             user.setPhoneNumber(updatedUser.getPhoneNumber());
+            if (updatedUser.getEmail() != null && !updatedUser.getEmail().trim().isEmpty()) {
+                user.setEmail(updatedUser.getEmail().trim());
+            }
             return userRepository.save(user);
         }
         throw new UserNotFoundException("User with ID '" + id + "' not found");

@@ -29,7 +29,14 @@ public class BookingService {
     @Autowired
     private HotelRepository hotelRepository;
 
+    @Autowired
+    private NotificationService notificationService;
+
     public Booking bookFlight(String userId, String flightId, int seats, double price) {
+        if (seats <= 0) {
+            throw new IllegalArgumentException("Invalid ticket quantity requested: " + seats + ". Must be at least 1.");
+        }
+
         Users user = userRepository.findById(userId)
             .orElseThrow(() -> new UserNotFoundException("User with ID '" + userId + "' not found"));
 
@@ -40,12 +47,19 @@ public class BookingService {
             throw new InsufficientCapacityException("Not enough seats available. Requested: " + seats + ", Available: " + flight.getAvailableSeats());
         }
 
+        // Validate price to prevent client tampering
+        if (price <= 0) {
+            price = flight.getPrice() * seats;
+        }
+
         flight.setAvailableSeats(flight.getAvailableSeats() - seats);
         flightRepository.save(flight);
 
+        String uniqueBookingId = "BK-FL-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+
         Booking booking = new Booking();
         booking.setType("Flight");
-        booking.setBookingId(flightId);
+        booking.setBookingId(uniqueBookingId);
         booking.setDate(LocalDate.now().toString());
         booking.setQuantity(seats);
         booking.setTotalPrice(price);
@@ -53,10 +67,22 @@ public class BookingService {
         user.getBookings().add(booking);
         userRepository.save(user);
 
+        // Dynamically create notification in DB for user
+        notificationService.createNotification(
+            userId,
+            "✈️ Flight Booking Confirmed!",
+            "Confirmed " + seats + " seat(s) on " + flight.getFlightName() + " (" + flight.getFrom() + " ➔ " + flight.getTo() + "). Total: ₹" + price,
+            "flight"
+        );
+
         return booking;
     }
 
     public Booking bookhotel(String userId, String hotelId, int rooms, double price) {
+        if (rooms <= 0) {
+            throw new IllegalArgumentException("Invalid room quantity requested: " + rooms + ". Must be at least 1.");
+        }
+
         Users user = userRepository.findById(userId)
             .orElseThrow(() -> new UserNotFoundException("User with ID '" + userId + "' not found"));
 
@@ -67,18 +93,33 @@ public class BookingService {
             throw new InsufficientCapacityException("Not enough rooms available. Requested: " + rooms + ", Available: " + hotel.getAvailableRooms());
         }
 
+        // Validate price to prevent client tampering
+        if (price <= 0) {
+            price = hotel.getPricePerNight() * rooms;
+        }
+
         hotel.setAvailableRooms(hotel.getAvailableRooms() - rooms);
         hotelRepository.save(hotel);
 
+        String uniqueBookingId = "BK-HT-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+
         Booking booking = new Booking();
         booking.setType("Hotel");
-        booking.setBookingId(hotelId);
+        booking.setBookingId(uniqueBookingId);
         booking.setDate(LocalDate.now().toString());
         booking.setQuantity(rooms);
         booking.setTotalPrice(price);
 
         user.getBookings().add(booking);
         userRepository.save(user);
+
+        // Dynamically create notification in DB for user
+        notificationService.createNotification(
+            userId,
+            "🏨 Hotel Booking Confirmed!",
+            "Confirmed " + rooms + " room(s) at " + hotel.getHotelName() + " (" + hotel.getLocation() + "). Total: ₹" + price,
+            "hotel"
+        );
 
         return booking;
     }

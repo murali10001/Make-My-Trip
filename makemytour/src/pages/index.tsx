@@ -225,27 +225,52 @@ export default function Home() {
                   >
                     {bookingtype === "flights" ? (
                       <>
-                        <p className="font-semibold text-lg">
-                          Flight Name: {result.flightName}
-                        </p>
-                        <h3 className="font-semibold text-lg">
-                          {result.from} to {result.to}
+                        <div className="flex items-center justify-between">
+                          <p className="font-semibold text-lg text-slate-900">
+                            {result.flightName}
+                          </p>
+                          <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded border border-amber-300">
+                            🔥 High Demand Rate
+                          </span>
+                        </div>
+                        <h3 className="font-semibold text-base text-blue-950 mt-1">
+                          {result.from} ➔ {result.to}
                         </h3>
-                        <p className="text-gray-600">
-                          Departure Time: {formatDate(result.departureTime)}
+                        <p className="text-xs text-gray-600 mt-1">
+                          Departure: {formatDate(result.departureTime)}
                         </p>
-                        <p className="text-gray-600">
-                          Arrival Time: {formatDate(result.arrivalTime)}
+                        <p className="text-xs text-gray-600">
+                          Arrival: {formatDate(result.arrivalTime)}
                         </p>
-                        <p className="text-lg font-bold mt-2">
-                          ₹{result.price}
-                        </p>
-                        <Button
-                          className="w-full mt-4"
-                          onClick={() => handlebooknow(result.id || result._id)}
-                        >
-                          Book Now
-                        </Button>
+                        
+                        <div className="mt-3 p-2.5 bg-slate-50 rounded-lg border border-slate-200">
+                          <div className="flex items-baseline justify-between">
+                            <span className="text-xs font-semibold text-slate-500">Live Dynamic Rate:</span>
+                            <span className="text-xl font-black text-emerald-600">
+                              ₹{Math.round((result.price || 5500) * 1.35).toLocaleString("en-IN")}
+                            </span>
+                          </div>
+                          <div className="flex justify-between text-[11px] text-slate-500 mt-0.5">
+                            <span>Base Fare: ₹{(result.price || 5500).toLocaleString("en-IN")}</span>
+                            <span className="text-amber-600 font-bold">+35% Surge</span>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 mt-4">
+                          <Button
+                            variant="outline"
+                            className="text-xs font-bold border-emerald-500 text-emerald-700 hover:bg-emerald-50"
+                            onClick={() => router.push("/dynamic-pricing")}
+                          >
+                            ❄️ Lock Fare
+                          </Button>
+                          <Button
+                            className="text-xs font-bold"
+                            onClick={() => handlebooknow(result.id || result._id)}
+                          >
+                            Book Now
+                          </Button>
+                        </div>
                       </>
                     ) : (
                       <>
@@ -253,9 +278,15 @@ export default function Home() {
                           {result.hotelName}
                         </h3>
                         <p className="text-gray-600">City: {result.location}</p>
-                        <p className="text-lg font-bold mt-2">
-                          ₹{result.pricePerNight} per night
-                        </p>
+                        <div className="mt-3 p-2.5 bg-slate-50 rounded-lg border border-slate-200">
+                          <div className="flex items-baseline justify-between">
+                            <span className="text-xs font-semibold text-slate-500">Dynamic Rate:</span>
+                            <span className="text-xl font-black text-emerald-600">
+                              ₹{Math.round((result.pricePerNight || 4200) * 1.35).toLocaleString("en-IN")}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 mt-0.5">Base: ₹{(result.pricePerNight || 4200).toLocaleString("en-IN")} / night</p>
+                        </div>
                         <Button
                           className="w-full mt-4"
                           onClick={() => handlebooknow(result.id || result._id)}
@@ -361,35 +392,35 @@ const DownloadApp = ({ content }: any) => {
   const playStoreBadge = content?.playStoreBadgeUrl || "https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg";
 
   return (
-    // <div className="bg-white p-6 rounded-lg shadow-md max-w-7xl mx-auto my-12">
-    //   <div className="flex flex-col md:flex-row items-center justify-between">
-    //     <div className="mb-6 md:mb-0">
-    //       <h3 className="text-xl font-bold mb-2">Download App Now!</h3>
-    //       <p className="text-gray-600 mb-4">
-    //         Get India's #1 travel super app with best deals on flights
-    //       </p>
-    //       <div className="flex space-x-4">
-    //         <img
-    //           src={appStoreBadge}
-    //           alt="App Store"
-    //           className="h-10"
-    //         />
-    //         <img
-    //           src={playStoreBadge}
-    //           alt="Play Store"
-    //           className="h-10"
-    //         />
-    //       </div>
-    //     </div>
-    //     <div className="flex items-center space-x-4">
-    //       <QrCode className="w-24 h-24" />
-    //       <p className="text-sm text-gray-600">
-    //         Scan QR code to download the app
-    //       </p>
-    //     </div>
-    //   </div>
-    // </div>
-    <>  </>
+    <div className="bg-white p-6 rounded-lg shadow-md max-w-7xl mx-auto my-12">
+      <div className="flex flex-col md:flex-row items-center justify-between">
+        <div className="mb-6 md:mb-0">
+          <h3 className="text-xl font-bold mb-2">Download App Now!</h3>
+          <p className="text-gray-600 mb-4">
+            Get India's #1 travel super app with best deals on flights
+          </p>
+          <div className="flex space-x-4">
+            <img
+              src={appStoreBadge}
+              alt="App Store"
+              className="h-10"
+            />
+            <img
+              src={playStoreBadge}
+              alt="Play Store"
+              className="h-10"
+            />
+          </div>
+        </div>
+        <div className="flex items-center space-x-4">
+          <QrCode className="w-24 h-24" />
+          <p className="text-sm text-gray-600">
+            Scan QR code to download the app
+          </p>
+        </div>
+      </div>
+    </div>
+
   );
 };
 
@@ -412,9 +443,8 @@ const WonderCard = ({ title, imageUrl }: any) => {
 function NavItem({ icon, text, active = false, onClick }: any) {
   return (
     <button
-      className={`flex flex-col items-center p-2 rounded-lg transition-colors ${
-        active ? "text-blue-500" : "text-gray-600 hover:text-blue-500"
-      }`}
+      className={`flex flex-col items-center p-2 rounded-lg transition-colors ${active ? "text-blue-500" : "text-gray-600 hover:text-blue-500"
+        }`}
       onClick={onClick}
     >
       {icon}

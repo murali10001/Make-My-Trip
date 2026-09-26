@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   getFlightStatuses,
   getTrackedFlights,
@@ -64,7 +64,7 @@ const LiveFlightTracker: React.FC = () => {
   const [selectedStatus, setSelectedStatus] = useState<string>("ALL");
   
   // Tracked flight numbers (Multi-flight tracking)
-  const [trackedNumbers, setTrackedNumbers] = useState<string[]>(["AI-101", "6E-204"]);
+  const [trackedNumbers, setTrackedNumbers] = useState<string[]>([]);
   const [isMounted, setIsMounted] = useState<boolean>(false);
 
   useEffect(() => {
@@ -89,6 +89,30 @@ const LiveFlightTracker: React.FC = () => {
   const [testEmailInput, setTestEmailInput] = useState<string>("");
   const [emailSending, setEmailSending] = useState<boolean>(false);
   const [emailFeedback, setEmailFeedback] = useState<{ success: boolean; message: string } | null>(null);
+  const [webPushPermission, setWebPushPermission] = useState<string>("default");
+
+  // Check initial Notification permission
+  useEffect(() => {
+    if (typeof window !== "undefined" && "Notification" in window) {
+      setWebPushPermission(Notification.permission);
+    }
+  }, []);
+
+  const requestWebPushPermission = async () => {
+    if (typeof window !== "undefined" && "Notification" in window) {
+      try {
+        const perm = await Notification.requestPermission();
+        setWebPushPermission(perm);
+        if (perm === "granted") {
+          new window.Notification("🔔 Web Push Notifications Enabled!", {
+            body: "You will now receive desktop and mobile status updates for tracked flights.",
+          });
+        }
+      } catch (err) {
+        console.error("Failed to request Web Push permission", err);
+      }
+    }
+  };
 
   // Fetch flights
   const fetchFlights = async () => {
@@ -105,6 +129,59 @@ const LiveFlightTracker: React.FC = () => {
   useEffect(() => {
     fetchFlights();
   }, [searchQuery, selectedStatus]);
+
+  const trackedNumbersRef = useRef(trackedNumbers);
+  useEffect(() => {
+    trackedNumbersRef.current = trackedNumbers;
+  }, [trackedNumbers]);
+
+  // Server-Sent Events (SSE) Real-Time Flight Stream Listener
+  useEffect(() => {
+    let eventSource: EventSource | null = null;
+    if (typeof window !== "undefined") {
+      try {
+        const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081";
+        eventSource = new EventSource(`${apiBase}/api/flight-status/stream`);
+
+        eventSource.addEventListener("flight-update", (event: MessageEvent) => {
+          try {
+            const updatedFlight: FlightStatusItem = JSON.parse(event.data);
+            if (updatedFlight) {
+              fetchFlights();
+              const isTracked = trackedNumbersRef.current.includes(updatedFlight.flightNumber);
+              let notifType: "delay" | "boarding" | "gate" | "info" = "info";
+              let title = `Radar SSE Update: ${updatedFlight.flightNumber}`;
+
+              if (updatedFlight.status === "DELAYED") {
+                notifType = "delay";
+                title = `🚨 Live Delay Alert: ${updatedFlight.flightNumber}`;
+              } else if (updatedFlight.status === "BOARDING") {
+                notifType = "boarding";
+                title = `✈️ Live Boarding Alert: ${updatedFlight.flightNumber}`;
+              }
+
+              addNotification({
+                id: Date.now().toString(),
+                flightNumber: updatedFlight.flightNumber,
+                title: isTracked ? `[WATCHLIST STREAM] ${title}` : title,
+                message: `${updatedFlight.airline} (${updatedFlight.origin} ➔ ${updatedFlight.destination}): ${updatedFlight.delayReason}`,
+                timestamp: new Date().toLocaleTimeString(),
+                type: notifType,
+              });
+            }
+          } catch (e) {
+            console.error("Failed to parse SSE payload", e);
+          }
+        });
+      } catch (err) {
+        console.error("Failed to initialize SSE EventSource", err);
+      }
+    }
+
+    return () => {
+      if (eventSource) eventSource.close();
+    };
+  }, []);
 
   // Save tracked flights to localStorage
   useEffect(() => {
@@ -151,9 +228,21 @@ const LiveFlightTracker: React.FC = () => {
     }
   };
 
-  // Add push notification
+  // Add push notification (In-App Drawer + Native OS/Browser Web Push)
   const addNotification = (notif: PushNotification) => {
     setNotifications((prev) => [notif, ...prev.slice(0, 9)]);
+
+    // Trigger Native OS/Browser Push Notification if permission granted
+    if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+      try {
+        new window.Notification(notif.title, {
+          body: notif.message,
+          icon: "/favicon.ico",
+        });
+      } catch (e) {
+        console.error("Error firing native push notification", e);
+      }
+    }
   };
 
   // Dismiss notification
@@ -337,6 +426,19 @@ const LiveFlightTracker: React.FC = () => {
 
           {/* Action Simulation Buttons */}
           <div className="flex flex-wrap items-center gap-2">
+            <Button
+              onClick={requestWebPushPermission}
+              variant="outline"
+              className={`text-xs md:text-sm font-semibold border border-white/20 ${
+                webPushPermission === "granted"
+                  ? "bg-blue-600 text-white border-blue-400"
+                  : "bg-white/10 text-white hover:bg-white/20"
+              }`}
+            >
+              <Bell className="w-4 h-4 mr-1.5 text-amber-300" />
+              {webPushPermission === "granted" ? "Web Push Enabled" : "Enable Web Push Alerts"}
+            </Button>
+
             <Button
               onClick={() => handleRandomSimulation(false)}
               disabled={simulationLoading}

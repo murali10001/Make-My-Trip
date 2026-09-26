@@ -6,17 +6,28 @@ import {
   Clock,
   Calendar,
   MapPin,
-  Gift,
   CreditCard,
   AlertCircle,
   ChevronRight,
   Star,
   Info,
   ArrowRight,
-  Building2,
+  Tag,
+  Snowflake,
+  TrendingUp,
+  CheckCircle,
+  Sparkles,
+  X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { getflight, gethotel, handleflightbooking } from "@/api";
+import {
+  getflight,
+  handleflightbooking,
+  getPromotionalOffers,
+  applyCouponCode,
+  freezePrice,
+  getDynamicPricing,
+} from "@/api";
 import { useDispatch, useSelector } from "react-redux";
 
 interface Flight {
@@ -42,17 +53,6 @@ interface Flight {
   discounts?: number;
 }
 
-interface HotelOffer {
-  id?: string;
-  _id?: string;
-  hotelName: string;
-  location: string;
-  pricePerNight: number;
-  rating?: number;
-  imageUrl?: string;
-  imageUrls?: string[];
-}
-
 import {
   Dialog,
   DialogContent,
@@ -72,12 +72,31 @@ const BookFlightPage = () => {
   const router = useRouter();
   const { id } = router.query;
   const [flights, setFlights] = useState<Flight[]>([]);
-  const [dbHotels, setDbHotels] = useState<HotelOffer[]>([]);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [open, setopem] = useState(false);
   const user = useSelector((state: any) => state.user.user);
   const dispatch = useDispatch();
+
+  // Dynamic Offers & Pricing state
+  const [offers, setOffers] = useState<any[]>([]);
+  const [couponCodeInput, setCouponCodeInput] = useState<string>("");
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    code: string;
+    discountAmount: number;
+    finalAmount: number;
+    message: string;
+  } | null>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [couponApplying, setCouponApplying] = useState<boolean>(false);
+
+  // Price Freeze Locker state
+  const [priceFrozen, setPriceFrozen] = useState<any | null>(null);
+  const [freezeLoading, setFreezeLoading] = useState<boolean>(false);
+
+  // Price History graph modal state
+  const [showHistoryModal, setShowHistoryModal] = useState<boolean>(false);
+  const [dynamicPricingInfo, setDynamicPricingInfo] = useState<any | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -86,8 +105,35 @@ const BookFlightPage = () => {
         const filteredData = flightData.filter((f: any) => (f.id === id || f._id === id));
         setFlights(filteredData);
 
-        const hotelData = await gethotel();
-        setDbHotels(Array.isArray(hotelData) ? hotelData.slice(0, 3) : []);
+        const offersData = await getPromotionalOffers();
+        setOffers(offersData || []);
+
+        if (filteredData.length > 0) {
+          const target = filteredData[0];
+          const priceInfo = await getDynamicPricing(
+            target.id || target._id,
+            "FLIGHT",
+            target.price || 5500,
+            "HIGH",
+            "HOLIDAY_PEAK"
+          );
+          setDynamicPricingInfo(priceInfo);
+
+          // Check if user has active price freeze for this item
+          if (typeof window !== "undefined") {
+            try {
+              const savedList = JSON.parse(localStorage.getItem("user_price_freezes") || "[]");
+              const found = savedList.find(
+                (fr: any) =>
+                  fr.itemId === (target.id || target._id) ||
+                  (Boolean(router.query.freezeId) && fr.freezeId === router.query.freezeId)
+              );
+              if (found) {
+                setPriceFrozen(found);
+              }
+            } catch (e) { }
+          }
+        }
       } catch (error) {
         console.error("Error fetching flight booking data:", error);
       } finally {
@@ -95,7 +141,7 @@ const BookFlightPage = () => {
       }
     };
     if (id) fetchData();
-  }, [id, user]);
+  }, [id, user, router.query]);
 
   if (loading) {
     return <Loader />;
@@ -115,19 +161,32 @@ const BookFlightPage = () => {
 
   const flight = flights[0];
 
-  // Extended properties derived dynamically from DB flight object
-  const flightNo = flight.flightNo || `FL-${(flight.id || flight._id || '101').substring(0, 5).toUpperCase()}`;
+  const rawId = (flight.id || flight._id || '101').toUpperCase();
+  const flightNo = flight.flightNo || (rawId.startsWith("FL-") ? rawId : `FL-${rawId.substring(0, 5)}`);
   const aircraft = flight.aircraft || "Airbus A320";
   const airline = flight.airline || flight.flightName;
-  const duration = flight.duration || "3h 30m ";
+  const duration = flight.duration || "3h 30m";
   const departureTerminal = flight.departureTerminal || `${flight.from} International Airport, Terminal T2`;
   const arrivalTerminal = flight.arrivalTerminal || `${flight.to} International Airport, Terminal T3`;
   const cabinBaggage = flight.cabinBaggage || "7 Kgs / Adult";
   const checkInBaggage = flight.checkInBaggage || "15 Kgs (1 piece only) / Adult";
 
-  const taxesPerTicket = flight.taxes || Math.round(flight.price * 0.15);
+  // Effective unit fare prioritizing Price Freeze, then Dynamic Pricing Rate, then Base Price
+  const unitPrice = priceFrozen
+    ? priceFrozen.frozenPrice
+    : (dynamicPricingInfo ? dynamicPricingInfo.finalPrice : (flight.price || 5500));
+
+  const baseTotalPrice = unitPrice * quantity;
+  const taxesPerTicket = flight.taxes || Math.round(unitPrice * 0.15);
   const otherServicesPerTicket = flight.otherServices || 150;
-  const discountsPerTicket = flight.discounts || 200;
+  const initialDiscounts = (flight.discounts || 200) * quantity;
+
+  const totalTaxes = taxesPerTicket * quantity;
+  const totalOtherServices = otherServicesPerTicket * quantity;
+  const couponDiscount = appliedCoupon ? appliedCoupon.discountAmount : 0;
+  const totalDiscounts = initialDiscounts + couponDiscount;
+
+  const grandTotal = Math.max(0, baseTotalPrice + totalTaxes + totalOtherServices - totalDiscounts);
 
   const formatDate = (dateString: string): string => {
     if (!dateString) return "N/A";
@@ -150,11 +209,61 @@ const BookFlightPage = () => {
     );
   };
 
-  const totalPrice = flight.price * quantity;
-  const totalTaxes = taxesPerTicket * quantity;
-  const totalOtherServices = otherServicesPerTicket * quantity;
-  const totalDiscounts = discountsPerTicket * quantity;
-  const grandTotal = totalPrice + totalTaxes + totalOtherServices - totalDiscounts;
+  const handleApplyCoupon = async (codeToApply?: string) => {
+    const code = (codeToApply || couponCodeInput).trim();
+    if (!code) return;
+    setCouponApplying(true);
+    setCouponError(null);
+
+    const bookingSubtotal = baseTotalPrice;
+    try {
+      const res = await applyCouponCode(code, bookingSubtotal);
+      if (res && res.success) {
+        setAppliedCoupon({
+          code: res.code,
+          discountAmount: res.discountAmount,
+          finalAmount: res.finalAmount,
+          message: res.message,
+        });
+        setCouponCodeInput(res.code);
+      } else {
+        setCouponError(res?.message || "Invalid coupon code.");
+      }
+    } catch (err: any) {
+      const errText = err?.response?.data?.message || err?.message || "Invalid coupon code for this booking.";
+      setCouponError(errText);
+    } finally {
+      setCouponApplying(false);
+    }
+  };
+
+  const handleFreezePrice = async () => {
+    setFreezeLoading(true);
+    try {
+      const userId = user?.id || user?._id || "";
+      const res = await freezePrice(
+        flight.id || flight._id || "FL-101",
+        `${flight.flightName} (${flight.from} ➔ ${flight.to})`,
+        unitPrice,
+        24,
+        userId
+      );
+      if (res) {
+        setPriceFrozen(res);
+        if (typeof window !== "undefined") {
+          try {
+            const savedList = JSON.parse(localStorage.getItem("user_price_freezes") || "[]");
+            const filtered = savedList.filter((f: any) => f.freezeId !== res.freezeId);
+            localStorage.setItem("user_price_freezes", JSON.stringify([res, ...filtered]));
+          } catch (e) { }
+        }
+      }
+    } catch (err) {
+      console.error("Failed to lock price:", err);
+    } finally {
+      setFreezeLoading(false);
+    }
+  };
 
   const handlebooking = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -252,35 +361,25 @@ const BookFlightPage = () => {
             <CreditCard className="w-5 h-5 mr-2" />
             Fare Summary
           </h3>
-          <div className="space-y-2">
+          <div className="space-y-2 text-sm">
             <div className="flex justify-between items-center">
               <span className="text-gray-600">Base Fare</span>
-              <span className="font-medium">
-                ₹ {totalPrice.toLocaleString()}
-              </span>
+              <span className="font-medium">₹ {baseTotalPrice.toLocaleString()}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-gray-600">Taxes and Surcharges</span>
-              <span className="font-medium">
-                ₹ {totalTaxes.toLocaleString()}
-              </span>
+              <span className="font-medium">₹ {totalTaxes.toLocaleString()}</span>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-600">Other Services</span>
-              <span className="font-medium">
-                ₹ {totalOtherServices.toLocaleString()}
-              </span>
-            </div>
-            <div className="flex justify-between items-center text-green-600">
-              <span className="font-medium">Discounts</span>
-              <span className="font-medium">
-                - ₹ {Math.abs(totalDiscounts).toLocaleString()}
-              </span>
-            </div>
+            {appliedCoupon && (
+              <div className="flex justify-between items-center text-emerald-700 font-semibold">
+                <span>Bank Coupon ('{appliedCoupon.code}')</span>
+                <span>- ₹ {appliedCoupon.discountAmount.toLocaleString()}</span>
+              </div>
+            )}
             <div className="border-t pt-2 mt-2">
               <div className="flex justify-between items-center">
                 <span className="font-bold text-lg">Total Amount</span>
-                <span className="font-bold text-lg">
+                <span className="font-bold text-lg text-emerald-700">
                   ₹ {grandTotal.toLocaleString()}
                 </span>
               </div>
@@ -298,9 +397,9 @@ const BookFlightPage = () => {
     <div className="min-h-screen bg-[#f4f7fa]">
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
+
+          {/* Main Flight Details Left Column */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Flight Details */}
             <div className="bg-white rounded-xl shadow-sm p-6">
               <div className="flex flex-wrap justify-between items-start gap-4 mb-6">
                 <div>
@@ -321,6 +420,27 @@ const BookFlightPage = () => {
                     <Clock className="w-4 h-4 mr-2" />
                     <span>Non Stop - {duration}</span>
                   </div>
+                </div>
+
+                {/* Price Lock & Trend Graph Actions */}
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={handleFreezePrice}
+                    disabled={freezeLoading}
+                    variant="outline"
+                    className="border-cyan-500 text-cyan-700 bg-cyan-50 hover:bg-cyan-100 text-xs font-bold flex items-center gap-1"
+                  >
+                    <Snowflake className="w-4 h-4 text-cyan-600" />
+                    {priceFrozen ? "Fare Locked 24h" : "Lock Fare 24h"}
+                  </Button>
+                  <Button
+                    onClick={() => setShowHistoryModal(true)}
+                    variant="outline"
+                    className="border-indigo-300 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 text-xs font-bold flex items-center gap-1"
+                  >
+                    <TrendingUp className="w-4 h-4 text-indigo-600" />
+                    Price Trend
+                  </Button>
                 </div>
               </div>
 
@@ -383,129 +503,139 @@ const BookFlightPage = () => {
               </div>
             </div>
 
-            {/* Cancellation Policy */}
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-bold flex items-center">
-                  <AlertCircle className="w-5 h-5 mr-2 text-orange-500" />
-                  Cancellation & Date Change Policy
-                </h2>
-              </div>
-              <div className="bg-gray-50 p-6 rounded-xl">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                      <Plane className="w-5 h-5 text-blue-600" />
-                    </div>
-                    <span className="font-semibold">{flight.from} - {flight.to}</span>
+            {/* Price Freeze Active Banner if locked */}
+            {priceFrozen && (
+              <div className="bg-gradient-to-r from-blue-900 to-indigo-950 text-white p-4 rounded-xl shadow-md border border-cyan-500/30 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Snowflake className="w-6 h-6 text-cyan-400 animate-spin" />
+                  <div>
+                    <h3 className="font-extrabold text-sm text-cyan-300">Fare Locked at ₹{priceFrozen.frozenPrice.toLocaleString()}</h3>
+                    <p className="text-xs text-slate-300">Protected against future surge hikes for 24 hours.</p>
                   </div>
-                  <div className="font-bold text-lg">Standard Refundable Fee Applies</div>
                 </div>
-                <div className="h-2.5 bg-gradient-to-r from-green-500 via-yellow-500 to-red-500 rounded-full"></div>
-              </div>
-            </div>
-
-            {/* Dynamic Hotel Offers from DB */}
-            {dbHotels.length > 0 && (
-              <div className="bg-white rounded-xl shadow-sm p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-lg font-bold flex items-center">
-                    <Gift className="w-5 h-5 mr-2 text-red-500" />
-                    Hotels Available in Database
-                  </h2>
-                  <span className="bg-red-100 text-red-600 text-xs px-3 py-1 rounded-full font-medium">
-                    DB Special
-                  </span>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {dbHotels.map((h, index) => (
-                    <div
-                      key={h.id || h._id || index}
-                      className="bg-white border rounded-xl overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
-                      onClick={() => router.push(`/book-hotel/${h.id || h._id}`)}
-                    >
-                      <div className="relative h-40 bg-gray-200 flex items-center justify-center">
-                        {h.imageUrl || (h.imageUrls && h.imageUrls[0]) ? (
-                          <img
-                            src={h.imageUrl || (h.imageUrls && h.imageUrls[0])}
-                            alt={h.hotelName}
-                            className="w-full h-40 object-cover"
-                          />
-                        ) : (
-                          <div className="flex flex-col items-center text-gray-400">
-                            <Building2 className="w-8 h-8 mb-1" />
-                            <span className="text-xs">{h.hotelName}</span>
-                          </div>
-                        )}
-                      </div>
-                      <div className="p-4">
-                        <h3 className="font-semibold text-base mb-1 truncate">
-                          {h.hotelName}
-                        </h3>
-                        <div className="flex items-center text-xs text-gray-600 mb-2">
-                          <MapPin className="w-3 h-3 mr-1" />
-                          {h.location}
-                        </div>
-                        <div className="flex items-center justify-between mt-2 border-t pt-2">
-                          <div className="text-xs text-gray-500">Per Night</div>
-                          <div className="font-bold text-base text-blue-600">
-                            ₹ {h.pricePerNight}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <span className="text-xs bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-3 py-1 rounded-full font-mono font-bold">
+                  FARE LOCKED
+                </span>
               </div>
             )}
           </div>
 
-          {/* Fare Summary */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl shadow-sm p-6 sticky top-24">
-              <h2 className="text-lg font-bold mb-6 flex items-center">
+          {/* Fare Summary & Bank Coupon Cards Right Column */}
+          <div className="lg:col-span-1 space-y-6">
+            <div className="bg-white rounded-xl shadow-sm p-6 sticky top-24 space-y-6">
+              <h2 className="text-lg font-bold flex items-center border-b pb-3">
                 <CreditCard className="w-5 h-5 mr-2 text-gray-600" />
                 Fare Summary
               </h2>
-              <div className="space-y-2">
+
+              <div className="space-y-2 text-sm">
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Base Fare ({quantity} Ticket{quantity > 1 ? 's' : ''})</span>
-                  <span className="font-medium">
-                    ₹ {totalPrice.toLocaleString()}
-                  </span>
+                  <span className="font-medium">₹ {baseTotalPrice.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Taxes and Surcharges</span>
-                  <span className="font-medium">
-                    ₹ {totalTaxes.toLocaleString()}
-                  </span>
+                  <span className="font-medium">₹ {totalTaxes.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Other Services</span>
-                  <span className="font-medium">
-                    ₹ {totalOtherServices.toLocaleString()}
-                  </span>
+                  <span className="font-medium">₹ {totalOtherServices.toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between items-center text-green-600">
-                  <span className="font-medium">Discounts</span>
-                  <span className="font-medium">
-                    - ₹ {Math.abs(totalDiscounts).toLocaleString()}
-                  </span>
-                </div>
+                {initialDiscounts > 0 && (
+                  <div className="flex justify-between items-center text-green-600">
+                    <span className="font-medium">Promotional Discount</span>
+                    <span className="font-medium">- ₹ {initialDiscounts.toLocaleString()}</span>
+                  </div>
+                )}
+                {appliedCoupon && (
+                  <div className="flex justify-between items-center text-emerald-600 font-bold">
+                    <span>Coupon Discount ({appliedCoupon.code})</span>
+                    <span>- ₹ {appliedCoupon.discountAmount.toLocaleString()}</span>
+                  </div>
+                )}
                 <div className="border-t pt-2 mt-2">
                   <div className="flex justify-between items-center">
                     <span className="font-bold text-lg">Total Amount</span>
-                    <span className="font-bold text-lg">
+                    <span className="font-bold text-lg text-emerald-700">
                       ₹ {grandTotal.toLocaleString()}
                     </span>
                   </div>
                 </div>
               </div>
 
+              {/* Bank Card Offers & Coupon Apply Box */}
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                <div className="flex items-center gap-1.5 font-bold text-xs text-slate-900">
+                  <Tag className="w-4 h-4 text-emerald-600" />
+                  <span>Bank Offers & Coupon Code</span>
+                </div>
+
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Enter code (HDFC10, SBISAVE)"
+                    value={couponCodeInput}
+                    onChange={(e) => {
+                      setCouponCodeInput(e.target.value);
+                      setCouponError(null);
+                    }}
+                    className="flex-1 px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-mono uppercase bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                  <Button
+                    onClick={() => handleApplyCoupon()}
+                    disabled={couponApplying}
+                    className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-3 py-1.5 h-auto"
+                  >
+                    {couponApplying ? "Applying..." : "Apply"}
+                  </Button>
+                </div>
+
+                {appliedCoupon && (
+                  <div className="p-2.5 bg-emerald-100 border border-emerald-300 rounded-lg text-xs text-emerald-900 space-y-0.5">
+                    <div className="flex items-center justify-between font-bold">
+                      <span className="flex items-center gap-1">
+                        <CheckCircle className="w-3.5 h-3.5 text-emerald-600" /> Code '{appliedCoupon.code}' Applied!
+                      </span>
+                      <span>-₹{appliedCoupon.discountAmount}</span>
+                    </div>
+                  </div>
+                )}
+
+                {couponError && (
+                  <div className="p-2.5 bg-amber-50 border border-amber-300 rounded-lg text-xs text-amber-800 flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
+                    <span>{couponError}</span>
+                  </div>
+                )}
+
+                {/* Bank Card Deals List */}
+                <div className="space-y-2 pt-1 border-t border-slate-200">
+                  <p className="text-[11px] font-bold text-slate-700">Select Bank Card Deal:</p>
+                  {offers.map((offer) => (
+                    <div
+                      key={offer.id || offer.code}
+                      className="bg-white p-2 rounded-lg border border-slate-200 flex items-center justify-between text-xs hover:border-emerald-500 transition-colors"
+                    >
+                      <div>
+                        <span className="font-bold text-slate-900 text-[11px]">{offer.bankName}</span>
+                        <p className="text-[10px] text-slate-500">{offer.badgeText}</p>
+                      </div>
+                      <Button
+                        onClick={() => handleApplyCoupon(offer.code)}
+                        variant="outline"
+                        className="text-[10px] font-bold border-emerald-300 hover:bg-emerald-50 text-emerald-700 px-2 py-1 h-auto"
+                      >
+                        Apply
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               <Dialog open={open} onOpenChange={setopem}>
                 <DialogTrigger asChild>
-                  <Button className="w-full bg-red-600 hover:bg-red-700 text-white mt-6 py-6 text-base">
-                    Book Now
+                  <Button className="w-full bg-red-600 hover:bg-red-700 text-white py-6 text-base font-bold shadow-md">
+                    Proceed to Booking
                   </Button>
                 </DialogTrigger>
                 {user ? (
@@ -526,11 +656,58 @@ const BookFlightPage = () => {
               </Dialog>
             </div>
           </div>
+
         </div>
       </div>
+
+      {/* Price Trend History Modal */}
+      {showHistoryModal && dynamicPricingInfo && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div className="flex items-center justify-between border-b pb-3">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-indigo-600" />
+                <h3 className="font-extrabold text-slate-900 text-base">Flight Fare History & Trend</h3>
+              </div>
+              <button
+                onClick={() => setShowHistoryModal(false)}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-600">
+              7-Day historical fare trend for {flight.flightName} ({flight.from} ➔ {flight.to}).
+            </p>
+
+            <div className="bg-slate-900 rounded-xl p-4 text-white space-y-3">
+              <div className="h-36 w-full flex items-end justify-between gap-2 pt-4">
+                {dynamicPricingInfo.priceHistory.map((point: any, idx: number) => (
+                  <div key={idx} className="flex-1 flex flex-col items-center gap-1">
+                    <span className="text-[9px] text-slate-300 font-mono">₹{point.price}</span>
+                    <div className="w-full bg-slate-800 rounded-t h-24 flex items-end p-0.5">
+                      <div
+                        style={{ height: `${Math.max(20, Math.min(100, (point.price / 8000) * 100))}%` }}
+                        className={`w-full rounded-t ${point.isCurrent ? "bg-emerald-400" : "bg-indigo-500"}`}
+                      />
+                    </div>
+                    <span className="text-[9px] text-slate-400">{point.dayLabel}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <Button onClick={() => setShowHistoryModal(false)} className="bg-slate-900 text-xs">
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
 export default BookFlightPage;
-

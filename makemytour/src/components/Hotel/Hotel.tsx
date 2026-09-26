@@ -45,19 +45,19 @@ const HotelList = ({ onSelect }: any) => {
         </TableHeader>
         <TableBody>
           {hotel.length > 0 ? (
-            hotel.map((hotel: any) => (
-              <TableRow key={hotel._id}>
-                <TableCell>{hotel.hotelName}</TableCell>
-                <TableCell>{hotel.location}</TableCell>
-                <TableCell>${hotel.pricePerNight}</TableCell>
+            hotel.map((item: any, idx: number) => (
+              <TableRow key={item.id || item._id || idx}>
+                <TableCell>{item.hotelName}</TableCell>
+                <TableCell>{item.location}</TableCell>
+                <TableCell>₹{item.pricePerNight}</TableCell>
                 <TableCell>
-                  <Button onClick={() => onSelect(hotel)}>Edit</Button>
+                  <Button onClick={() => onSelect(item)}>Edit</Button>
                 </TableCell>
               </TableRow>
             ))
           ) : (
-            <TableRow>
-              <TableCell>No data</TableCell>
+            <TableRow key="no-data">
+              <TableCell colSpan={4} className="text-center text-gray-500">No hotel data available</TableCell>
             </TableRow>
           )}
         </TableBody>

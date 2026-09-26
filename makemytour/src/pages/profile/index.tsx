@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   User,
   Phone,
@@ -12,15 +12,21 @@ import {
   LogOut,
   Plane,
   Building2,
+  Snowflake,
+  Clock,
+  ShieldCheck,
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "next/router";
 import { clearUser, setUser } from "@/store";
-import { editprofile } from "@/api";
+import { editprofile, getUserPriceFreezes, removePriceFreeze } from "@/api";
+
 const index = () => {
   const dispatch = useDispatch();
   const user = useSelector((state: any) => state.user.user);
   const router = useRouter();
+
+  const [frozenPrices, setFrozenPrices] = useState<any[]>([]);
 
   const logout = () => {
     dispatch(clearUser());
@@ -35,16 +41,77 @@ const index = () => {
   });
 
   const [editForm, setEditForm] = useState({ ...userData });
+
+  useEffect(() => {
+    const fetchUserFreezes = async () => {
+      try {
+        const userId = user?.id || user?._id || "";
+        const apiFreezes = userId ? await getUserPriceFreezes(userId) : [];
+        
+        let localFreezes: any[] = [];
+        if (typeof window !== "undefined") {
+          try {
+            localFreezes = JSON.parse(localStorage.getItem("user_price_freezes") || "[]");
+          } catch (e) {}
+        }
+
+        const map = new Map();
+        (apiFreezes || []).forEach((f: any) => {
+          if (f && f.freezeId && (f.userId === userId || !userId || !f.userId)) {
+            map.set(f.freezeId, f);
+          }
+        });
+        (localFreezes || []).forEach((f: any) => {
+          if (f && f.freezeId && (f.userId === userId || !f.userId)) {
+            if (!map.has(f.freezeId)) map.set(f.freezeId, f);
+          }
+        });
+
+        setFrozenPrices(Array.from(map.values()));
+      } catch (err) {
+        console.error("Failed to load user price freezes in profile:", err);
+      }
+    };
+    fetchUserFreezes();
+  }, [user]);
+
+  const handleRemoveFreeze = async (freezeId: string) => {
+    setFrozenPrices((prev) => prev.filter((f: any) => f.freezeId !== freezeId));
+
+    if (typeof window !== "undefined") {
+      try {
+        const savedList = JSON.parse(localStorage.getItem("user_price_freezes") || "[]");
+        const updatedList = savedList.filter((f: any) => f.freezeId !== freezeId);
+        localStorage.setItem("user_price_freezes", JSON.stringify(updatedList));
+      } catch (e) {
+        console.error("Error updating localStorage", e);
+      }
+    }
+
+    try {
+      await removePriceFreeze(freezeId);
+    } catch (e) {
+      console.error("Error deleting price freeze", e);
+    }
+  };
   const handleSave = async () => {
     try {
+      const userId = user?.id || user?._id;
       const data = await editprofile(
-        user?.id,
+        userId,
         userData.firstName,
         userData.lastName,
         userData.email,
         userData.phoneNumber
       );
-      dispatch(setUser(data));
+      if (data) {
+        const mergedUser = {
+          ...user,
+          ...data,
+          bookings: (data.bookings && data.bookings.length > 0) ? data.bookings : (user?.bookings || []),
+        };
+        dispatch(setUser(mergedUser));
+      }
       setIsEditing(false);
     } catch (error) {
       setUserData(editForm);
@@ -183,8 +250,96 @@ const index = () => {
             </div>
           </div>
 
-          {/* Bookings Section */}
-          <div className="md:col-span-2">
+          {/* Bookings & Price Freeze Locker Section */}
+          <div className="md:col-span-2 space-y-6">
+            
+            {/* Price Freeze Locker Section */}
+            <div className="bg-gradient-to-r from-blue-900 to-indigo-950 text-white rounded-xl shadow-lg p-6 border border-blue-800">
+              <div className="flex items-center justify-between mb-4 border-b border-blue-800/60 pb-3">
+                <div className="flex items-center gap-2">
+                  <Snowflake className="w-6 h-6 text-cyan-400" />
+                  <div>
+                    <h2 className="text-xl font-bold">My Locked Fares & Price Freezes</h2>
+                    <p className="text-xs text-slate-300">Fares locked against projected market surge increases</p>
+                  </div>
+                </div>
+                <span className="text-xs bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-3 py-1 rounded-full font-mono font-bold">
+                  {frozenPrices.length} Active Locks
+                </span>
+              </div>
+
+              <div className="space-y-4">
+                {frozenPrices.length > 0 ? (
+                  frozenPrices.map((freeze: any, index: number) => (
+                    <div
+                      key={freeze.freezeId || index}
+                      className="bg-blue-950/80 rounded-xl p-4 border border-cyan-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative pr-12"
+                    >
+                      <button
+                        onClick={() => handleRemoveFreeze(freeze.freezeId)}
+                        title="Remove Frozen Price"
+                        aria-label="Remove Frozen Price"
+                        className="absolute top-3 right-3 p-1.5 rounded-full text-slate-400 hover:text-red-400 hover:bg-blue-900/80 transition-all cursor-pointer border border-transparent hover:border-red-500/30"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-[10px] bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded border border-cyan-500/30 font-bold">
+                            {freeze.freezeId}
+                          </span>
+                          <span className="text-xs text-slate-300 flex items-center gap-1 font-semibold">
+                            <Clock className="w-3.5 h-3.5 text-cyan-400" /> 24h Protection Active
+                          </span>
+                        </div>
+                        <h3 className="font-bold text-white text-base mt-1">{freeze.itemTitle || "Flight / Hotel Booking"}</h3>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-2xl font-black text-cyan-300">
+                            ₹{(freeze.frozenPrice || 0).toLocaleString("en-IN")}
+                          </span>
+                          {freeze.originalPrice > freeze.frozenPrice && (
+                            <span className="text-xs text-slate-400 line-through">
+                              Surge: ₹{freeze.originalPrice.toLocaleString("en-IN")}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col sm:items-end gap-2">
+                        <button
+                          onClick={() => {
+                            if (freeze.itemId && freeze.itemId.startsWith("HT")) {
+                              router.push(`/book-hotel/${freeze.itemId}?freezeId=${freeze.freezeId}`);
+                            } else {
+                              router.push(`/book-flight/${freeze.itemId || 'FL-101'}?freezeId=${freeze.freezeId}`);
+                            }
+                          }}
+                          className="bg-cyan-400 hover:bg-cyan-500 text-slate-950 font-extrabold text-xs px-5 py-2.5 rounded-lg shadow-md transition-all flex items-center justify-center gap-1.5"
+                        >
+                          <ShieldCheck className="w-4 h-4 text-slate-950" />
+                          Book Now at Locked Fare
+                        </button>
+                        <span className="text-[10px] text-slate-400">Guaranteed lock against market price increases</span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-6 text-slate-300 bg-blue-950/40 rounded-xl border border-blue-800/40">
+                    <p className="text-sm font-semibold">No price freeze locks currently saved</p>
+                    <p className="text-xs text-slate-400 mt-1">Visit Dynamic Pricing Engine to lock fares for 24 hours.</p>
+                    <button
+                      onClick={() => router.push("/dynamic-pricing")}
+                      className="mt-3 bg-cyan-400 hover:bg-cyan-500 text-slate-950 font-bold text-xs px-4 py-2 rounded-lg"
+                    >
+                      Lock a Fare Now
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Bookings Section */}
             <div className="bg-white rounded-xl shadow-lg p-6">
               <h2 className="text-2xl font-bold mb-6">My Bookings</h2>
               <div className="space-y-6">

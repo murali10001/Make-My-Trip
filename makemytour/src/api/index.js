@@ -12,9 +12,14 @@ export const login = async (email, password) => {
     const url = `/user/login?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`;
     const res = await apiClient.post(url);
     if (res.status === 200) return res.data;
-    throw new Error(res.data?.message || "Login failed");
+    const errorMsg = typeof res.data === "string" ? res.data : (res.data?.message || res.data?.error || "Invalid email or password");
+    throw new Error(errorMsg);
   } catch (error) {
     console.error("Login failed:", error);
+    if (error.response && error.response.data) {
+      const msg = typeof error.response.data === "string" ? error.response.data : (error.response.data.message || error.response.data.error || "Invalid email or password");
+      throw new Error(msg);
+    }
     throw error;
   }
 };
@@ -35,9 +40,14 @@ export const signup = async (
       password,
     });
     if (res.status === 200) return res.data;
-    throw new Error(res.data?.message || "Signup failed");
+    const errorMsg = typeof res.data === "string" ? res.data : (res.data?.message || res.data?.error || "Signup failed");
+    throw new Error(errorMsg);
   } catch (error) {
     console.error("Signup failed:", error);
+    if (error.response && error.response.data) {
+      const msg = typeof error.response.data === "string" ? error.response.data : (error.response.data.message || error.response.data.error || "Signup failed");
+      throw new Error(msg);
+    }
     throw error;
   }
 };
@@ -88,16 +98,17 @@ export const getflight = async () => {
   }
 };
 
-export const addflight = async (flightData) => {
+export const addflight = async (...args) => {
   try {
-    const payload = typeof flightData === "object" ? flightData : {
-      flightName: arguments[0],
-      from: arguments[1],
-      to: arguments[2],
-      departureTime: arguments[3],
-      arrivalTime: arguments[4],
-      price: arguments[5],
-      availableSeats: arguments[6],
+    const flightData = args[0];
+    const payload = typeof flightData === "object" && flightData !== null ? flightData : {
+      flightName: args[0],
+      from: args[1],
+      to: args[2],
+      departureTime: args[3],
+      arrivalTime: args[4],
+      price: args[5],
+      availableSeats: args[6],
     };
     const res = await apiClient.post(`/admin/flight`, payload);
     return res.data;
@@ -107,16 +118,18 @@ export const addflight = async (flightData) => {
   }
 };
 
-export const editflight = async (id, flightData) => {
+export const editflight = async (...args) => {
   try {
-    const payload = typeof flightData === "object" ? flightData : {
-      flightName: arguments[1],
-      from: arguments[2],
-      to: arguments[3],
-      departureTime: arguments[4],
-      arrivalTime: arguments[5],
-      price: arguments[6],
-      availableSeats: arguments[7],
+    const id = args[0];
+    const flightData = args[1];
+    const payload = typeof flightData === "object" && flightData !== null ? flightData : {
+      flightName: args[1],
+      from: args[2],
+      to: args[3],
+      departureTime: args[4],
+      arrivalTime: args[5],
+      price: args[6],
+      availableSeats: args[7],
     };
     const res = await apiClient.put(`/admin/flight/${id}`, payload);
     return res.data;
@@ -152,14 +165,15 @@ export const getHomeContent = async () => {
   }
 };
 
-export const addhotel = async (hotelData) => {
+export const addhotel = async (...args) => {
   try {
-    const payload = typeof hotelData === "object" ? hotelData : {
-      hotelName: arguments[0],
-      location: arguments[1],
-      pricePerNight: arguments[2],
-      availableRooms: arguments[3],
-      amenities: arguments[4],
+    const hotelData = args[0];
+    const payload = typeof hotelData === "object" && hotelData !== null ? hotelData : {
+      hotelName: args[0],
+      location: args[1],
+      pricePerNight: args[2],
+      availableRooms: args[3],
+      amenities: args[4],
     };
     const res = await apiClient.post(`/admin/hotel`, payload);
     return res.data;
@@ -169,14 +183,16 @@ export const addhotel = async (hotelData) => {
   }
 };
 
-export const edithotel = async (id, hotelData) => {
+export const edithotel = async (...args) => {
   try {
-    const payload = typeof hotelData === "object" ? hotelData : {
-      hotelName: arguments[1],
-      location: arguments[2],
-      pricePerNight: arguments[3],
-      availableRooms: arguments[4],
-      amenities: arguments[5],
+    const id = args[0];
+    const hotelData = args[1];
+    const payload = typeof hotelData === "object" && hotelData !== null ? hotelData : {
+      hotelName: args[1],
+      location: args[2],
+      pricePerNight: args[3],
+      availableRooms: args[4],
+      amenities: args[5],
     };
     const res = await apiClient.put(`/admin/hotel/${id}`, payload);
     return res.data;
@@ -281,3 +297,129 @@ export const sendFlightEmailNotification = async (flightNumber, email) => {
     throw error;
   }
 };
+
+/* --- DYNAMIC PRICING ENGINE & E-CART OFFERS API METHODS --- */
+
+export const getDynamicPricing = async (
+  itemId = "FL-101",
+  itemType = "FLIGHT",
+  basePrice = 5500,
+  demand = "HIGH",
+  season = "HOLIDAY_PEAK"
+) => {
+  try {
+    const params = new URLSearchParams({
+      itemId,
+      itemType,
+      basePrice: basePrice.toString(),
+      demand,
+      season,
+    });
+    const res = await apiClient.get(`/api/pricing/calculate?${params.toString()}`);
+    if (res.status === 200) return res.data;
+    return null;
+  } catch (error) {
+    console.error("Failed to fetch dynamic price:", error);
+    return null;
+  }
+};
+
+export const freezePrice = async (itemId, itemTitle, currentPrice, hours = 24, userId = "") => {
+  try {
+    const res = await apiClient.post(`/api/pricing/freeze`, {
+      itemId,
+      itemTitle,
+      currentPrice,
+      hours,
+      userId,
+    });
+    if (res.status === 200) return res.data;
+    return null;
+  } catch (error) {
+    console.error("Failed to freeze price:", error);
+    throw error;
+  }
+};
+
+export const getFreezeStatus = async (freezeId) => {
+  try {
+    const res = await apiClient.get(`/api/pricing/freeze/${encodeURIComponent(freezeId)}`);
+    if (res.status === 200) return res.data;
+    return null;
+  } catch (error) {
+    console.error(`Failed to fetch freeze status for ${freezeId}:`, error);
+    return null;
+  }
+};
+
+export const getUserPriceFreezes = async (userId = "") => {
+  try {
+    const res = await apiClient.get(`/api/pricing/user-freezes?userId=${encodeURIComponent(userId)}`);
+    if (res.status === 200 && Array.isArray(res.data)) return res.data;
+    return [];
+  } catch (error) {
+    console.error("Failed to fetch user price freezes:", error);
+    return [];
+  }
+};
+
+export const removePriceFreeze = async (freezeId) => {
+  try {
+    const res = await apiClient.delete(`/api/pricing/freeze/${encodeURIComponent(freezeId)}`);
+    if (res.status === 200) return res.data;
+    return null;
+  } catch (error) {
+    console.error(`Failed to delete price freeze ${freezeId}:`, error);
+    return null;
+  }
+};
+
+export const getPromotionalOffers = async () => {
+  try {
+    const res = await apiClient.get(`/api/pricing/offers`);
+    if (res.status === 200 && Array.isArray(res.data)) return res.data;
+    return [];
+  } catch (error) {
+    console.error("Failed to fetch promotional offers:", error);
+    return [];
+  }
+};
+
+export const applyCouponCode = async (code, amount = 5500) => {
+  try {
+    const res = await apiClient.post(`/api/pricing/apply-coupon`, {
+      code,
+      amount,
+    });
+    return res.data;
+  } catch (error) {
+    console.error("Failed to apply coupon:", error);
+    throw error;
+  }
+};
+
+export const getAppNotifications = async (userId = "") => {
+  try {
+    const params = new URLSearchParams();
+    if (userId) params.append("userId", userId);
+    const res = await apiClient.get(`/api/notifications?${params.toString()}`);
+    if (res.status === 200 && Array.isArray(res.data)) return res.data;
+    return [];
+  } catch (error) {
+    console.error("Failed to fetch app notifications:", error);
+    return [];
+  }
+};
+
+export const deleteAppNotification = async (id) => {
+  try {
+    const res = await apiClient.delete(`/api/notifications/${encodeURIComponent(id)}`);
+    if (res.status === 200) return res.data;
+    return null;
+  } catch (error) {
+    console.error(`Failed to delete notification ${id}:`, error);
+    return null;
+  }
+};
+
+

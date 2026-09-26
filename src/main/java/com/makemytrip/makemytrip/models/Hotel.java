@@ -49,15 +49,6 @@ public class Hotel {
         this.hotelName = hotelName;
     }
 
-    // Alias for backward compatibility
-    public String gethotelName() {
-        return getHotelName();
-    }
-
-    public void sethotelName(String hotelName) {
-        setHotelName(hotelName);
-    }
-
     public String getLocation() {
         return location;
     }
@@ -90,14 +81,7 @@ public class Hotel {
         this.amenities = amenities;
     }
 
-    // Alias for backward compatibility
-    public String getamenities() {
-        return getAmenities();
-    }
 
-    public void setamenities(String amenities) {
-        setAmenities(amenities);
-    }
 
     public String getImageUrl() {
         return imageUrl;

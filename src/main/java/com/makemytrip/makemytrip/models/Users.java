@@ -36,13 +36,22 @@ public class Users {
     public String getPhoneNumber() {
         return phoneNumber;
     }
+    public void setId(String id) {this._id = id;}
+    public void setEmail(String email) {this.email = email;}
     public String getPassword() {return password;}
     public String getEmail() {return email;}
     public String getRole() {return role;}
     public void setPassword(String password) {this.password = password;}
     public void setRole(String role) {this.role = role;}
-    public List<Booking> getBookings(){return bookings;}
-    public void setBookings(List<Booking> bookings){this.bookings=bookings;}
+    public List<Booking> getBookings() {
+        if (bookings == null) {
+            bookings = new ArrayList<>();
+        }
+        return bookings;
+    }
+    public void setBookings(List<Booking> bookings) {
+        this.bookings = bookings;
+    }
 
 
     public static class Booking{

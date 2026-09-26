@@ -44,19 +44,19 @@ const FlightList = ({ onSelect }: any) => {
         </TableHeader>
         <TableBody>
           {flight.length > 0 ? (
-            flight?.map((flight: any) => (
-              <TableRow key={flight._id}>
-                <TableCell>{flight.flightName}</TableCell>
-                <TableCell>{flight.from}</TableCell>
-                <TableCell>{flight.to}</TableCell>
+            flight?.map((item: any, idx: number) => (
+              <TableRow key={item.id || item._id || idx}>
+                <TableCell>{item.flightName}</TableCell>
+                <TableCell>{item.from}</TableCell>
+                <TableCell>{item.to}</TableCell>
                 <TableCell>
-                  <Button onClick={() => onSelect(flight)}>Edit</Button>
+                  <Button onClick={() => onSelect(item)}>Edit</Button>
                 </TableCell>
               </TableRow>
             ))
           ) : (
-            <TableRow>
-              <TableCell>No data</TableCell>
+            <TableRow key="no-data">
+              <TableCell colSpan={4} className="text-center text-gray-500">No flight data available</TableCell>
             </TableRow>
           )}
         </TableBody>
