@@ -72,8 +72,8 @@ public class BookingService {
         // Dynamically create notification in DB for user
         notificationService.createNotification(
             userId,
-            "✈️ Flight Booking Confirmed!",
-            "Confirmed " + seats + " seat(s) on " + flight.getFlightName() + " (" + flight.getFrom() + " ➔ " + flight.getTo() + "). Total: ₹" + price,
+            "Flight Booking Confirmed!",
+            "Confirmed " + seats + " seat(s) on " + flight.getFlightName() + " (" + flight.getFrom() + " to " + flight.getTo() + "). Total: ₹" + price,
             "flight"
         );
 
@@ -120,7 +120,7 @@ public class BookingService {
         // Dynamically create notification in DB for user
         notificationService.createNotification(
             userId,
-            "🏨 Hotel Booking Confirmed!",
+            "Hotel Booking Confirmed!",
             "Confirmed " + rooms + " room(s) at " + hotel.getHotelName() + " (" + hotel.getLocation() + "). Total: ₹" + price,
             "hotel"
         );

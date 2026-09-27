@@ -49,14 +49,14 @@ public class FlightStatusController {
     public void broadcastUpdate(FlightStatus status) {
         if (status == null) return;
 
-        // Persist notification in MongoDB for Navbar bell 🔔
+        // Persist notification in MongoDB for Navbar bell
         try {
             if (notificationService != null) {
-                String title = "✈️ Flight " + status.getFlightNumber() + " is " + (status.getStatus() != null ? status.getStatus() : "UPDATED");
+                String title = "Flight " + status.getFlightNumber() + " is " + (status.getStatus() != null ? status.getStatus() : "UPDATED");
                 String reason = status.getDelayReason() != null && !status.getDelayReason().isEmpty()
                                 ? status.getDelayReason()
                                 : "Status updated to " + status.getStatus();
-                String message = status.getAirline() + " (" + status.getOrigin() + " ➔ " + status.getDestination() + "): " + reason;
+                String message = status.getAirline() + " (" + status.getOrigin() + " to " + status.getDestination() + "): " + reason;
                 notificationService.createNotification(
                     "ALL",
                     title,

@@ -1,14 +1,20 @@
 package com.makemytrip.makemytrip.services;
 
-import com.makemytrip.makemytrip.models.FlightStatus;
-import com.makemytrip.makemytrip.repositories.FlightStatusRepository;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.Random;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.stream.Collectors;
+import com.makemytrip.makemytrip.models.FlightStatus;
+import com.makemytrip.makemytrip.repositories.FlightStatusRepository;
 
 @Service
 public class FlightStatusService {

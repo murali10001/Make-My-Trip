@@ -230,11 +230,11 @@ export default function Home() {
                             {result.flightName}
                           </p>
                           <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded border border-amber-300">
-                            🔥 High Demand Rate
+                            High Demand Rate
                           </span>
                         </div>
                         <h3 className="font-semibold text-base text-blue-950 mt-1">
-                          {result.from} ➔ {result.to}
+                          {result.from} to {result.to}
                         </h3>
                         <p className="text-xs text-gray-600 mt-1">
                           Departure: {formatDate(result.departureTime)}
@@ -262,7 +262,7 @@ export default function Home() {
                             className="text-xs font-bold border-emerald-500 text-emerald-700 hover:bg-emerald-50"
                             onClick={() => router.push("/dynamic-pricing")}
                           >
-                            ❄️ Lock Fare
+                            Lock Fare
                           </Button>
                           <Button
                             className="text-xs font-bold"

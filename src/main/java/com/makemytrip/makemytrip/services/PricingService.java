@@ -200,7 +200,7 @@ public class PricingService {
         result.put("originalAmount", bookingAmount);
         result.put("discountAmount", discount);
         result.put("finalAmount", finalAmount);
-        result.put("message", String.format("🎉 Success! You saved ₹%.0f with coupon %s", discount, coupon.getCode()));
+        result.put("message", String.format("Success! You saved ₹%.0f with coupon %s", discount, coupon.getCode()));
         return result;
     }
 }

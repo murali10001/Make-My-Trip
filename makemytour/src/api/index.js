@@ -473,5 +473,66 @@ export const getRefundStatus = async (refundId) => {
   }
 };
 
+export const getSeatMap = async (flightId) => {
+  try {
+    const res = await apiClient.get(`/api/selection/seatmap/${encodeURIComponent(flightId)}`);
+    if (res.status === 200) return res.data;
+    return null;
+  } catch (error) {
+    console.error(`Failed to fetch seat map for flight ${flightId}:`, error);
+    return null;
+  }
+};
+
+export const reserveSeat = async (flightId, seatNo, userId = "") => {
+  try {
+    const params = new URLSearchParams();
+    params.append("flightId", flightId);
+    params.append("seatNo", seatNo);
+    if (userId) params.append("userId", userId);
+
+    const res = await apiClient.post(`/api/selection/reserve-seat?${params.toString()}`);
+    if (res.status === 200) return res.data;
+    return null;
+  } catch (error) {
+    console.error(`Failed to reserve seat ${seatNo}:`, error);
+    throw error;
+  }
+};
+
+export const getHotelRoomOptions = async (hotelId) => {
+  try {
+    const res = await apiClient.get(`/api/selection/hotel-rooms/${encodeURIComponent(hotelId)}`);
+    if (res.status === 200 && Array.isArray(res.data)) return res.data;
+    return [];
+  } catch (error) {
+    console.error(`Failed to fetch hotel rooms for ${hotelId}:`, error);
+    return [];
+  }
+};
+
+export const saveUserPreferences = async (preferences) => {
+  try {
+    const res = await apiClient.post(`/api/selection/preferences`, preferences);
+    if (res.status === 200) return res.data;
+    return null;
+  } catch (error) {
+    console.error("Failed to save user preferences:", error);
+    throw error;
+  }
+};
+
+export const getUserPreferences = async (userId) => {
+  try {
+    const res = await apiClient.get(`/api/selection/preferences/${encodeURIComponent(userId)}`);
+    if (res.status === 200) return res.data;
+    return null;
+  } catch (error) {
+    console.error(`Failed to fetch user preferences for ${userId}:`, error);
+    return null;
+  }
+};
+
+
 
 

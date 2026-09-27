@@ -60,7 +60,7 @@ public class FlightStatusScheduler {
                     flight.setDelayReason("Landed safely at " + formattedNow12 + " - Taxiing to gate");
                     flight.setLastUpdated(now.format(DateTimeFormatter.ofPattern("HH:mm:ss")));
                     FlightStatus saved = flightStatusRepository.save(flight);
-                    System.out.println("⏰ [SCHEDULER] Flight " + saved.getFlightNumber() + " reached arrival time (" + arrivalTimeStr + "). Status updated to LANDED!");
+                    System.out.println("[SCHEDULER] Flight " + saved.getFlightNumber() + " reached arrival time (" + arrivalTimeStr + "). Status updated to LANDED!");
                     if (flightStatusController != null) {
                         flightStatusController.broadcastUpdate(saved);
                     }
@@ -83,7 +83,7 @@ public class FlightStatusScheduler {
                     flight.setDelayReason("En route at cruising altitude");
                     flight.setLastUpdated(now.format(DateTimeFormatter.ofPattern("HH:mm:ss")));
                     FlightStatus saved = flightStatusRepository.save(flight);
-                    System.out.println("⏰ [SCHEDULER] Flight " + saved.getFlightNumber() + " reached departure time (" + departureTimeStr + "). Status updated to IN_FLIGHT!");
+                    System.out.println("[SCHEDULER] Flight " + saved.getFlightNumber() + " reached departure time (" + departureTimeStr + "). Status updated to IN_FLIGHT!");
                     if (flightStatusController != null) {
                         flightStatusController.broadcastUpdate(saved);
                     }

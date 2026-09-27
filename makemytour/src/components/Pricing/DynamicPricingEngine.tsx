@@ -122,7 +122,7 @@ const DynamicPricingEngine: React.FC = () => {
           combined.push({
             id: f._id || f.id || `FL-${Math.random()}`,
             type: "FLIGHT",
-            title: `${f.flightName || "Flight"} (${f.from} ➔ ${f.to})`,
+            title: `${f.flightName || "Flight"} (${f.from} to ${f.to})`,
             subtitle: `Departure: ${f.departureTime || "08:00 AM"} • ${f.availableSeats || 120} seats left`,
             basePrice: f.price || 5500,
           });
@@ -359,7 +359,7 @@ const DynamicPricingEngine: React.FC = () => {
             >
               {dbItems.map((item) => (
                 <option key={item.id} value={item.id}>
-                  {item.type === "FLIGHT" ? "✈️ Flight: " : "🏨 Hotel: "} {item.title} (Base: ₹{item.basePrice.toLocaleString()})
+                  {item.type === "FLIGHT" ? "Flight: " : "Hotel: "} {item.title} (Base: ₹{item.basePrice.toLocaleString()})
                 </option>
               ))}
             </select>
@@ -385,9 +385,9 @@ const DynamicPricingEngine: React.FC = () => {
                 onChange={(e) => setDemandLevel(e.target.value)}
                 className="bg-white border border-slate-300 text-slate-800 text-xs rounded-lg px-2.5 py-1.5 font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500"
               >
-                <option value="HIGH">🔥 High Demand</option>
-                <option value="MEDIUM">⚡ Medium Demand</option>
-                <option value="NORMAL">✅ Normal Demand</option>
+                <option value="HIGH">High Demand</option>
+                <option value="MEDIUM">Medium Demand</option>
+                <option value="NORMAL">Normal Demand</option>
               </select>
 
               <select
@@ -395,9 +395,9 @@ const DynamicPricingEngine: React.FC = () => {
                 onChange={(e) => setSeasonType(e.target.value)}
                 className="bg-white border border-slate-300 text-slate-800 text-xs rounded-lg px-2.5 py-1.5 font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500"
               >
-                <option value="HOLIDAY_PEAK">🎄 Peak Holiday (+20%)</option>
-                <option value="WEEKEND">✈️ Weekend (+10%)</option>
-                <option value="OFF_PEAK">🌿 Standard Off-Peak</option>
+                <option value="HOLIDAY_PEAK">Peak Holiday (+20%)</option>
+                <option value="WEEKEND">Weekend (+10%)</option>
+                <option value="OFF_PEAK">Standard Off-Peak</option>
               </select>
             </div>
           </div>

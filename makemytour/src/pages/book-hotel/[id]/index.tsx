@@ -20,6 +20,7 @@ import {
   CheckCircle,
   Building2,
   X,
+  Sparkles,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
@@ -72,6 +73,8 @@ import SignupDialog from "@/components/SignupDialog";
 import Loader from "@/components/Loader";
 import { setUser } from "@/store";
 
+import HotelRoomPicker from "@/components/HotelRoomPicker";
+
 const BookHotelPage = () => {
   const [quantity, setQuantity] = useState(1);
   const router = useRouter();
@@ -101,6 +104,9 @@ const BookHotelPage = () => {
   // Price History graph modal state
   const [showHistoryModal, setShowHistoryModal] = useState<boolean>(false);
   const [dynamicPricingInfo, setDynamicPricingInfo] = useState<any | null>(null);
+
+  // Room type selection state
+  const [selectedRoom, setSelectedRoom] = useState<{ roomTypeName: string; priceUpgradeAddon: number } | null>(null);
 
   useEffect(() => {
     const fetchhotels = async () => {
@@ -216,8 +222,9 @@ const BookHotelPage = () => {
   const initialTotalDiscounts = initialDiscountPerNight * quantity;
   const couponDiscount = appliedCoupon ? appliedCoupon.discountAmount : 0;
   const totalDiscounts = initialTotalDiscounts + couponDiscount;
+  const roomUpgradeTotal = (selectedRoom?.priceUpgradeAddon || 0) * quantity;
 
-  const grandTotal = Math.max(0, totalPrice + totalTaxes - totalDiscounts);
+  const grandTotal = Math.max(0, totalPrice + roomUpgradeTotal + totalTaxes - totalDiscounts);
 
   const handleApplyCoupon = async (codeToApply?: string) => {
     const code = (codeToApply || couponCodeInput).trim();
@@ -438,6 +445,16 @@ const BookHotelPage = () => {
               </div>
             </div>
 
+            {/* Interactive Hotel Room Picker & 3D Tour */}
+            <HotelRoomPicker
+              hotelId={hotel.id || hotel._id || "ht-101"}
+              hotelName={hotel.hotelName || "Hotel"}
+              userId={user?.id || user?._id || ""}
+              userEmail={user?.email || ""}
+              onRoomSelect={(room) => setSelectedRoom(room)}
+              selectedRoomType={selectedRoom?.roomTypeName || ""}
+            />
+
             {priceFrozen && (
               <div className="bg-gradient-to-r from-blue-900 to-indigo-950 text-white p-4 rounded-xl shadow-md border border-cyan-500/30 flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -471,6 +488,17 @@ const BookHotelPage = () => {
                   <span className="text-slate-600">Taxes & Fees</span>
                   <span className="font-medium">₹ {totalTaxes.toLocaleString()}</span>
                 </div>
+                {selectedRoom && (
+                  <div className="flex justify-between items-center bg-indigo-50 p-2 rounded-lg border border-indigo-200 text-xs font-bold text-indigo-900">
+                    <span className="flex items-center gap-1">
+                      <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                      {selectedRoom.roomTypeName} Option
+                    </span>
+                    <span className="text-indigo-800 font-extrabold">
+                      {selectedRoom.priceUpgradeAddon > 0 ? `+ ₹ ${roomUpgradeTotal.toLocaleString()}` : "Included (₹0)"}
+                    </span>
+                  </div>
+                )}
                 {initialTotalDiscounts > 0 && (
                   <div className="flex justify-between text-green-600">
                     <span>Promotional Discount</span>

@@ -24,6 +24,7 @@ import {
   DollarSign,
   ArrowRight,
   RefreshCw,
+  BookmarkCheck,
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "next/router";
@@ -36,6 +37,8 @@ import {
   submitCancellationAndRefund,
   getUserRefunds,
   getuserbyemail,
+  getUserPreferences,
+  saveUserPreferences,
 } from "@/api";
 import {
   Dialog,
@@ -59,10 +62,11 @@ const ProfileDashboardPage = () => {
   const user = useSelector((state: any) => state.user.user);
   const router = useRouter();
 
-  const [activeTab, setActiveTab] = useState<"bookings" | "refunds" | "freezes">("bookings");
+  const [activeTab, setActiveTab] = useState<"bookings" | "refunds" | "freezes" | "preferences">("bookings");
   const [frozenPrices, setFrozenPrices] = useState<any[]>([]);
   const [userRefunds, setUserRefunds] = useState<any[]>([]);
   const [loadingRefunds, setLoadingRefunds] = useState<boolean>(false);
+  const [userPrefs, setUserPrefs] = useState<any | null>(null);
 
   // Cancellation Modal State
   const [cancelModalOpen, setCancelModalOpen] = useState<boolean>(false);
@@ -144,14 +148,25 @@ const ProfileDashboardPage = () => {
       }
     };
 
+    const fetchUserPreferencesData = async () => {
+      const userId = user?.id || user?._id || "";
+      if (userId) {
+        try {
+          const prefs = await getUserPreferences(userId);
+          setUserPrefs(prefs);
+        } catch (e) {}
+      }
+    };
+
     fetchUserFreezes();
     fetchUserDataAndRefunds();
-  }, [user?.email]);
+    fetchUserPreferencesData();
+  }, [user?.email, user?.id]);
 
   useEffect(() => {
     if (activeTab === "refunds") {
       fetchUserDataAndRefunds();
-      const interval = setInterval(fetchUserDataAndRefunds, 4000);
+      const interval = setInterval(fetchUserDataAndRefunds, 2000);
       return () => clearInterval(interval);
     }
   }, [activeTab, user?.id, user?._id]);
@@ -340,6 +355,17 @@ const ProfileDashboardPage = () => {
             >
               <Snowflake className="w-3.5 h-3.5" />
               Price Locks ({frozenPrices.length})
+            </button>
+            <button
+              onClick={() => setActiveTab("preferences")}
+              className={`px-4 py-2 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 ${
+                activeTab === "preferences"
+                  ? "bg-indigo-600 text-white shadow-md"
+                  : "bg-slate-800/80 hover:bg-slate-800 text-slate-300"
+              }`}
+            >
+              <BookmarkCheck className="w-3.5 h-3.5" />
+              Travel Preferences
             </button>
           </div>
         </div>
@@ -790,6 +816,62 @@ const ProfileDashboardPage = () => {
                       </button>
                     </div>
                   )}
+                </div>
+              </div>
+            )}
+
+            {/* TAB 4: Travel Preferences */}
+            {activeTab === "preferences" && (
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                      <BookmarkCheck className="w-5 h-5 text-indigo-600" />
+                      Saved Travel & Booking Preferences
+                    </h2>
+                    <p className="text-xs text-slate-500">
+                      Saved seat and room choices are automatically pre-selected during checkout.
+                    </p>
+                  </div>
+                  <span className="text-xs bg-indigo-50 text-indigo-700 font-bold px-3 py-1 rounded-full border border-indigo-200">
+                    Auto-Applied
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Flight Seat Preference */}
+                  <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-3">
+                    <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
+                      <Plane className="w-4 h-4 text-cyan-600" />
+                      <span>Preferred Flight Seat</span>
+                    </div>
+                    <div className="space-y-1 text-xs">
+                      <p className="text-slate-500">Default Seat Type:</p>
+                      <p className="font-extrabold text-slate-900 text-sm bg-white p-2.5 rounded-xl border border-slate-200">
+                        {userPrefs?.preferredSeatType || "Window / Extra Legroom"} ({userPrefs?.preferredSeatNo || "1A"})
+                      </p>
+                    </div>
+                    <p className="text-[11px] text-slate-500 italic">
+                      Automatically selects {userPrefs?.preferredSeatNo || "1A"} when opening airplane seat map.
+                    </p>
+                  </div>
+
+                  {/* Hotel Room Preference */}
+                  <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-3">
+                    <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
+                      <Building2 className="w-4 h-4 text-indigo-600" />
+                      <span>Preferred Hotel Room</span>
+                    </div>
+                    <div className="space-y-1 text-xs">
+                      <p className="text-slate-500">Default Room Category:</p>
+                      <p className="font-extrabold text-slate-900 text-sm bg-white p-2.5 rounded-xl border border-slate-200">
+                        {userPrefs?.preferredRoomType || "Executive Deluxe Room"}
+                      </p>
+                    </div>
+                    <p className="text-[11px] text-slate-500 italic">
+                      Pre-selects {userPrefs?.preferredRoomType || "Executive Deluxe Room"} in hotel room grids.
+                    </p>
+                  </div>
                 </div>
               </div>
             )}

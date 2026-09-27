@@ -13,7 +13,7 @@ public class DynamicPrice {
     private String seasonType; // "HOLIDAY_PEAK", "WEEKEND", "OFF_PEAK"
     private double demandSurgePercentage; // e.g. 20.0 for +20%
     private double seasonalMultiplier; // e.g. 1.20
-    private String surgeReason; // e.g. "🔥 High Demand & Peak Holiday Surge (+20%)"
+    private String surgeReason; // e.g. "High Demand & Peak Holiday Surge (+20%)"
     private List<Map<String, Object>> priceHistory;
 
     public DynamicPrice() {}

@@ -24,7 +24,7 @@ public class RootController {
 
     @GetMapping("/")
     public String home() {
-        return "✅ MakeMyTrip Backend Server is running on port 8081!";
+        return "MakeMyTrip Backend Server is running on port 8081!";
     }
 
     @GetMapping("/hotel")

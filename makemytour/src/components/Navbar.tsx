@@ -34,6 +34,49 @@ const Navbar = () => {
   const router = useRouter();
   const [showNotifDrawer, setShowNotifDrawer] = useState<boolean>(false);
   const [notifications, setNotifications] = useState<any[]>([]);
+  const [webPushPermission, setWebPushPermission] = useState<string>("default");
+  const seenNotifIdsRef = React.useRef<Set<string>>(new Set());
+
+  const requestBrowserPushPermission = async () => {
+    if (typeof window !== "undefined" && "Notification" in window) {
+      try {
+        const perm = await Notification.requestPermission();
+        setWebPushPermission(perm);
+        if (perm === "granted") {
+          new window.Notification("MakeMyTour Desktop Push Active", {
+            body: "Desktop alerts are enabled! You will now see live popups for flight delays and refund status changes.",
+            icon: "/favicon.ico",
+          });
+        } else if (perm === "denied") {
+          alert("Browser notifications are blocked in your browser settings. Please click the site settings / lock icon in your address bar and set Notifications to Allow.");
+        }
+      } catch (err) {
+        console.error("Failed to request notification permission", err);
+      }
+    } else {
+      alert("Your browser does not support Desktop Push Notifications.");
+    }
+  };
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && "Notification" in window) {
+      setWebPushPermission(Notification.permission);
+      // Auto-prompt permission if default on page load
+      if (Notification.permission === "default") {
+        Notification.requestPermission().then((perm) => {
+          setWebPushPermission(perm);
+          if (perm === "granted") {
+            new window.Notification("MakeMyTour Desktop Alerts Active", {
+              body: "Desktop notifications enabled for flight updates & refunds.",
+              icon: "/favicon.ico",
+            });
+          }
+        }).catch(() => {});
+      }
+    }
+  }, []);
+
+  const isFirstLoadRef = React.useRef<boolean>(true);
 
   useEffect(() => {
     const fetchNotifs = async () => {
@@ -46,13 +89,57 @@ const Navbar = () => {
             n.type !== "freeze" &&
             (!n.title || !n.title.includes("Fare Locked"))
         );
+
+        if (isFirstLoadRef.current) {
+          // On first load, record existing past notifications so we don't dump old popups
+          filtered.forEach((n: any) => {
+            if (n && n.id) seenNotifIdsRef.current.add(n.id);
+          });
+          isFirstLoadRef.current = false;
+        } else {
+          // On subsequent polls, check for unseen notifications
+          filtered.forEach((n: any) => {
+            if (n && n.id && !seenNotifIdsRef.current.has(n.id)) {
+              if (typeof window !== "undefined" && "Notification" in window) {
+                if (Notification.permission === "granted") {
+                  try {
+                    new window.Notification(n.title || "Flight Status Alert", {
+                      body: n.desc || "New status update received.",
+                      icon: "/favicon.ico",
+                    });
+                    seenNotifIdsRef.current.add(n.id);
+                  } catch (e) {
+                    console.error("Failed to fire browser push notification", e);
+                  }
+                } else if (Notification.permission === "default") {
+                  // Do not add to seen set yet, ask for permission so popup fires when granted
+                  Notification.requestPermission().then((perm) => {
+                    setWebPushPermission(perm);
+                    if (perm === "granted") {
+                      try {
+                        new window.Notification(n.title || "Flight Status Alert", {
+                          body: n.desc || "New status update received.",
+                          icon: "/favicon.ico",
+                        });
+                        seenNotifIdsRef.current.add(n.id);
+                      } catch (e) {}
+                    }
+                  }).catch(() => {});
+                }
+              } else {
+                seenNotifIdsRef.current.add(n.id);
+              }
+            }
+          });
+        }
+
         setNotifications(filtered);
       } catch (err) {
         console.error("Failed to fetch navbar notifications", err);
       }
     };
     fetchNotifs();
-    const interval = setInterval(fetchNotifs, 4000);
+    const interval = setInterval(fetchNotifs, 3000);
     return () => clearInterval(interval);
   }, [user]);
 
@@ -128,10 +215,16 @@ const Navbar = () => {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Notification Bell Icon 🔔 */}
+          {/* Notification Bell Icon */}
           <div className="relative">
             <button
-              onClick={() => setShowNotifDrawer(!showNotifDrawer)}
+              onClick={() => {
+                const nextState = !showNotifDrawer;
+                setShowNotifDrawer(nextState);
+                if (nextState && webPushPermission === "default") {
+                  requestBrowserPushPermission();
+                }
+              }}
               className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 transition-all relative shadow-2xs"
               title="Notifications & Updates"
             >
@@ -158,6 +251,23 @@ const Navbar = () => {
                     <X className="w-4 h-4" />
                   </button>
                 </div>
+
+                {webPushPermission !== "granted" && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-2.5 text-[11px] text-blue-900 space-y-1.5">
+                    <div className="flex items-center justify-between font-bold">
+                      <span>Enable Desktop Alerts</span>
+                      <button
+                        onClick={requestBrowserPushPermission}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-0.5 rounded text-[10px] font-semibold"
+                      >
+                        Enable
+                      </button>
+                    </div>
+                    <p className="text-[10px] text-blue-700 leading-tight">
+                      Receive instant browser push popups for refund completions and flight updates.
+                    </p>
+                  </div>
+                )}
 
                 {notifications.length === 0 ? (
                   <p className="text-xs text-slate-500 italic py-4 text-center">No unread notifications.</p>

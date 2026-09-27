@@ -149,7 +149,7 @@ public class RefundService {
         // Create live notification for user in MongoDB
         notificationService.createNotification(
                 userId,
-                "🚫 Booking Cancelled & Refund Initiated",
+                "Booking Cancelled & Refund Initiated",
                 "Booking " + bookingId + " cancelled. Refund ID " + refundId + " for ₹" + refundAmount + " is currently PENDING.",
                 "cancellation"
         );
@@ -202,7 +202,7 @@ public class RefundService {
         // Notify user about status change
         notificationService.createNotification(
                 refund.getUserId(),
-                "💰 Refund Status Update (" + refundId + ")",
+                "Refund Status Update (" + refundId + ")",
                 "Your refund for booking " + refund.getBookingId() + " is now " + upperStatus + ". Amount: ₹" + refund.getRefundAmount(),
                 "refund"
         );

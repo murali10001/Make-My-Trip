@@ -25,12 +25,12 @@ public class EmailService {
             recipientEmail = "passenger-test@makemytour.com";
         }
 
-        String subject = "✈️ Live Flight Notification: " + flightStatus.getFlightNumber() + " [" + flightStatus.getStatus() + "]";
+        String subject = "Live Flight Notification: " + flightStatus.getFlightNumber() + " [" + flightStatus.getStatus() + "]";
         String body = String.format(
             "Hello Traveler,\n\n" +
             "Here is the latest live update for your tracked flight %s (%s):\n\n" +
             "• Airline: %s\n" +
-            "• Route: %s ➔ %s\n" +
+            "• Route: %s to %s\n" +
             "• Status: %s\n" +
             "• Context / Delay Reason: %s\n" +
             "• Scheduled Departure: %s (Revised: %s)\n" +

@@ -81,7 +81,6 @@ const SignupDialog = ({trigger}:any) => {
         </DialogHeader>
         {authError && (
           <div className="p-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md flex items-center gap-2">
-            <span className="font-bold text-red-500">⚠️</span>
             <span>{authError}</span>
           </div>
         )}

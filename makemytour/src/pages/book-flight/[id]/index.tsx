@@ -31,6 +31,7 @@ import {
   getUserPriceFreezes,
 } from "@/api";
 import { useDispatch, useSelector } from "react-redux";
+import FlightSeatPicker from "@/components/FlightSeatPicker";
 
 interface Flight {
   id: string;
@@ -99,6 +100,9 @@ const BookFlightPage = () => {
   // Price History graph modal state
   const [showHistoryModal, setShowHistoryModal] = useState<boolean>(false);
   const [dynamicPricingInfo, setDynamicPricingInfo] = useState<any | null>(null);
+
+  // Seat selection state
+  const [selectedSeat, setSelectedSeat] = useState<{ seatNo: string; tier: string; priceAddon: number } | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -208,8 +212,9 @@ const BookFlightPage = () => {
   const totalOtherServices = otherServicesPerTicket * quantity;
   const couponDiscount = appliedCoupon ? appliedCoupon.discountAmount : 0;
   const totalDiscounts = initialDiscounts + couponDiscount;
+  const seatAddonTotal = (selectedSeat?.priceAddon || 0) * quantity;
 
-  const grandTotal = Math.max(0, baseTotalPrice + totalTaxes + totalOtherServices - totalDiscounts);
+  const grandTotal = Math.max(0, baseTotalPrice + seatAddonTotal + totalTaxes + totalOtherServices - totalDiscounts);
 
   const formatDate = (dateString: string): string => {
     if (!dateString) return "N/A";
@@ -266,7 +271,7 @@ const BookFlightPage = () => {
       const userId = user?.id || user?._id || "";
       const res = await freezePrice(
         flight.id || flight._id || "FL-101",
-        `${flight.flightName} (${flight.from} ➔ ${flight.to})`,
+        `${flight.flightName} (${flight.from} to ${flight.to})`,
         unitPrice,
         24,
         userId
@@ -526,6 +531,15 @@ const BookFlightPage = () => {
               </div>
             </div>
 
+            {/* Interactive Flight Seat Picker */}
+            <FlightSeatPicker
+              flightId={flight.id || flight._id || "101"}
+              userId={user?.id || user?._id || ""}
+              userEmail={user?.email || ""}
+              onSeatSelect={(seat) => setSelectedSeat(seat)}
+              selectedSeatNo={selectedSeat?.seatNo || ""}
+            />
+
             {/* Price Freeze Active Banner if locked */}
             {priceFrozen && (
               <div className="bg-gradient-to-r from-blue-900 to-indigo-950 text-white p-4 rounded-xl shadow-md border border-cyan-500/30 flex items-center justify-between">
@@ -564,6 +578,17 @@ const BookFlightPage = () => {
                   <span className="text-gray-600">Other Services</span>
                   <span className="font-medium">₹ {totalOtherServices.toLocaleString()}</span>
                 </div>
+                {selectedSeat && (
+                  <div className="flex justify-between items-center bg-cyan-50 p-2 rounded-lg border border-cyan-200 text-xs font-bold text-cyan-900">
+                    <span className="flex items-center gap-1">
+                      <Sparkles className="w-3.5 h-3.5 text-cyan-600" />
+                      Seat {selectedSeat.seatNo} Fee ({selectedSeat.tier?.replace(/_/g, " ")})
+                    </span>
+                    <span className="text-cyan-800 font-extrabold">
+                      {selectedSeat.priceAddon > 0 ? `+ ₹ ${seatAddonTotal.toLocaleString()}` : "Included (₹0)"}
+                    </span>
+                  </div>
+                )}
                 {initialDiscounts > 0 && (
                   <div className="flex justify-between items-center text-green-600">
                     <span className="font-medium">Promotional Discount</span>
@@ -701,7 +726,7 @@ const BookFlightPage = () => {
             </div>
 
             <p className="text-xs text-slate-600">
-              7-Day historical fare trend for {flight.flightName} ({flight.from} ➔ {flight.to}).
+              7-Day historical fare trend for {flight.flightName} ({flight.from} to {flight.to}).
             </p>
 
             <div className="bg-slate-900 rounded-xl p-4 text-white space-y-3">

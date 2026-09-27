@@ -12,6 +12,6 @@ public class DataSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        logger.info("Application started. All data is managed dynamically via MongoDB database.");
+        logger.info("Database connection active. Flights, hotels, and status records are managed directly via Database and Admin Panel.");
     }
 }

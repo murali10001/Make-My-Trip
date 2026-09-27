@@ -44,7 +44,7 @@ public class UserServices {
         // Dynamically create welcome notification in DB for new user
         notificationService.createNotification(
             savedUser.getId(),
-            "🎉 Welcome to MakeMyTour!",
+            "Welcome to MakeMyTour!",
             "Welcome " + savedUser.getFirstName() + "! Explore flights, hotels, and exclusive travel deals.",
             "welcome"
         );

@@ -104,7 +104,7 @@ const LiveFlightTracker: React.FC = () => {
         const perm = await Notification.requestPermission();
         setWebPushPermission(perm);
         if (perm === "granted") {
-          new window.Notification("🔔 Web Push Notifications Enabled!", {
+          new window.Notification("Web Push Notifications Enabled!", {
             body: "You will now receive desktop and mobile status updates for tracked flights.",
           });
         }
@@ -154,16 +154,16 @@ const LiveFlightTracker: React.FC = () => {
 
               if (updatedFlight.status === "DELAYED") {
                 notifType = "delay";
-                title = `🚨 Live Delay Alert: ${updatedFlight.flightNumber}`;
+                title = `Live Delay Alert: ${updatedFlight.flightNumber}`;
               } else if (updatedFlight.status === "BOARDING") {
                 notifType = "boarding";
-                title = `✈️ Live Boarding Alert: ${updatedFlight.flightNumber}`;
+                title = `Live Boarding Alert: ${updatedFlight.flightNumber}`;
               } else if (updatedFlight.status === "LANDED") {
                 notifType = "boarding";
-                title = `🛬 Live Landing Alert: ${updatedFlight.flightNumber}`;
+                title = `Live Landing Alert: ${updatedFlight.flightNumber}`;
               } else if (updatedFlight.status === "IN_FLIGHT") {
                 notifType = "info";
-                title = `🛫 Live Departure Alert: ${updatedFlight.flightNumber}`;
+                title = `Live Departure Alert: ${updatedFlight.flightNumber}`;
               }
 
               addNotification({
@@ -238,15 +238,29 @@ const LiveFlightTracker: React.FC = () => {
   const addNotification = (notif: PushNotification) => {
     setNotifications((prev) => [notif, ...prev.slice(0, 9)]);
 
-    // Trigger Native OS/Browser Push Notification if permission granted
-    if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
-      try {
-        new window.Notification(notif.title, {
-          body: notif.message,
-          icon: "/favicon.ico",
-        });
-      } catch (e) {
-        console.error("Error firing native push notification", e);
+    // Trigger Native OS/Browser Push Notification if permission granted or request permission
+    if (typeof window !== "undefined" && "Notification" in window) {
+      if (Notification.permission === "granted") {
+        try {
+          new window.Notification(notif.title, {
+            body: notif.message,
+            icon: "/favicon.ico",
+          });
+        } catch (e) {
+          console.error("Error firing native push notification", e);
+        }
+      } else if (Notification.permission === "default") {
+        Notification.requestPermission().then((perm) => {
+          setWebPushPermission(perm);
+          if (perm === "granted") {
+            try {
+              new window.Notification(notif.title, {
+                body: notif.message,
+                icon: "/favicon.ico",
+              });
+            } catch (e) {}
+          }
+        }).catch(() => {});
       }
     }
   };
@@ -273,23 +287,23 @@ const LiveFlightTracker: React.FC = () => {
 
         if (updatedFlight.status === "DELAYED") {
           notifType = "delay";
-          title = `🚨 Delay Alert: ${updatedFlight.flightNumber}`;
+          title = `Delay Alert: ${updatedFlight.flightNumber}`;
         } else if (updatedFlight.status === "BOARDING") {
           notifType = "boarding";
-          title = `✈️ Boarding Started: ${updatedFlight.flightNumber}`;
+          title = `Boarding Started: ${updatedFlight.flightNumber}`;
         } else if (updatedFlight.status === "IN_FLIGHT") {
           notifType = "info";
-          title = `🛫 In Flight: ${updatedFlight.flightNumber}`;
+          title = `In Flight: ${updatedFlight.flightNumber}`;
         } else if (updatedFlight.status === "LANDED") {
           notifType = "boarding";
-          title = `🛬 Landed: ${updatedFlight.flightNumber}`;
+          title = `Landed: ${updatedFlight.flightNumber}`;
         }
 
         addNotification({
           id: Date.now().toString(),
           flightNumber: updatedFlight.flightNumber,
           title: isTracked ? `[TRACKED] ${title}` : title,
-          message: `${updatedFlight.airline} (${updatedFlight.origin} ➔ ${updatedFlight.destination}): ${updatedFlight.delayReason}`,
+          message: `${updatedFlight.airline} (${updatedFlight.origin} to ${updatedFlight.destination}): ${updatedFlight.delayReason}`,
           timestamp: new Date().toLocaleTimeString(),
           type: notifType,
         });
@@ -320,7 +334,7 @@ const LiveFlightTracker: React.FC = () => {
         addNotification({
           id: Date.now().toString(),
           flightNumber,
-          title: `✅ Flight Alert Email Sent`,
+          title: `Flight Alert Email Sent`,
           message: `Sent status update for ${flightNumber} to ${targetEmail}`,
           timestamp: new Date().toLocaleTimeString(),
           type: "email",
@@ -334,7 +348,7 @@ const LiveFlightTracker: React.FC = () => {
         addNotification({
           id: Date.now().toString(),
           flightNumber,
-          title: `⚠️ Email Service Currently Unavailable`,
+          title: `Email Service Currently Unavailable`,
           message: failMsg,
           timestamp: new Date().toLocaleTimeString(),
           type: "delay",
@@ -350,7 +364,7 @@ const LiveFlightTracker: React.FC = () => {
       addNotification({
         id: Date.now().toString(),
         flightNumber,
-        title: `⚠️ Email Service Unavailable`,
+        title: `Email Service Unavailable`,
         message: errText,
         timestamp: new Date().toLocaleTimeString(),
         type: "delay",
@@ -526,7 +540,7 @@ const LiveFlightTracker: React.FC = () => {
                     </div>
                     {matched ? (
                       <p className="text-xs text-slate-600 mt-1 truncate">
-                        {matched.origin.split(" ")[0]} ➔ {matched.destination.split(" ")[0]}
+                        {matched.origin.split(" ")[0]} -&gt; {matched.destination.split(" ")[0]}
                       </p>
                     ) : (
                       <p className="text-xs text-slate-400 mt-1">Loading status...</p>
@@ -586,8 +600,8 @@ const LiveFlightTracker: React.FC = () => {
       ) : flights.length === 0 ? (
         <div className="bg-white rounded-xl p-8 text-center border border-slate-200">
           <AlertTriangle className="w-12 h-12 text-slate-400 mx-auto mb-2" />
-          <h3 className="font-bold text-slate-700">No flights matched your search</h3>
-          <p className="text-xs text-slate-500 mt-1">Try clearing filters or search by flight number (e.g. AI-101, 6E-204)</p>
+          <h3 className="font-bold text-slate-700">No flight status records available in database</h3>
+          <p className="text-xs text-slate-500 mt-1">Please add flights via Admin Panel or clear your search filters.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -707,7 +721,7 @@ const LiveFlightTracker: React.FC = () => {
                       }}
                       className="font-bold text-blue-600 hover:text-blue-800 underline flex items-center gap-1"
                     >
-                      Details ➔
+                      Details &rarr;
                     </button>
                   </div>
                 </div>
@@ -739,7 +753,7 @@ const LiveFlightTracker: React.FC = () => {
                   {selectedFlight.flightNumber} • {selectedFlight.airline}
                 </h3>
                 <p className="text-xs text-slate-500 font-mono">
-                  {selectedFlight.origin} ➔ {selectedFlight.destination}
+                  {selectedFlight.origin} to {selectedFlight.destination}
                 </p>
               </div>
             </div>
