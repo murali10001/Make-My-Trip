@@ -17,6 +17,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -74,8 +75,7 @@ class FlightStatusServiceTest {
     @Test
     @DisplayName("GetTrackedFlights - Returns list of tracked flights")
     void testGetTrackedFlights_Success() {
-        when(flightStatusRepository.findByFlightNumberIn(Arrays.asList("AI-101", "6E-202")))
-                .thenReturn(Arrays.asList(flight1, flight2));
+        doReturn(Arrays.asList(flight1, flight2)).when(flightStatusRepository).findByFlightNumberIn(any());
 
         List<FlightStatus> tracked = flightStatusService.getTrackedFlights(Arrays.asList("AI-101", "6E-202"));
 

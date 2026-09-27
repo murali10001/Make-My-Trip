@@ -3,6 +3,7 @@ package com.makemytrip.makemytrip.controllers;
 import com.makemytrip.makemytrip.models.FlightStatus;
 import com.makemytrip.makemytrip.services.EmailService;
 import com.makemytrip.makemytrip.services.FlightStatusService;
+import com.makemytrip.makemytrip.services.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +28,9 @@ public class FlightStatusController {
     @Autowired
     private EmailService emailService;
 
+    @Autowired
+    private NotificationService notificationService;
+
     private final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
 
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
@@ -44,6 +48,26 @@ public class FlightStatusController {
 
     public void broadcastUpdate(FlightStatus status) {
         if (status == null) return;
+
+        // Persist notification in MongoDB for Navbar bell 🔔
+        try {
+            if (notificationService != null) {
+                String title = "✈️ Flight " + status.getFlightNumber() + " is " + (status.getStatus() != null ? status.getStatus() : "UPDATED");
+                String reason = status.getDelayReason() != null && !status.getDelayReason().isEmpty()
+                                ? status.getDelayReason()
+                                : "Status updated to " + status.getStatus();
+                String message = status.getAirline() + " (" + status.getOrigin() + " ➔ " + status.getDestination() + "): " + reason;
+                notificationService.createNotification(
+                    "ALL",
+                    title,
+                    message,
+                    "flight"
+                );
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to persist notification in MongoDB: " + e.getMessage());
+        }
+
         List<SseEmitter> deadEmitters = new ArrayList<>();
         for (SseEmitter emitter : emitters) {
             try {
@@ -54,6 +78,7 @@ public class FlightStatusController {
         }
         emitters.removeAll(deadEmitters);
     }
+
 
     @GetMapping
     public ResponseEntity<List<FlightStatus>> getAllFlights(
@@ -77,8 +102,12 @@ public class FlightStatusController {
     }
 
     @PostMapping("/simulate")
-    public ResponseEntity<FlightStatus> simulateUpdate(@RequestBody Map<String, Object> payload) {
+    public ResponseEntity<FlightStatus> simulateUpdate(@RequestBody(required = false) Map<String, Object> payload) {
+        if (payload == null) {
+            payload = new java.util.HashMap<>();
+        }
         String flightNumber = (String) payload.get("flightNumber");
+
         if (flightNumber == null || flightNumber.trim().isEmpty()) {
             FlightStatus randomUpdate = flightStatusService.triggerRandomSimulation();
             broadcastUpdate(randomUpdate);
@@ -105,6 +134,10 @@ public class FlightStatusController {
             flightNumber, status, delayReason, revisedDeparture, revisedArrival, gate, terminal, estMins
         );
 
+        if (updated == null) {
+            return ResponseEntity.notFound().build();
+        }
+
         broadcastUpdate(updated);
 
         // Send email notification automatically if email provided
@@ -123,7 +156,17 @@ public class FlightStatusController {
         return ResponseEntity.ok(updated);
     }
 
+    @RequestMapping(value = "/simulate-all", method = {RequestMethod.GET, RequestMethod.POST})
+    public ResponseEntity<List<FlightStatus>> simulateAll() {
+        List<FlightStatus> updatedFlights = flightStatusService.triggerAllFlightsSimulation();
+        for (FlightStatus flight : updatedFlights) {
+            broadcastUpdate(flight);
+        }
+        return ResponseEntity.ok(updatedFlights);
+    }
+
     @PostMapping("/notify-email")
+
     public ResponseEntity<Map<String, Object>> sendEmailNotification(@RequestBody Map<String, String> payload) {
         String flightNumber = payload.get("flightNumber");
         String email = payload.get("email");

@@ -29,6 +29,8 @@ import {
   applyCouponCode,
   freezePrice,
   getDynamicPricing,
+  getFreezeStatus,
+  getUserPriceFreezes,
 } from "@/api";
 
 interface Hotel {
@@ -125,18 +127,39 @@ const BookHotelPage = () => {
           setDynamicPricingInfo(priceInfo);
 
           // Check active price freeze for this item
+          let found: any = null;
           if (typeof window !== "undefined") {
             try {
               const savedList = JSON.parse(localStorage.getItem("user_price_freezes") || "[]");
-              const found = savedList.find(
+              found = savedList.find(
                 (fr: any) =>
                   fr.itemId === (target.id || target._id) ||
                   (Boolean(router.query.freezeId) && fr.freezeId === router.query.freezeId)
               );
-              if (found) {
-                setPriceFrozen(found);
-              }
             } catch (e) {}
+          }
+
+          const freezeIdParam = router.query.freezeId as string;
+          if (freezeIdParam && !found) {
+            try {
+              const remoteFreeze = await getFreezeStatus(freezeIdParam);
+              if (remoteFreeze && remoteFreeze.active) found = remoteFreeze;
+            } catch (e) {}
+          }
+
+          const userId = user?.id || user?._id;
+          if (userId && !found) {
+            try {
+              const remoteList = await getUserPriceFreezes(userId);
+              const remoteMatch = (remoteList || []).find(
+                (fr: any) => fr.itemId === (target.id || target._id) && fr.active
+              );
+              if (remoteMatch) found = remoteMatch;
+            } catch (e) {}
+          }
+
+          if (found) {
+            setPriceFrozen(found);
           }
         }
       } catch (error) {

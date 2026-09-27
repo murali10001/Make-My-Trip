@@ -31,9 +31,13 @@ public class PricingController {
         return ResponseEntity.ok(price);
     }
 
-    @PostMapping("/freeze")
-    public ResponseEntity<PriceFreeze> freezePrice(@RequestBody Map<String, Object> request) {
+    @RequestMapping(value = {"/freeze", "/freeze/lock"}, method = {RequestMethod.POST, RequestMethod.PUT})
+    public ResponseEntity<PriceFreeze> freezePrice(@RequestBody(required = false) Map<String, Object> request) {
+        if (request == null) {
+            request = new HashMap<>();
+        }
         String itemId = (String) request.getOrDefault("itemId", "FL-101");
+
         String itemTitle = (String) request.getOrDefault("itemTitle", "Air India Flight AI-101");
         double currentPrice = Double.parseDouble(request.getOrDefault("currentPrice", 5500.0).toString());
         long hours = Long.parseLong(request.getOrDefault("hours", 24).toString());
@@ -43,11 +47,12 @@ public class PricingController {
         return ResponseEntity.ok(freeze);
     }
 
-    @GetMapping("/freeze/{freezeId}")
+    @GetMapping(value = {"/freeze/{freezeId}", "/freeze/status/{freezeId}"})
     public ResponseEntity<PriceFreeze> getFreezeStatus(@PathVariable String freezeId) {
         PriceFreeze freeze = pricingService.getFreezeStatus(freezeId);
         return ResponseEntity.ok(freeze);
     }
+
 
     @DeleteMapping("/freeze/{freezeId}")
     public ResponseEntity<Map<String, String>> deleteFreeze(@PathVariable String freezeId) {

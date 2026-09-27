@@ -16,9 +16,12 @@ public class NotificationController {
     @Autowired
     private NotificationService notificationService;
 
-    @GetMapping
-    public ResponseEntity<List<Notification>> getNotifications(@RequestParam(required = false) String userId) {
-        return ResponseEntity.ok(notificationService.getNotificationsForUser(userId));
+    @GetMapping(value = {"", "/{userId}"})
+    public ResponseEntity<List<Notification>> getNotifications(
+            @PathVariable(required = false) String userId,
+            @RequestParam(required = false) String userIdParam) {
+        String targetUserId = userId != null ? userId : userIdParam;
+        return ResponseEntity.ok(notificationService.getNotificationsForUser(targetUserId));
     }
 
     @DeleteMapping("/{id}")

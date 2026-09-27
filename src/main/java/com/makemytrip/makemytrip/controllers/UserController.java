@@ -29,6 +29,16 @@ public class UserController {
         }
         return ResponseEntity.notFound().build();
     }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Users> getuserbyid(@PathVariable String id){
+        Users user = userServices.getUserById(id);
+        if(user != null){
+            return ResponseEntity.ok(user);
+        }
+        return ResponseEntity.notFound().build();
+    }
+
     @PostMapping("/edit")
     public Users editprofile(@RequestParam String id ,@RequestBody Users updatedUser){
         return userServices.editprofile(id,updatedUser);

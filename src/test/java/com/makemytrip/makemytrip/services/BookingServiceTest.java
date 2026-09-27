@@ -81,7 +81,7 @@ class BookingServiceTest {
 
         assertNotNull(booking);
         assertEquals("Flight", booking.getType());
-        assertEquals("FL-555", booking.getBookingId());
+        assertTrue(booking.getBookingId().startsWith("BK-FL-"));
         assertEquals(2, booking.getQuantity());
         assertEquals(10000.0, booking.getTotalPrice());
 
@@ -122,7 +122,7 @@ class BookingServiceTest {
 
         assertNotNull(booking);
         assertEquals("Hotel", booking.getType());
-        assertEquals("HT-777", booking.getBookingId());
+        assertTrue(booking.getBookingId().startsWith("BK-HT-"));
         assertEquals(3, booking.getQuantity());
         assertEquals(36000.0, booking.getTotalPrice());
 

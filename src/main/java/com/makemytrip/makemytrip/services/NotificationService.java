@@ -27,12 +27,16 @@ public class NotificationService {
     }
 
     public List<Notification> getNotificationsForUser(String userId) {
-        if (userId == null || userId.trim().isEmpty() || "null".equalsIgnoreCase(userId) || "undefined".equalsIgnoreCase(userId)) {
-            return java.util.Collections.emptyList();
-        }
-        List<Notification> list = notificationRepository.findByUserIdOrUserId(userId, "ALL");
-        return list.stream()
-                .filter(n -> n != null && !"freeze".equalsIgnoreCase(n.getType()) && (n.getTitle() == null || !n.getTitle().contains("Fare Locked")))
+        List<Notification> all = notificationRepository.findAll();
+        return all.stream()
+                .filter(n -> n != null)
+                .filter(n -> {
+                    if (userId == null || userId.trim().isEmpty() || "null".equalsIgnoreCase(userId) || "undefined".equalsIgnoreCase(userId)) {
+                        return "ALL".equalsIgnoreCase(n.getUserId());
+                    }
+                    return userId.equalsIgnoreCase(n.getUserId()) || "ALL".equalsIgnoreCase(n.getUserId());
+                })
+                .filter(n -> !"freeze".equalsIgnoreCase(n.getType()) && (n.getTitle() == null || !n.getTitle().contains("Fare Locked")))
                 .collect(Collectors.toList());
     }
 

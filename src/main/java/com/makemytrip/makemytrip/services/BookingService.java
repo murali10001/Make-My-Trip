@@ -63,6 +63,8 @@ public class BookingService {
         booking.setDate(LocalDate.now().toString());
         booking.setQuantity(seats);
         booking.setTotalPrice(price);
+        booking.setTargetId(flightId);
+        booking.setStatus("CONFIRMED");
 
         user.getBookings().add(booking);
         userRepository.save(user);
@@ -109,6 +111,8 @@ public class BookingService {
         booking.setDate(LocalDate.now().toString());
         booking.setQuantity(rooms);
         booking.setTotalPrice(price);
+        booking.setTargetId(hotelId);
+        booking.setStatus("CONFIRMED");
 
         user.getBookings().add(booking);
         userRepository.save(user);

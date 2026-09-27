@@ -1,12 +1,16 @@
 package com.makemytrip.makemytrip.models;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.List;
 import java.util.ArrayList;
 @Document(collection = "users")
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Users {
     @Id
+    @JsonProperty("id")
     private String _id;
     private String firstName;
     private String lastName;
@@ -60,6 +64,10 @@ public class Users {
         private String date;
         private int quantity;
         private double totalPrice;
+        private String status = "CONFIRMED"; // "CONFIRMED" or "CANCELLED"
+        private String targetId; // Flight or Hotel ID
+        private String cancellationReason;
+        private String refundId;
 
         // Getters and Setters
         public String getType() {
@@ -100,6 +108,38 @@ public class Users {
 
         public void setTotalPrice(double totalPrice) {
             this.totalPrice = totalPrice;
+        }
+
+        public String getStatus() {
+            return status != null ? status : "CONFIRMED";
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
+        }
+
+        public String getTargetId() {
+            return targetId;
+        }
+
+        public void setTargetId(String targetId) {
+            this.targetId = targetId;
+        }
+
+        public String getCancellationReason() {
+            return cancellationReason;
+        }
+
+        public void setCancellationReason(String cancellationReason) {
+            this.cancellationReason = cancellationReason;
+        }
+
+        public String getRefundId() {
+            return refundId;
+        }
+
+        public void setRefundId(String refundId) {
+            this.refundId = refundId;
         }
     }
 }

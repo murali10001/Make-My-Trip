@@ -4,7 +4,7 @@ const BACKEND_URL = "http://localhost:8081";
 
 const apiClient = axios.create({
   baseURL: BACKEND_URL,
-  validateStatus: (status) => status >= 200 && status < 600,
+  validateStatus: (status) => status >= 200 && status < 300,
 });
 
 export const login = async (email, password) => {
@@ -233,12 +233,11 @@ export const getFlightStatuses = async (query = "", status = "ALL") => {
     if (status && status !== "ALL") params.append("status", status);
 
     const res = await apiClient.get(`/api/flight-status?${params.toString()}`);
-    if (res.status === 200 && Array.isArray(res.data)) {
+    if (res && res.status === 200 && Array.isArray(res.data)) {
       return res.data;
     }
     return [];
   } catch (error) {
-    console.error("Failed to fetch flight statuses:", error);
     return [];
   }
 };
@@ -246,10 +245,9 @@ export const getFlightStatuses = async (query = "", status = "ALL") => {
 export const getFlightStatusByNumber = async (flightNumber) => {
   try {
     const res = await apiClient.get(`/api/flight-status/${encodeURIComponent(flightNumber)}`);
-    if (res.status === 200) return res.data;
+    if (res && res.status === 200) return res.data;
     return null;
   } catch (error) {
-    console.error(`Failed to fetch flight status for ${flightNumber}:`, error);
     return null;
   }
 };
@@ -257,10 +255,9 @@ export const getFlightStatusByNumber = async (flightNumber) => {
 export const getTrackedFlights = async (flightNumbers = []) => {
   try {
     const res = await apiClient.post(`/api/flight-status/tracked`, flightNumbers);
-    if (res.status === 200 && Array.isArray(res.data)) return res.data;
+    if (res && res.status === 200 && Array.isArray(res.data)) return res.data;
     return [];
   } catch (error) {
-    console.error("Failed to fetch tracked flights:", error);
     return [];
   }
 };
@@ -403,10 +400,9 @@ export const getAppNotifications = async (userId = "") => {
     const params = new URLSearchParams();
     if (userId) params.append("userId", userId);
     const res = await apiClient.get(`/api/notifications?${params.toString()}`);
-    if (res.status === 200 && Array.isArray(res.data)) return res.data;
+    if (res && res.status === 200 && Array.isArray(res.data)) return res.data;
     return [];
   } catch (error) {
-    console.error("Failed to fetch app notifications:", error);
     return [];
   }
 };
@@ -421,5 +417,61 @@ export const deleteAppNotification = async (id) => {
     return null;
   }
 };
+
+export const calculateRefundPreview = async (userId, bookingId) => {
+  try {
+    const res = await apiClient.get(`/refund/calculate?userId=${encodeURIComponent(userId)}&bookingId=${encodeURIComponent(bookingId)}`);
+    if (res.status === 200) return res.data;
+    return null;
+  } catch (error) {
+    console.error("Failed to calculate refund preview:", error);
+    throw error;
+  }
+};
+
+export const submitCancellationAndRefund = async (userId, bookingId, reason, comment = "") => {
+  try {
+    const params = new URLSearchParams();
+    params.append("userId", userId);
+    params.append("bookingId", bookingId);
+    params.append("reason", reason);
+    if (comment) params.append("comment", comment);
+
+    const res = await apiClient.post(`/refund/cancel-and-request?${params.toString()}`);
+    if (res.status === 200) return res.data;
+    const errorMsg = typeof res.data === "string" ? res.data : (res.data?.message || res.data?.error || "Cancellation failed");
+    throw new Error(errorMsg);
+  } catch (error) {
+    console.error("Failed to submit cancellation & refund:", error);
+    if (error.response && error.response.data) {
+      const msg = typeof error.response.data === "string" ? error.response.data : (error.response.data.message || error.response.data.error || "Cancellation failed");
+      throw new Error(msg);
+    }
+    throw error;
+  }
+};
+
+export const getUserRefunds = async (userId) => {
+  try {
+    const res = await apiClient.get(`/refund/user/${encodeURIComponent(userId)}`);
+    if (res.status === 200 && Array.isArray(res.data)) return res.data;
+    return [];
+  } catch (error) {
+    console.error("Failed to fetch user refunds:", error);
+    return [];
+  }
+};
+
+export const getRefundStatus = async (refundId) => {
+  try {
+    const res = await apiClient.get(`/refund/status/${encodeURIComponent(refundId)}`);
+    if (res.status === 200) return res.data;
+    return null;
+  } catch (error) {
+    console.error(`Failed to fetch refund status for ${refundId}:`, error);
+    return null;
+  }
+};
+
 
 

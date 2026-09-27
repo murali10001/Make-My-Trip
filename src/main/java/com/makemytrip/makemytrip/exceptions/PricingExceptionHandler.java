@@ -11,6 +11,17 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class PricingExceptionHandler {
 
+    @ExceptionHandler(PriceFreezeNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handlePriceFreezeNotFound(PriceFreezeNotFoundException ex) {
+        ApiErrorResponse error = new ApiErrorResponse(
+                HttpStatus.NOT_FOUND.value(),
+                "Price Freeze Not Found",
+                ex.getMessage(),
+                "/api/pricing/freeze"
+        );
+        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    }
+
     @ExceptionHandler(PriceFreezeExpiredException.class)
     public ResponseEntity<ApiErrorResponse> handlePriceFreezeExpired(PriceFreezeExpiredException ex) {
         ApiErrorResponse error = new ApiErrorResponse(
@@ -33,3 +44,4 @@ public class PricingExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 }
+

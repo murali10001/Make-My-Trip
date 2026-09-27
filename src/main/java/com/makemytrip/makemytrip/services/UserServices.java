@@ -60,6 +60,12 @@ public class UserServices {
         return user;
     }
 
+    public Users getUserById(String id) {
+        if (id == null || id.trim().isEmpty()) return null;
+        return userRepository.findById(id.trim()).orElse(null);
+    }
+
+
     public Users editprofile(String id, Users updatedUser) {
         Optional<Users> userOptional = userRepository.findById(id);
         if (userOptional.isPresent()) {

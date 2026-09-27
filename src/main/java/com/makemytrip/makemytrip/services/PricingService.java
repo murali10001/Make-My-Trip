@@ -2,6 +2,7 @@ package com.makemytrip.makemytrip.services;
 
 import com.makemytrip.makemytrip.exceptions.InvalidCouponException;
 import com.makemytrip.makemytrip.exceptions.PriceFreezeExpiredException;
+import com.makemytrip.makemytrip.exceptions.PriceFreezeNotFoundException;
 import com.makemytrip.makemytrip.models.DynamicPrice;
 import com.makemytrip.makemytrip.models.OfferCoupon;
 import com.makemytrip.makemytrip.models.PriceFreeze;
@@ -139,7 +140,7 @@ public class PricingService {
     public PriceFreeze getFreezeStatus(String freezeId) {
         Optional<PriceFreeze> optionalFreeze = priceFreezeRepository.findById(freezeId);
         if (!optionalFreeze.isPresent()) {
-            throw new PriceFreezeExpiredException("Price freeze session not found in database.");
+            throw new PriceFreezeNotFoundException("Price freeze session not found in database.");
         }
         PriceFreeze freeze = optionalFreeze.get();
         if (LocalDateTime.now().isAfter(freeze.getExpiresAt())) {

@@ -158,6 +158,12 @@ const LiveFlightTracker: React.FC = () => {
               } else if (updatedFlight.status === "BOARDING") {
                 notifType = "boarding";
                 title = `✈️ Live Boarding Alert: ${updatedFlight.flightNumber}`;
+              } else if (updatedFlight.status === "LANDED") {
+                notifType = "boarding";
+                title = `🛬 Live Landing Alert: ${updatedFlight.flightNumber}`;
+              } else if (updatedFlight.status === "IN_FLIGHT") {
+                notifType = "info";
+                title = `🛫 Live Departure Alert: ${updatedFlight.flightNumber}`;
               }
 
               addNotification({
@@ -417,7 +423,7 @@ const LiveFlightTracker: React.FC = () => {
               )}
             </div>
             <h1 className="text-3xl font-extrabold mt-2 tracking-tight">
-              Real-Time Flight Tracker & Push Notifications
+              Real-Time Flight Tracker
             </h1>
             <p className="text-slate-300 text-sm mt-1 max-w-2xl">
               Track multiple flights simultaneously, receive instant delay alerts, view revised schedules, and monitor dynamic estimated arrival times.
@@ -483,62 +489,6 @@ const LiveFlightTracker: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {/* Push Notification Alert Drawer */}
-      {notifications.length > 0 && (
-        <div className="bg-slate-900 text-white rounded-xl p-4 shadow-lg border border-slate-800">
-          <div className="flex items-center justify-between mb-3 border-b border-slate-800 pb-2">
-            <div className="flex items-center gap-2">
-              <div className="relative">
-                <Bell className="w-5 h-5 text-amber-400" />
-                <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-red-500 animate-ping" />
-              </div>
-              <h3 className="text-sm font-semibold text-slate-200">
-                Live Push Notifications ({notifications.length})
-              </h3>
-            </div>
-            <button
-              onClick={() => setNotifications([])}
-              className="text-xs text-slate-400 hover:text-white underline"
-            >
-              Clear All
-            </button>
-          </div>
-
-          <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-            {notifications.map((n) => (
-              <div
-                key={n.id}
-                className={`flex items-start justify-between p-3 rounded-lg border text-xs transition-all ${
-                  n.type === "delay"
-                    ? "bg-amber-950/40 border-amber-800/50 text-amber-200"
-                    : n.type === "boarding"
-                    ? "bg-blue-950/40 border-blue-800/50 text-blue-200"
-                    : n.type === "email"
-                    ? "bg-emerald-950/40 border-emerald-800/50 text-emerald-200"
-                    : "bg-slate-800/60 border-slate-700 text-slate-300"
-                }`}
-              >
-                <div className="space-y-0.5 pr-2">
-                  <div className="flex items-center gap-2 font-semibold text-sm">
-                    <span>{n.title}</span>
-                    <span className="text-[10px] text-slate-400 font-mono">
-                      {n.timestamp}
-                    </span>
-                  </div>
-                  <p className="text-xs opacity-90">{n.message}</p>
-                </div>
-                <button
-                  onClick={() => dismissNotification(n.id)}
-                  className="text-slate-400 hover:text-white p-1"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Multi-Flight Simultaneous Tracking Bar */}
       <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
@@ -742,6 +692,7 @@ const LiveFlightTracker: React.FC = () => {
                       onClick={() => {
                         setSelectedFlight(flight);
                         setEmailFeedback(null);
+                        setTestEmailInput("");
                       }}
                       title="Send email alert notification"
                       className="text-slate-700 hover:text-emerald-700 font-semibold flex items-center gap-1 bg-white px-2.5 py-1 rounded border border-slate-200 hover:border-emerald-300 transition-all shadow-2xs text-xs"
@@ -752,6 +703,7 @@ const LiveFlightTracker: React.FC = () => {
                       onClick={() => {
                         setSelectedFlight(flight);
                         setEmailFeedback(null);
+                        setTestEmailInput("");
                       }}
                       className="font-bold text-blue-600 hover:text-blue-800 underline flex items-center gap-1"
                     >
@@ -773,6 +725,7 @@ const LiveFlightTracker: React.FC = () => {
               onClick={() => {
                 setSelectedFlight(null);
                 setEmailFeedback(null);
+                setTestEmailInput("");
               }}
               className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1"
             >

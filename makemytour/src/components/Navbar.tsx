@@ -11,6 +11,7 @@ import {
   ChevronDown,
   CheckCircle,
   X,
+  RotateCcw,
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -36,11 +37,7 @@ const Navbar = () => {
 
   useEffect(() => {
     const fetchNotifs = async () => {
-      const userId = user?.id || user?._id || "";
-      if (!userId) {
-        setNotifications([]);
-        return;
-      }
+      const userId = user?.id || user?._id || "ALL";
       try {
         const data = await getAppNotifications(userId);
         const filtered = (data || []).filter(
@@ -55,6 +52,8 @@ const Navbar = () => {
       }
     };
     fetchNotifs();
+    const interval = setInterval(fetchNotifs, 4000);
+    return () => clearInterval(interval);
   }, [user]);
 
   const logout = () => {
@@ -223,7 +222,11 @@ const Navbar = () => {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => router.push("/profile")}>
                     <User className="mr-2 h-4 w-4" />
-                    <span>Profile</span>
+                    <span>Profile & Dashboard</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push("/profile")}>
+                    <RotateCcw className="mr-2 h-4 w-4 text-amber-500" />
+                    <span>My Bookings & Refunds</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => router.push("/flight-status")}>
                     <Activity className="mr-2 h-4 w-4 text-red-500" />
