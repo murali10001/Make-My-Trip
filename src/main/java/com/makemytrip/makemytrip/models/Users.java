@@ -62,6 +62,7 @@ public class Users {
         private String type;
         private String bookingId;
         private String date;
+        private String bookingTimestamp;
         private int quantity;
         private double totalPrice;
         private String status = "CONFIRMED"; // "CONFIRMED" or "CANCELLED"
@@ -70,6 +71,14 @@ public class Users {
         private String refundId;
 
         // Getters and Setters
+        public String getBookingTimestamp() {
+            return bookingTimestamp;
+        }
+
+        public void setBookingTimestamp(String bookingTimestamp) {
+            this.bookingTimestamp = bookingTimestamp;
+        }
+
         public String getType() {
             return type;
         }

@@ -98,6 +98,17 @@ export const getflight = async () => {
   }
 };
 
+export const getflightbyid = async (id) => {
+  try {
+    const res = await apiClient.get(`/flight/${encodeURIComponent(id)}`);
+    if (res.status === 200) return res.data;
+    return null;
+  } catch (error) {
+    console.error(`Get flight by id failed for ${id}:`, error);
+    return null;
+  }
+};
+
 export const addflight = async (...args) => {
   try {
     const flightData = args[0];
@@ -149,6 +160,17 @@ export const gethotel = async () => {
   } catch (error) {
     console.error("Get hotel list failed:", error);
     return [];
+  }
+};
+
+export const gethotelbyid = async (id) => {
+  try {
+    const res = await apiClient.get(`/hotel/${encodeURIComponent(id)}`);
+    if (res.status === 200) return res.data;
+    return null;
+  } catch (error) {
+    console.error(`Get hotel by id failed for ${id}:`, error);
+    return null;
   }
 };
 
@@ -388,10 +410,29 @@ export const applyCouponCode = async (code, amount = 5500) => {
       code,
       amount,
     });
-    return res.data;
+    if (res && res.data) {
+      return res.data;
+    }
+    return {
+      success: false,
+      code,
+      discountAmount: 0,
+      finalAmount: amount,
+      message: "Unable to apply coupon code.",
+    };
   } catch (error) {
-    console.error("Failed to apply coupon:", error);
-    throw error;
+    const errorMsg =
+      error?.response?.data?.message ||
+      error?.response?.data?.error ||
+      error?.message ||
+      "Invalid or ineligible coupon code for this booking.";
+    return {
+      success: false,
+      code,
+      discountAmount: 0,
+      finalAmount: amount,
+      message: errorMsg,
+    };
   }
 };
 
@@ -533,6 +574,93 @@ export const getUserPreferences = async (userId) => {
   }
 };
 
+export const getReviews = async (targetId, targetType = "HOTEL", sort = "helpful", minRating = 0, withPhotosOnly = false) => {
+  try {
+    const params = new URLSearchParams();
+    params.append("targetId", targetId);
+    params.append("targetType", targetType);
+    if (sort) params.append("sort", sort);
+    if (minRating > 0) params.append("minRating", minRating);
+    if (withPhotosOnly) params.append("withPhotosOnly", "true");
 
+    const res = await apiClient.get(`/api/reviews?${params.toString()}`);
+    if (res.status === 200) return res.data;
+    return null;
+  } catch (error) {
+    console.error("Failed to fetch reviews:", error);
+    return null;
+  }
+};
 
+export const createReview = async (reviewData) => {
+  try {
+    const res = await apiClient.post("/api/reviews", reviewData);
+    if (res.status === 200) return res.data;
+    throw new Error(res.data?.message || "Failed to create review");
+  } catch (error) {
+    console.error("Failed to post review:", error);
+    throw error;
+  }
+};
 
+export const addReviewReply = async (reviewId, replyData) => {
+  try {
+    const res = await apiClient.post(`/api/reviews/${encodeURIComponent(reviewId)}/reply`, replyData);
+    if (res.status === 200) return res.data;
+    throw new Error(res.data?.message || "Failed to add reply");
+  } catch (error) {
+    console.error("Failed to add reply:", error);
+    throw error;
+  }
+};
+
+export const toggleReviewHelpful = async (reviewId, userId = "") => {
+  try {
+    const params = new URLSearchParams();
+    if (userId) params.append("userId", userId);
+    const res = await apiClient.post(`/api/reviews/${encodeURIComponent(reviewId)}/helpful?${params.toString()}`);
+    if (res.status === 200) return res.data;
+    throw new Error(res.data?.message || "Failed to toggle helpful vote");
+  } catch (error) {
+    console.error("Failed to toggle helpful vote:", error);
+    throw error;
+  }
+};
+
+export const flagReview = async (reviewId, userId = "", reason = "Inappropriate content") => {
+  try {
+    const params = new URLSearchParams();
+    if (userId) params.append("userId", userId);
+    params.append("reason", reason);
+    const res = await apiClient.post(`/api/reviews/${encodeURIComponent(reviewId)}/flag?${params.toString()}`);
+    if (res.status === 200) return res.data;
+    throw new Error(res.data?.message || "Failed to flag review");
+  } catch (error) {
+    console.error("Failed to flag review:", error);
+    throw error;
+  }
+};
+
+export const getFlaggedReviews = async () => {
+  try {
+    const res = await apiClient.get("/api/reviews/moderation/flagged");
+    if (res.status === 200 && Array.isArray(res.data)) return res.data;
+    return [];
+  } catch (error) {
+    console.error("Failed to fetch flagged reviews for moderation:", error);
+    return [];
+  }
+};
+
+export const moderateReview = async (reviewId, action) => {
+  try {
+    const params = new URLSearchParams();
+    params.append("action", action);
+    const res = await apiClient.post(`/api/reviews/moderation/${encodeURIComponent(reviewId)}/action?${params.toString()}`);
+    if (res.status === 200) return res.data;
+    throw new Error(res.data?.message || "Failed to execute moderation action");
+  } catch (error) {
+    console.error("Failed to moderate review:", error);
+    throw error;
+  }
+};

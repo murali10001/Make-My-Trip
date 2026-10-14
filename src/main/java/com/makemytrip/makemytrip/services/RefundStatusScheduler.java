@@ -26,7 +26,8 @@ public class RefundStatusScheduler {
     @Scheduled(fixedRate = 2000)
     public void monitorRefundStatuses() {
         long nowMs = System.currentTimeMillis();
-        List<RefundRequest> refunds = refundRepository.findAll();
+        // Only query active refund requests pending banking clearance
+        List<RefundRequest> refunds = refundRepository.findByStatusIn(java.util.List.of("PENDING", "PROCESSED"));
 
         for (RefundRequest refund : refunds) {
             if (refund == null || refund.getStatus() == null) continue;

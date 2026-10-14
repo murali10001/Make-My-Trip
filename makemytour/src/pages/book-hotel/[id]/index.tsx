@@ -25,6 +25,7 @@ import {
 import { useEffect, useState } from "react";
 import {
   gethotel,
+  gethotelbyid,
   handlehotelbooking,
   getPromotionalOffers,
   applyCouponCode,
@@ -74,6 +75,7 @@ import Loader from "@/components/Loader";
 import { setUser } from "@/store";
 
 import HotelRoomPicker from "@/components/HotelRoomPicker";
+import ReviewsSection from "@/components/ReviewsSection";
 
 const BookHotelPage = () => {
   const [quantity, setQuantity] = useState(1);
@@ -111,8 +113,12 @@ const BookHotelPage = () => {
   useEffect(() => {
     const fetchhotels = async () => {
       try {
-        const data = await gethotel();
-        const filteredData = data.filter((hotel: any) => (hotel.id === id || hotel._id === id));
+        let targetHotel = id ? await gethotelbyid(id as string) : null;
+        let filteredData = targetHotel ? [targetHotel] : [];
+        if (filteredData.length === 0) {
+          const data = await gethotel();
+          filteredData = data.filter((hotel: any) => (hotel.id === id || hotel._id === id));
+        }
         sethotels(filteredData);
 
         const offersData = await getPromotionalOffers();
@@ -175,7 +181,7 @@ const BookHotelPage = () => {
       }
     };
     if (id) fetchhotels();
-  }, [id, router.query]);
+  }, [id, router.query.demand, router.query.season, router.query.freezeId]);
 
   if (loading) {
     return <Loader />;
@@ -243,10 +249,13 @@ const BookHotelPage = () => {
           message: res.message,
         });
         setCouponCodeInput(res.code);
+        setCouponError(null);
       } else {
+        setAppliedCoupon(null);
         setCouponError(res?.message || "Invalid coupon code.");
       }
     } catch (err: any) {
+      setAppliedCoupon(null);
       const errText = err?.response?.data?.message || err?.message || "Invalid coupon code for this booking.";
       setCouponError(errText);
     } finally {
@@ -469,6 +478,14 @@ const BookHotelPage = () => {
                 </span>
               </div>
             )}
+
+            {/* Reviews & Guest Ratings Section */}
+            <ReviewsSection
+              targetId={hotel.id || hotel._id || (id as string)}
+              targetType="HOTEL"
+              targetTitle={hotel.hotelName || "Hotel Stay"}
+              currentUser={user}
+            />
           </div>
 
           {/* Right Column: Rate Summary & Bank Coupons */}
@@ -479,7 +496,36 @@ const BookHotelPage = () => {
                 Booking Rate Summary
               </h2>
 
-              <div className="space-y-2 text-sm">
+              <div className="space-y-3 text-sm">
+                {/* Room Counter Selector */}
+                <div className="flex items-center justify-between bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                  <div>
+                    <span className="font-extrabold text-slate-900 text-xs block">Rooms to Book</span>
+                    <span className="text-[11px] text-slate-500">1 room selected by default</span>
+                  </div>
+                  <div className="flex items-center gap-2 bg-white border border-slate-300 rounded-lg p-1">
+                    <button
+                      type="button"
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      disabled={quantity <= 1}
+                      className="w-6 h-6 rounded flex items-center justify-center font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-40 transition-colors"
+                      title="Decrease room count"
+                    >
+                      -
+                    </button>
+                    <span className="font-black text-xs text-slate-900 w-5 text-center">{quantity}</span>
+                    <button
+                      type="button"
+                      onClick={() => setQuantity(Math.min(hotel.availableRooms || 10, quantity + 1))}
+                      disabled={quantity >= (hotel.availableRooms || 10)}
+                      className="w-6 h-6 rounded flex items-center justify-center font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-40 transition-colors"
+                      title="Increase room count"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
                 <div className="flex justify-between">
                   <span className="text-slate-600">Room Rate ({quantity} Room{quantity > 1 ? 's' : ''})</span>
                   <span className="font-medium">₹ {totalPrice.toLocaleString()}</span>

@@ -6,6 +6,10 @@ import com.makemytrip.makemytrip.models.RoomTypeOption;
 import com.makemytrip.makemytrip.models.SeatMap;
 import com.makemytrip.makemytrip.models.SeatMap.SeatItem;
 import com.makemytrip.makemytrip.models.UserPreferences;
+import com.makemytrip.makemytrip.models.Flight;
+import com.makemytrip.makemytrip.models.Hotel;
+import com.makemytrip.makemytrip.repositories.FlightRepository;
+import com.makemytrip.makemytrip.repositories.HotelRepository;
 import com.makemytrip.makemytrip.repositories.RoomTypeOptionRepository;
 import com.makemytrip.makemytrip.repositories.SeatMapRepository;
 import com.makemytrip.makemytrip.repositories.UserPreferencesRepository;
@@ -15,8 +19,9 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class SelectionService {
@@ -30,6 +35,12 @@ public class SelectionService {
     @Autowired
     private UserPreferencesRepository userPreferencesRepository;
 
+    @Autowired(required = false)
+    private HotelRepository hotelRepository;
+
+    @Autowired(required = false)
+    private FlightRepository flightRepository;
+
     /**
      * Get or dynamically generate standard flight seat map with premium options.
      */
@@ -37,7 +48,14 @@ public class SelectionService {
         return seatMapRepository.findByFlightId(flightId).orElseGet(() -> {
             SeatMap map = new SeatMap();
             map.setFlightId(flightId);
-            map.setAircraftType("Airbus A320-200");
+            String aircraft = "Airbus A320-200";
+            if (flightRepository != null) {
+                Optional<Flight> f = flightRepository.findById(flightId);
+                if (f.isPresent() && f.get().getAircraft() != null && !f.get().getAircraft().trim().isEmpty()) {
+                    aircraft = f.get().getAircraft();
+                }
+            }
+            map.setAircraftType(aircraft);
             map.setTotalRows(12);
 
             List<SeatItem> seats = new ArrayList<>();
@@ -152,93 +170,58 @@ public class SelectionService {
     }
 
     /**
-     * Get or dynamically generate hotel room-type grid options with 3D previews & upselling tiers.
+     * Get hotel room-type grid options dynamically from database or hotel entity.
      */
     public List<RoomTypeOption> getRoomOptionsForHotel(String hotelId) {
+        if (hotelId == null || hotelId.trim().isEmpty()) {
+            return Collections.emptyList();
+        }
+
         List<RoomTypeOption> options = roomTypeOptionRepository.findByHotelId(hotelId);
         if (options != null && !options.isEmpty()) {
             return options;
         }
 
-        List<RoomTypeOption> generated = new ArrayList<>();
+        if (hotelRepository != null) {
+            Optional<Hotel> hotelOpt = hotelRepository.findById(hotelId);
+            if (hotelOpt.isPresent()) {
+                Hotel hotel = hotelOpt.get();
+                RoomTypeOption standard = new RoomTypeOption();
+                standard.setHotelId(hotelId);
+                standard.setRoomTypeName(hotel.getRoomType() != null && !hotel.getRoomType().trim().isEmpty() ? hotel.getRoomType() : "Standard Room");
+                standard.setPriceUpgradeAddon(0.0);
+                standard.setAvailableRooms(hotel.getAvailableRooms() > 0 ? hotel.getAvailableRooms() : 1);
+                standard.setBedType("Comfort Bed");
+                standard.setRoomSize(hotel.getRoomFeatures() != null && !hotel.getRoomFeatures().trim().isEmpty() ? hotel.getRoomFeatures() : "Spacious Room");
+                standard.setViewType("City / Garden View");
+                List<String> amenityList = new ArrayList<>();
+                if (hotel.getAmenities() != null && !hotel.getAmenities().trim().isEmpty()) {
+                    for (String part : hotel.getAmenities().split("[,;|]")) {
+                        String trimmed = part.trim();
+                        if (!trimmed.isEmpty()) {
+                            amenityList.add(trimmed);
+                        }
+                    }
+                }
+                standard.setAmenities(amenityList);
 
-        // Option 1: Standard Comfort
-        RoomTypeOption opt1 = new RoomTypeOption();
-        opt1.setHotelId(hotelId);
-        opt1.setRoomTypeName("Standard Comfort Room");
-        opt1.setPriceUpgradeAddon(0.0);
-        opt1.setAvailableRooms(8);
-        opt1.setBedType("Queen Size Bed");
-        opt1.setRoomSize("320 sq.ft");
-        opt1.setViewType("Garden View");
-        opt1.setAmenities(Arrays.asList("High Speed Wi-Fi", "HD Smart TV", "Air Conditioning", "Ensuite Bathroom", "Coffee Maker"));
-        opt1.setImageUrls(Arrays.asList(
-                "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=800&q=80",
-                "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=800&q=80"
-        ));
-        opt1.setPreview3dModelUrl("https://my.matterport.com/show/?m=sample3dstandard");
-        opt1.setDescription("Cozy and comfortable standard room equipped with modern amenities for a relaxing stay.");
-        opt1.setPopularUpsell(false);
-        generated.add(opt1);
+                List<String> images = new ArrayList<>();
+                if (hotel.getImageUrls() != null && !hotel.getImageUrls().isEmpty()) {
+                    images.addAll(hotel.getImageUrls());
+                } else if (hotel.getImageUrl() != null && !hotel.getImageUrl().trim().isEmpty()) {
+                    images.add(hotel.getImageUrl());
+                }
+                standard.setImageUrls(images);
+                standard.setPreview3dModelUrl("");
+                standard.setDescription(hotel.getDescription() != null && !hotel.getDescription().trim().isEmpty() ? hotel.getDescription() : (hotel.getHotelName() + " comfortable room accommodation."));
+                standard.setPopularUpsell(false);
 
-        // Option 2: Executive Deluxe Room
-        RoomTypeOption opt2 = new RoomTypeOption();
-        opt2.setHotelId(hotelId);
-        opt2.setRoomTypeName("Executive Deluxe Room");
-        opt2.setPriceUpgradeAddon(1800.0);
-        opt2.setAvailableRooms(5);
-        opt2.setBedType("King Size Bed");
-        opt2.setRoomSize("480 sq.ft");
-        opt2.setViewType("High Floor City Skyline View");
-        opt2.setAmenities(Arrays.asList("Buffet Breakfast Included", "Executive Work Desk", "Rain Shower", "Mini Bar", "Soundproof Windows", "Complimentary Lounge Pass"));
-        opt2.setImageUrls(Arrays.asList(
-                "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=800&q=80",
-                "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=800&q=80"
-        ));
-        opt2.setPreview3dModelUrl("https://my.matterport.com/show/?m=sample3dexec");
-        opt2.setDescription("Spacious executive room with city views, plush king bed, and complimentary breakfast.");
-        opt2.setPopularUpsell(true);
-        generated.add(opt2);
+                List<RoomTypeOption> generated = Collections.singletonList(standard);
+                return roomTypeOptionRepository.saveAll(generated);
+            }
+        }
 
-        // Option 3: Ocean View Premium Suite
-        RoomTypeOption opt3 = new RoomTypeOption();
-        opt3.setHotelId(hotelId);
-        opt3.setRoomTypeName("Ocean View Premium Suite");
-        opt3.setPriceUpgradeAddon(3500.0);
-        opt3.setAvailableRooms(3);
-        opt3.setBedType("Super King Suite Bed");
-        opt3.setRoomSize("680 sq.ft");
-        opt3.setViewType("Panoramic Ocean View Balcony");
-        opt3.setAmenities(Arrays.asList("Private Balcony & Jacuzzi", "Separate Living Room Lounge", "Luxury Spa Amenities", "Nespresso Bar", "Free Airport Transfer", "3D Interactive Preview"));
-        opt3.setImageUrls(Arrays.asList(
-                "https://images.unsplash.com/photo-1578683010236-d716f9a3f461?auto=format&fit=crop&w=800&q=80",
-                "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=800&q=80"
-        ));
-        opt3.setPreview3dModelUrl("https://my.matterport.com/show/?m=sample3docean");
-        opt3.setDescription("Luxury suite featuring a private balcony with panoramic sea views, living room, and private Jacuzzi.");
-        opt3.setPopularUpsell(false);
-        generated.add(opt3);
-
-        // Option 4: Presidential Luxury Suite
-        RoomTypeOption opt4 = new RoomTypeOption();
-        opt4.setHotelId(hotelId);
-        opt4.setRoomTypeName("Presidential Luxury Suite");
-        opt4.setPriceUpgradeAddon(7200.0);
-        opt4.setAvailableRooms(1);
-        opt4.setBedType("Master King Bed + Twin Room");
-        opt4.setRoomSize("1,250 sq.ft");
-        opt4.setViewType("360 Panoramic Penthouse View");
-        opt4.setAmenities(Arrays.asList("Private Plunge Pool & Sun Deck", "24/7 Personal Butler Service", "Private Dining & Kitchenette", "VIP Airport Limousine", "Exclusive Lounge Access"));
-        opt4.setImageUrls(Arrays.asList(
-                "https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=800&q=80",
-                "https://images.unsplash.com/photo-1591088398332-8a7791972843?auto=format&fit=crop&w=800&q=80"
-        ));
-        opt4.setPreview3dModelUrl("https://my.matterport.com/show/?m=sample3dpresidential");
-        opt4.setDescription("The pinnacle of luxury: penthouse suite with private plunge pool, personal butler, and VIP privileges.");
-        opt4.setPopularUpsell(false);
-        generated.add(opt4);
-
-        return roomTypeOptionRepository.saveAll(generated);
+        return Collections.emptyList();
     }
 
     /**

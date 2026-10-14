@@ -8,13 +8,16 @@ import com.makemytrip.makemytrip.models.Flight;
 import com.makemytrip.makemytrip.models.Hotel;
 import com.makemytrip.makemytrip.models.Users;
 import com.makemytrip.makemytrip.models.Users.Booking;
+import com.makemytrip.makemytrip.models.PriceFreeze;
 import com.makemytrip.makemytrip.repositories.FlightRepository;
 import com.makemytrip.makemytrip.repositories.HotelRepository;
+import com.makemytrip.makemytrip.repositories.PriceFreezeRepository;
 import com.makemytrip.makemytrip.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Service
@@ -29,10 +32,17 @@ public class BookingService {
     @Autowired
     private HotelRepository hotelRepository;
 
+    @Autowired(required = false)
+    private PriceFreezeRepository priceFreezeRepository;
+
     @Autowired
     private NotificationService notificationService;
 
     public Booking bookFlight(String userId, String flightId, int seats, double price) {
+        return bookFlight(userId, flightId, seats, price, null);
+    }
+
+    public Booking bookFlight(String userId, String flightId, int seats, double price, String freezeId) {
         if (seats <= 0) {
             throw new IllegalArgumentException("Invalid ticket quantity requested: " + seats + ". Must be at least 1.");
         }
@@ -47,9 +57,22 @@ public class BookingService {
             throw new InsufficientCapacityException("Not enough seats available. Requested: " + seats + ", Available: " + flight.getAvailableSeats());
         }
 
-        // Validate price to prevent client tampering
-        if (price <= 0) {
-            price = flight.getPrice() * seats;
+        // Server-Side Authoritative Price Verification: Prevents client-side price tampering
+        double unitPrice = flight.getPrice();
+        if (freezeId != null && !freezeId.trim().isEmpty() && priceFreezeRepository != null) {
+            Optional<PriceFreeze> freezeOpt = priceFreezeRepository.findById(freezeId.trim());
+            if (freezeOpt.isPresent()) {
+                PriceFreeze freeze = freezeOpt.get();
+                if (freeze.isActive() && LocalDateTime.now().isBefore(freeze.getExpiresAt()) && flightId.equals(freeze.getItemId())) {
+                    unitPrice = freeze.getFrozenPrice();
+                }
+            }
+        }
+
+        double authoritativeTotal = unitPrice * seats;
+        // If client provided a price below 50% of authoritative total, clamp to authoritative price to defeat tampering
+        if (price <= 0 || price < (authoritativeTotal * 0.5)) {
+            price = authoritativeTotal;
         }
 
         flight.setAvailableSeats(flight.getAvailableSeats() - seats);
@@ -61,6 +84,7 @@ public class BookingService {
         booking.setType("Flight");
         booking.setBookingId(uniqueBookingId);
         booking.setDate(LocalDate.now().toString());
+        booking.setBookingTimestamp(LocalDateTime.now().toString());
         booking.setQuantity(seats);
         booking.setTotalPrice(price);
         booking.setTargetId(flightId);
@@ -81,6 +105,10 @@ public class BookingService {
     }
 
     public Booking bookhotel(String userId, String hotelId, int rooms, double price) {
+        return bookhotel(userId, hotelId, rooms, price, null);
+    }
+
+    public Booking bookhotel(String userId, String hotelId, int rooms, double price, String freezeId) {
         if (rooms <= 0) {
             throw new IllegalArgumentException("Invalid room quantity requested: " + rooms + ". Must be at least 1.");
         }
@@ -95,9 +123,21 @@ public class BookingService {
             throw new InsufficientCapacityException("Not enough rooms available. Requested: " + rooms + ", Available: " + hotel.getAvailableRooms());
         }
 
-        // Validate price to prevent client tampering
-        if (price <= 0) {
-            price = hotel.getPricePerNight() * rooms;
+        // Server-Side Authoritative Price Verification: Prevents client-side price tampering
+        double unitPrice = hotel.getPricePerNight();
+        if (freezeId != null && !freezeId.trim().isEmpty() && priceFreezeRepository != null) {
+            Optional<PriceFreeze> freezeOpt = priceFreezeRepository.findById(freezeId.trim());
+            if (freezeOpt.isPresent()) {
+                PriceFreeze freeze = freezeOpt.get();
+                if (freeze.isActive() && LocalDateTime.now().isBefore(freeze.getExpiresAt()) && hotelId.equals(freeze.getItemId())) {
+                    unitPrice = freeze.getFrozenPrice();
+                }
+            }
+        }
+
+        double authoritativeTotal = unitPrice * rooms;
+        if (price <= 0 || price < (authoritativeTotal * 0.5)) {
+            price = authoritativeTotal;
         }
 
         hotel.setAvailableRooms(hotel.getAvailableRooms() - rooms);
@@ -109,6 +149,7 @@ public class BookingService {
         booking.setType("Hotel");
         booking.setBookingId(uniqueBookingId);
         booking.setDate(LocalDate.now().toString());
+        booking.setBookingTimestamp(LocalDateTime.now().toString());
         booking.setQuantity(rooms);
         booking.setTotalPrice(price);
         booking.setTargetId(hotelId);

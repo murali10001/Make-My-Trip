@@ -791,8 +791,8 @@ const LiveFlightTracker: React.FC = () => {
                 </div>
                 <div>
                   <span className="text-slate-600 font-semibold block mb-0.5">Delay & Context Reason:</span>
-                  <p className="text-slate-800 italic bg-white p-2 rounded border border-blue-200">
-                    "{selectedFlight.delayReason}"
+                  <p className="text-slate-800 font-medium bg-white p-2 rounded border border-blue-200">
+                    {selectedFlight.delayReason ? selectedFlight.delayReason.replace(/^["']|["']$/g, "").trim() : "On Schedule"}
                   </p>
                 </div>
               </div>

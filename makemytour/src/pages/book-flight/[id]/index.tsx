@@ -22,6 +22,7 @@ import {
 import { useEffect, useState } from "react";
 import {
   getflight,
+  getflightbyid,
   handleflightbooking,
   getPromotionalOffers,
   applyCouponCode,
@@ -32,6 +33,7 @@ import {
 } from "@/api";
 import { useDispatch, useSelector } from "react-redux";
 import FlightSeatPicker from "@/components/FlightSeatPicker";
+import ReviewsSection from "@/components/ReviewsSection";
 
 interface Flight {
   id: string;
@@ -107,8 +109,12 @@ const BookFlightPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const flightData = await getflight();
-        const filteredData = flightData.filter((f: any) => (f.id === id || f._id === id));
+        let targetFlight = id ? await getflightbyid(id as string) : null;
+        let filteredData = targetFlight ? [targetFlight] : [];
+        if (filteredData.length === 0) {
+          const flightData = await getflight();
+          filteredData = flightData.filter((f: any) => (f.id === id || f._id === id));
+        }
         setFlights(filteredData);
 
         const offersData = await getPromotionalOffers();
@@ -168,7 +174,7 @@ const BookFlightPage = () => {
       }
     };
     if (id) fetchData();
-  }, [id, user, router.query]);
+  }, [id, user?.id, user?._id, router.query.demand, router.query.season, router.query.freezeId]);
 
   if (loading) {
     return <Loader />;
@@ -254,10 +260,13 @@ const BookFlightPage = () => {
           message: res.message,
         });
         setCouponCodeInput(res.code);
+        setCouponError(null);
       } else {
+        setAppliedCoupon(null);
         setCouponError(res?.message || "Invalid coupon code.");
       }
     } catch (err: any) {
+      setAppliedCoupon(null);
       const errText = err?.response?.data?.message || err?.message || "Invalid coupon code for this booking.";
       setCouponError(errText);
     } finally {
@@ -477,7 +486,7 @@ const BookFlightPage = () => {
                   <Plane className="w-6 h-6 text-blue-600" />
                 </div>
                 <div>
-                  <div className="font-semibold">{flight.flightName} ({airline})</div>
+                  <div className="font-semibold">{flight.flightName}{airline && airline !== flight.flightName ? ` (${airline})` : ""}</div>
                   <div className="text-sm text-gray-600">
                     {flightNo} • {aircraft}
                   </div>
@@ -555,6 +564,14 @@ const BookFlightPage = () => {
                 </span>
               </div>
             )}
+
+            {/* Reviews & Traveler Ratings Section */}
+            <ReviewsSection
+              targetId={flight.id || flight._id || (id as string)}
+              targetType="FLIGHT"
+              targetTitle={flight.flightName || "Flight Route"}
+              currentUser={user}
+            />
           </div>
 
           {/* Fare Summary & Bank Coupon Cards Right Column */}

@@ -22,6 +22,67 @@ import { useRouter } from "next/router";
 import { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 
+const AIRPORT_CODES: Record<string, string> = {
+  delhi: "DEL",
+  "new delhi": "DEL",
+  mumbai: "BOM",
+  bengaluru: "BLR",
+  bangalore: "BLR",
+  goa: "GOI",
+  kolkata: "CCU",
+  chennai: "MAA",
+  hyderabad: "HYD",
+  ahmedabad: "AMD",
+  pune: "PNQ",
+  kochi: "COK",
+  cochin: "COK",
+  jaipur: "JAI",
+  lucknow: "LKO",
+  udaipur: "UDR",
+  chandigarh: "IXC",
+  varanasi: "VNS",
+  amritsar: "ATQ",
+  srinagar: "SXR",
+  patna: "PAT",
+  indore: "IDR",
+  bhubaneswar: "BBI",
+  guwahati: "GAU",
+};
+
+function getBaseCity(str: string): string {
+  if (!str) return "";
+  return str.replace(/\s*\([A-Za-z0-9\s]+\)\s*/g, "").trim();
+}
+
+function getCodeFromCity(str: string): string {
+  if (!str) return "";
+  const match = str.match(/\(([A-Za-z0-9]{3})\)/);
+  if (match) return match[1].toUpperCase();
+  const base = getBaseCity(str).toLowerCase().replace(/\s+/g, "");
+  return AIRPORT_CODES[base] || "";
+}
+
+function matchCity(recordCity: string, queryCity: string): boolean {
+  if (!recordCity || !queryCity) return false;
+  const recTrim = recordCity.trim().toLowerCase();
+  const queryTrim = queryCity.trim().toLowerCase();
+
+  if (recTrim === queryTrim) return true;
+
+  const recBase = getBaseCity(recordCity).toLowerCase();
+  const queryBase = getBaseCity(queryCity).toLowerCase();
+
+  if (recBase && queryBase && recBase === queryBase) return true;
+
+  const recCode = getCodeFromCity(recordCity);
+  const qCode = getCodeFromCity(queryCity);
+  if (recCode && qCode && recCode === qCode) return true;
+
+  if (recBase && queryBase && (recBase.includes(queryBase) || queryBase.includes(recBase))) return true;
+
+  return false;
+}
+
 export default function Home() {
   const [bookingtype, setbookingtype] = useState("flights");
   const [from, setfrom] = useState("");
@@ -29,6 +90,7 @@ export default function Home() {
   const [date, setdate] = useState("");
   const [travelers, settravelers] = useState(1);
   const [searchresults, setsearchresult] = useState<any[]>([]);
+  const [hasSearched, setHasSearched] = useState(false);
   const [hotel, sethotel] = useState<any[]>([]);
   const [loading, setloading] = useState(true);
   const [flight, setflight] = useState<any[]>([]);
@@ -59,34 +121,58 @@ export default function Home() {
     fetchdata();
   }, [user]);
 
-  const cityOptions = useMemo(() => {
-    const cities = new Set<string>();
+  // Context-aware & Deduplicated options for Flights
+  const flightCityOptions = useMemo(() => {
+    const cityMap = new Map<string, string>();
     (flight || []).forEach((f) => {
-      if (f?.from) cities.add(f.from);
-      if (f?.to) cities.add(f.to);
+      [f?.from, f?.to].forEach((city) => {
+        if (!city) return;
+        const base = getBaseCity(city);
+        if (!base) return;
+        const key = base.toLowerCase();
+        const code = getCodeFromCity(city);
+        const formatted = code ? `${base} (${code})` : base;
+        if (!cityMap.has(key) || (code && !cityMap.get(key)?.includes("("))) {
+          cityMap.set(key, formatted);
+        }
+      });
     });
+    return Array.from(cityMap.values())
+      .sort((a, b) => a.localeCompare(b))
+      .map((city) => ({ value: city, label: city }));
+  }, [flight]);
+
+  // Context-aware & Clean city names for Hotels (without stray airport codes)
+  const hotelCityOptions = useMemo(() => {
+    const citySet = new Set<string>();
     (hotel || []).forEach((h) => {
-      if (h?.location) cities.add(h.location);
+      if (!h?.location) return;
+      const base = getBaseCity(h.location);
+      if (base) citySet.add(base);
     });
-    return Array.from(cities).map((city) => ({ value: city, label: city }));
-  }, [flight, hotel]);
+    return Array.from(citySet)
+      .sort((a, b) => a.localeCompare(b))
+      .map((city) => ({ value: city, label: city }));
+  }, [hotel]);
 
+  const activeCityOptions = bookingtype === "flights" ? flightCityOptions : hotelCityOptions;
 
-  if (loading) {
-    return <Loader />;
-  }
   const handlesearch = () => {
+    setHasSearched(true);
     if (bookingtype === "flights") {
-      const results = flight.filter(
-        (FLIGHT) =>
-          FLIGHT.from.toLowerCase() === from.toLowerCase() &&
-          FLIGHT.to.toLowerCase() === to.toLowerCase()
-      );
+      let results = flight;
+      if (from.trim()) {
+        results = results.filter((f) => matchCity(f.from, from));
+      }
+      if (to.trim()) {
+        results = results.filter((f) => matchCity(f.to, to));
+      }
       setsearchresult(results);
     } else if (bookingtype === "hotels") {
-      const results = hotel.filter(
-        (hotel) => hotel.location.toLowerCase() === to.toLowerCase()
-      );
+      let results = hotel;
+      if (to.trim()) {
+        results = results.filter((h) => matchCity(h.location, to));
+      }
       setsearchresult(results);
     }
   };
@@ -122,13 +208,22 @@ export default function Home() {
               icon={<Plane />}
               text="Flights"
               active={bookingtype === "flights"}
-              onClick={() => setbookingtype("flights")}
+              onClick={() => {
+                setbookingtype("flights");
+                setHasSearched(false);
+                setsearchresult([]);
+              }}
             />
             <NavItem
               icon={<Hotel />}
               text="Hotels"
               active={bookingtype === "hotels"}
-              onClick={() => setbookingtype("hotels")}
+              onClick={() => {
+                setbookingtype("hotels");
+                setHasSearched(false);
+                setsearchresult([]);
+                setto(getBaseCity(to));
+              }}
             />
             <NavItem
               icon={
@@ -157,7 +252,7 @@ export default function Home() {
             {bookingtype === "flights" && (
               <div className="col-span-1">
                 <SearchSelect
-                  options={cityOptions}
+                  options={flightCityOptions}
                   placeholder="From"
                   value={from}
                   onChange={setfrom}
@@ -167,9 +262,9 @@ export default function Home() {
               </div>
             )}
 
-            <div className="col-span-1">
+            <div className={bookingtype === "flights" ? "col-span-1" : "col-span-1 md:col-span-2 lg:col-span-2"}>
               <SearchSelect
-                options={cityOptions}
+                options={activeCityOptions}
                 placeholder={bookingtype === "flights" ? "To" : "City"}
                 value={to}
                 onChange={setto}
@@ -177,7 +272,7 @@ export default function Home() {
                 subtitle={
                   bookingtype === "flights"
                     ? "Enter city or airport"
-                    : "Enter city"
+                    : "Enter destination city"
                 }
               />
             </div>
@@ -208,141 +303,118 @@ export default function Home() {
               />
             </div>
 
-            <Button className="col-span-1 h-full" onClick={handlesearch}>
+            <Button className="col-span-1 h-full font-bold shadow-md" onClick={handlesearch}>
               SEARCH
             </Button>
           </div>
-          <div className="mt-6">
-            <h2 className="text-xl font-semibold mb-4 text-white">
-              Search Results
-            </h2>
-            {searchresults.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {searchresults.map((result) => (
-                  <div
-                    key={result.id || result._id}
-                    className="bg-white rounded-lg shadow p-4 border border-gray-200"
-                  >
-                    {bookingtype === "flights" ? (
-                      <>
-                        <div className="flex items-center justify-between">
-                          <p className="font-semibold text-lg text-slate-900">
-                            {result.flightName}
+          {hasSearched && (
+            <div className="mt-6">
+              <h2 className="text-xl font-semibold mb-4 text-slate-800">
+                Search Results
+              </h2>
+              {searchresults.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {searchresults.map((result) => (
+                    <div
+                      key={result.id || result._id}
+                      className="bg-white rounded-lg shadow p-4 border border-gray-200"
+                    >
+                      {bookingtype === "flights" ? (
+                        <>
+                          <p className="font-semibold text-lg">
+                            Flight Name: {result.flightName}
                           </p>
-                          <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded border border-amber-300">
-                            High Demand Rate
-                          </span>
-                        </div>
-                        <h3 className="font-semibold text-base text-blue-950 mt-1">
-                          {result.from} to {result.to}
-                        </h3>
-                        <p className="text-xs text-gray-600 mt-1">
-                          Departure: {formatDate(result.departureTime)}
-                        </p>
-                        <p className="text-xs text-gray-600">
-                          Arrival: {formatDate(result.arrivalTime)}
-                        </p>
-                        
-                        <div className="mt-3 p-2.5 bg-slate-50 rounded-lg border border-slate-200">
-                          <div className="flex items-baseline justify-between">
-                            <span className="text-xs font-semibold text-slate-500">Live Dynamic Rate:</span>
-                            <span className="text-xl font-black text-emerald-600">
-                              ₹{Math.round((result.price || 5500) * 1.35).toLocaleString("en-IN")}
-                            </span>
-                          </div>
-                          <div className="flex justify-between text-[11px] text-slate-500 mt-0.5">
-                            <span>Base Fare: ₹{(result.price || 5500).toLocaleString("en-IN")}</span>
-                            <span className="text-amber-600 font-bold">+35% Surge</span>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-2 mt-4">
+                          <h3 className="font-semibold text-lg">
+                            {result.from} to {result.to}
+                          </h3>
+                          <p className="text-gray-600">
+                            Departure Time: {formatDate(result.departureTime)}
+                          </p>
+                          <p className="text-gray-600">
+                            Arrival Time: {formatDate(result.arrivalTime)}
+                          </p>
+                          <p className="text-lg font-bold mt-2">
+                            ₹{result.price}
+                          </p>
                           <Button
-                            variant="outline"
-                            className="text-xs font-bold border-emerald-500 text-emerald-700 hover:bg-emerald-50"
-                            onClick={() => router.push("/dynamic-pricing")}
-                          >
-                            Lock Fare
-                          </Button>
-                          <Button
-                            className="text-xs font-bold"
+                            className="w-full mt-4"
                             onClick={() => handlebooknow(result.id || result._id)}
                           >
                             Book Now
                           </Button>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <h3 className="font-semibold text-lg">
-                          {result.hotelName}
-                        </h3>
-                        <p className="text-gray-600">City: {result.location}</p>
-                        <div className="mt-3 p-2.5 bg-slate-50 rounded-lg border border-slate-200">
-                          <div className="flex items-baseline justify-between">
-                            <span className="text-xs font-semibold text-slate-500">Dynamic Rate:</span>
-                            <span className="text-xl font-black text-emerald-600">
-                              ₹{Math.round((result.pricePerNight || 4200) * 1.35).toLocaleString("en-IN")}
-                            </span>
-                          </div>
-                          <p className="text-[11px] text-slate-500 mt-0.5">Base: ₹{(result.pricePerNight || 4200).toLocaleString("en-IN")} / night</p>
-                        </div>
-                        <Button
-                          className="w-full mt-4"
-                          onClick={() => handlebooknow(result.id || result._id)}
-                        >
-                          Book Now
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-600">
-                No {bookingtype} available for the selected criteria.
-              </p>
-            )}
-          </div>
+                        </>
+                      ) : (
+                        <>
+                          <h3 className="font-semibold text-lg">
+                            {result.hotelName}
+                          </h3>
+                          <p className="text-gray-600">City: {result.location}</p>
+                          <p className="text-lg font-bold mt-2">
+                            ₹{result.pricePerNight} per night
+                          </p>
+                          <Button
+                            className="w-full mt-4"
+                            onClick={() => handlebooknow(result.id || result._id)}
+                          >
+                            Book Now
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-600">
+                  No {bookingtype} available for the selected criteria.
+                </p>
+              )}
+            </div>
+          )}
         </div>
         <div className="max-w-7xl mx-auto px-4">
           {/* Offers Section */}
-          <section className="my-16">
-            <h2 className="text-2xl font-bold mb-8 text-white">Best Offers</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {(homeContent?.offers || []).map((offer: any, index: number) => (
-                <OfferCard key={index} {...offer} />
-              ))}
-            </div>
-          </section>
+          {homeContent?.offers && homeContent.offers.length > 0 && (
+            <section className="my-16">
+              <h2 className="text-2xl font-bold mb-8 text-white">Best Offers</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {homeContent.offers.map((offer: any, index: number) => (
+                  <OfferCard key={index} {...offer} />
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* Collections Section */}
-          <section className="my-16">
-            <div className="flex justify-between items-center mb-8">
-              <h2 className="text-2xl font-bold text-white">
-                Handpicked Collections for You
-              </h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {(homeContent?.collections || []).map((collection: any, index: number) => (
-                <CollectionCard key={index} {...collection} />
-              ))}
-            </div>
-          </section>
+          {homeContent?.collections && homeContent.collections.length > 0 && (
+            <section className="my-16">
+              <div className="flex justify-between items-center mb-8">
+                <h2 className="text-2xl font-bold text-white">
+                  Handpicked Collections for You
+                </h2>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {homeContent.collections.map((collection: any, index: number) => (
+                  <CollectionCard key={index} {...collection} />
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* Wonders Section */}
-          <section className="my-16">
-            <div className="flex justify-between items-center mb-8">
-              <h2 className="text-2xl font-bold text-white">
-                Unlock Lesser-Known Wonders of India
-              </h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {(homeContent?.wonders || []).map((wonder: any, index: number) => (
-                <WonderCard key={index} {...wonder} />
-              ))}
-            </div>
-          </section>
+          {homeContent?.wonders && homeContent.wonders.length > 0 && (
+            <section className="my-16">
+              <div className="flex justify-between items-center mb-8">
+                <h2 className="text-2xl font-bold text-white">
+                  Unlock Lesser-Known Wonders of India
+                </h2>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {homeContent.wonders.map((wonder: any, index: number) => (
+                  <WonderCard key={index} {...wonder} />
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* Download App Section */}
           <DownloadApp content={homeContent} />
@@ -351,6 +423,7 @@ export default function Home() {
     </div>
   );
 }
+
 const OfferCard = ({ title, description, imageUrl }: any) => {
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden">

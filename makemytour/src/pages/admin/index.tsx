@@ -30,6 +30,7 @@ import {
   getuserbyemail,
 } from "@/api";
 import HotelList from "@/components/Hotel/Hotel";
+import ReviewModerationPanel from "@/components/ReviewModerationPanel";
 interface User {
   _id: string;
   firstName: string;
@@ -532,10 +533,11 @@ export default function AdminDashboard() {
     <div className="container mx-auto p-4 bg-white max-w-full">
       <h1 className="text-3xl font-bold mb-6 ">Admin Dashboard</h1>
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3  text-black">
+        <TabsList className="grid w-full grid-cols-4 text-black">
           <TabsTrigger value="flights">Flights</TabsTrigger>
           <TabsTrigger value="hotels">Hotels</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
+          <TabsTrigger value="moderation">Review Moderation</TabsTrigger>
         </TabsList>
         <TabsContent value="flights">
           <Card>
@@ -577,6 +579,19 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <UserSearch />
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="moderation">
+          <Card>
+            <CardHeader>
+              <CardTitle>Community Review Moderation</CardTitle>
+              <CardDescription>
+                Audit flagged reviews and take moderation actions to safeguard platform quality.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ReviewModerationPanel />
             </CardContent>
           </Card>
         </TabsContent>

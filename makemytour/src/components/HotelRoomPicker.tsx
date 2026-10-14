@@ -28,7 +28,7 @@ interface HotelRoomPickerProps {
   hotelName?: string;
   userId?: string;
   userEmail?: string;
-  onRoomSelect: (room: { roomTypeName: string; priceUpgradeAddon: number }) => void;
+  onRoomSelect: (room: { roomTypeName: string; priceUpgradeAddon: number } | null) => void;
   selectedRoomType?: string;
 }
 
@@ -48,44 +48,41 @@ export const HotelRoomPicker: React.FC<HotelRoomPickerProps> = ({
   const [modalRoom3D, setModalRoom3D] = useState<any | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
 
-  const [savePrefChecked, setSavePrefChecked] = useState<boolean>(true);
+  const [savePrefChecked, setSavePrefChecked] = useState<boolean>(false);
   const [prefSavedMsg, setPrefSavedMsg] = useState<string | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
     const fetchRooms = async () => {
       setLoading(true);
       try {
         const data = await getHotelRoomOptions(hotelId);
-        setRoomOptions(data || []);
-
-        if (data && data.length > 0) {
-          let selected = data[0];
-
-          // Check user preferences to pre-select saved room choice
-          if (userId) {
-            const userPrefs = await getUserPreferences(userId);
-            if (userPrefs && userPrefs.preferredRoomType) {
-              const match = data.find((r: any) => r.roomTypeName === userPrefs.preferredRoomType);
-              if (match) selected = match;
-            }
-          }
-
-          setActiveRoom(selected);
-          onRoomSelect({
-            roomTypeName: selected.roomTypeName,
-            priceUpgradeAddon: selected.priceUpgradeAddon,
-          });
+        if (isMounted) {
+          setRoomOptions(data || []);
+          // Do not automatically choose any room option - leave selection to user
         }
       } catch (err) {
         console.error("Failed to load room options:", err);
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
     if (hotelId) fetchRooms();
-  }, [hotelId, userId]);
+    return () => {
+      isMounted = false;
+    };
+  }, [hotelId]);
 
   const handleSelectRoom = async (room: any) => {
+    const isCurrentlySelected = activeRoom?.roomTypeName === room.roomTypeName || selectedRoomType === room.roomTypeName;
+    if (isCurrentlySelected) {
+      setActiveRoom(null);
+      onRoomSelect(null);
+      return;
+    }
+
     setActiveRoom(room);
     onRoomSelect({
       roomTypeName: room.roomTypeName,
@@ -136,7 +133,7 @@ export const HotelRoomPicker: React.FC<HotelRoomPickerProps> = ({
           </p>
         </div>
 
-        {activeRoom && (
+        {activeRoom ? (
           <div className="bg-indigo-50 border border-indigo-200 rounded-xl px-3 py-1.5 flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-indigo-600" />
             <div className="text-xs">
@@ -146,6 +143,10 @@ export const HotelRoomPicker: React.FC<HotelRoomPickerProps> = ({
                 ({activeRoom.priceUpgradeAddon > 0 ? `+₹${activeRoom.priceUpgradeAddon.toLocaleString("en-IN")}/night` : "Standard Included"})
               </span>
             </div>
+          </div>
+        ) : (
+          <div className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 flex items-center gap-2 text-xs text-slate-500">
+            <span>No upgrade selected (Standard Stay)</span>
           </div>
         )}
       </div>
@@ -174,15 +175,18 @@ export const HotelRoomPicker: React.FC<HotelRoomPickerProps> = ({
               <div className="space-y-3">
                 {/* Image & 3D Preview Button */}
                 <div className="relative h-44 rounded-xl overflow-hidden bg-slate-100 group">
-                  <img
-                    src={
-                      room.imageUrls && room.imageUrls.length > 0
-                        ? room.imageUrls[0]
-                        : "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=800&q=80"
-                    }
-                    alt={room.roomTypeName}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
+                  {room.imageUrls && room.imageUrls.length > 0 ? (
+                    <img
+                      src={room.imageUrls[0]}
+                      alt={room.roomTypeName}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-100 to-indigo-50 text-indigo-400">
+                      <Building2 className="w-10 h-10 mb-1 opacity-60" />
+                      <span className="text-[11px] font-semibold text-slate-500">Room Overview</span>
+                    </div>
+                  )}
 
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex items-end justify-between p-3">
                     <button
@@ -306,15 +310,18 @@ export const HotelRoomPicker: React.FC<HotelRoomPickerProps> = ({
             <div className="space-y-4 py-2">
               {/* Image Carousel */}
               <div className="relative h-72 rounded-2xl overflow-hidden bg-slate-950 group">
-                <img
-                  src={
-                    modalRoom3D.imageUrls && modalRoom3D.imageUrls.length > 0
-                      ? modalRoom3D.imageUrls[currentImageIndex]
-                      : "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=800&q=80"
-                  }
-                  alt={modalRoom3D.roomTypeName}
-                  className="w-full h-full object-cover transition-all"
-                />
+                {modalRoom3D.imageUrls && modalRoom3D.imageUrls.length > 0 ? (
+                  <img
+                    src={modalRoom3D.imageUrls[currentImageIndex]}
+                    alt={modalRoom3D.roomTypeName}
+                    className="w-full h-full object-cover transition-all"
+                  />
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 to-indigo-950 text-indigo-300">
+                    <Building2 className="w-12 h-12 mb-2 opacity-60" />
+                    <span className="text-xs font-semibold text-slate-400">Photo gallery unavailable</span>
+                  </div>
+                )}
 
                 {modalRoom3D.imageUrls && modalRoom3D.imageUrls.length > 1 && (
                   <>

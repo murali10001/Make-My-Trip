@@ -57,8 +57,23 @@ public class RefundService {
         double refundPercentage = 80.0;
         String policyApplied = "Standard Cancellation Policy (80% Refund)";
 
-        // Policy Rule: 50% refund if cancelled within 24 hours of reservation date
-        if (booking.getDate() != null) {
+        // Policy Rule: 50% refund if cancelled within 24 hours of reservation date/time
+        if (booking.getBookingTimestamp() != null && !booking.getBookingTimestamp().trim().isEmpty()) {
+            try {
+                LocalDateTime bookingTime = LocalDateTime.parse(booking.getBookingTimestamp());
+                long hoursElapsed = java.time.Duration.between(bookingTime, LocalDateTime.now()).toHours();
+                if (hoursElapsed <= 24) {
+                    refundPercentage = 50.0;
+                    policyApplied = "24-Hour Reservation Policy (50% Refund)";
+                } else {
+                    refundPercentage = 80.0;
+                    policyApplied = "Standard Cancellation Policy (80% Refund)";
+                }
+            } catch (Exception e) {
+                refundPercentage = 50.0;
+                policyApplied = "24-Hour Reservation Policy (50% Refund)";
+            }
+        } else if (booking.getDate() != null) {
             try {
                 LocalDate bookingDate = LocalDate.parse(booking.getDate());
                 LocalDate today = LocalDate.now();
