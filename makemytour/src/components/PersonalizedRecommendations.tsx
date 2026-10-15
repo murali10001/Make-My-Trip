@@ -243,7 +243,7 @@ export default function PersonalizedRecommendations() {
         </div>
       )}
 
-      <div className="bg-gradient-to-r from-blue-700 via-indigo-700 to-sky-700 rounded-2xl p-6 md:p-7 text-white shadow-lg relative overflow-hidden">
+      <div className="bg-gradient-to-r from-blue-700 via-indigo-700 to-sky-700 rounded-2xl p-4 sm:p-6 md:p-7 text-white shadow-lg relative overflow-hidden w-full max-w-full">
         <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">

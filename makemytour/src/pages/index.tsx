@@ -212,14 +212,14 @@ export default function Home() {
   };
   return (
     <div
-      className="min-h-screen bg-cover bg-center bg-no-repeat bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-950"
+      className="min-h-screen w-full max-w-full overflow-x-hidden bg-cover bg-center bg-no-repeat bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-950"
       style={{
         backgroundImage: homeContent?.heroBgUrl ? `url("${homeContent.heroBgUrl}")` : undefined,
       }}
     >
-      <main className="container mx-auto px-4 py-6">
-        <nav className="bg-white rounded-xl shadow-lg mx-auto max-w-5xl mb-6 p-4 overflow-x-auto">
-          <div className="flex justify-between items-center min-w-max space-x-8">
+      <main className="w-full max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6 overflow-x-hidden">
+        <nav className="bg-white rounded-xl shadow-lg mx-auto max-w-5xl mb-6 p-3 sm:p-4 overflow-x-auto w-full scrollbar-none overscroll-x-contain touch-pan-x">
+          <div className="flex justify-between items-center min-w-max space-x-6 sm:space-x-8">
             <NavItem
               icon={<Plane />}
               text="Flights"
@@ -262,8 +262,8 @@ export default function Home() {
           </div>
         </nav>
 
-        <div className="bg-white rounded-xl shadow-lg mx-auto max-w-5xl p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="bg-white rounded-xl shadow-lg mx-auto max-w-5xl p-4 sm:p-6 w-full">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
             {bookingtype === "flights" && (
               <div className="col-span-1">
                 <SearchSelect
@@ -386,7 +386,7 @@ export default function Home() {
             </div>
           )}
         </div>
-        <div className="max-w-7xl mx-auto px-4">
+        <div className="w-full max-w-7xl mx-auto px-0 sm:px-4">
 
           <PersonalizedRecommendations />
 
@@ -479,7 +479,7 @@ const DownloadApp = ({ content }: any) => {
   const playStoreBadge = content?.playStoreBadgeUrl || "https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg";
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md max-w-7xl mx-auto my-12">
+    <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md max-w-7xl mx-auto my-8 sm:my-12 w-full">
       <div className="flex flex-col md:flex-row items-center justify-between">
         <div className="mb-6 md:mb-0">
           <h3 className="text-xl font-bold mb-2">Download App Now!</h3>

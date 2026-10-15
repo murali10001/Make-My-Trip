@@ -16,7 +16,7 @@ const Myapp = ({ Component, pageProps }: AppProps) => {
     }
   }, []);
   return (
-    <div className="min-h-screen ">
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden">
       <Navbar />
       <Component {...pageProps} />
       <Footer/>
@@ -28,6 +28,7 @@ export default function App(props: AppProps) {
     <Provider store={store}>
       <Head>
         <title>MakeMyTour</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
       </Head>
       <Myapp {...props} />
     </Provider>
