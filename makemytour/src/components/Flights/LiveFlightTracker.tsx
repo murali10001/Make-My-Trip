@@ -135,7 +135,7 @@ const LiveFlightTracker: React.FC = () => {
     let eventSource: EventSource | null = null;
     if (typeof window !== "undefined") {
       try {
-        const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081";
+        const apiBase = process.env.NEXT_PUBLIC_API_URL || "https://make-my-trip-7m1d.onrender.com";
         eventSource = new EventSource(`${apiBase}/api/flight-status/stream`);
 
         eventSource.addEventListener("flight-update", (event: MessageEvent) => {
@@ -256,9 +256,9 @@ const LiveFlightTracker: React.FC = () => {
                 body: notif.message,
                 icon: "/favicon.ico",
               });
-            } catch (e) {}
+            } catch (e) { }
           }
-        }).catch(() => {});
+        }).catch(() => { });
       }
     }
   };
@@ -442,11 +442,10 @@ const LiveFlightTracker: React.FC = () => {
             <Button
               onClick={requestWebPushPermission}
               variant="outline"
-              className={`text-xs md:text-sm font-semibold border border-white/20 ${
-                webPushPermission === "granted"
+              className={`text-xs md:text-sm font-semibold border border-white/20 ${webPushPermission === "granted"
                   ? "bg-blue-600 text-white border-blue-400"
                   : "bg-white/10 text-white hover:bg-white/20"
-              }`}
+                }`}
             >
               <Bell className="w-4 h-4 mr-1.5 text-amber-300" />
               {webPushPermission === "granted" ? "Web Push Enabled" : "Enable Web Push Alerts"}
@@ -464,11 +463,10 @@ const LiveFlightTracker: React.FC = () => {
             <Button
               onClick={() => setAutoSimulate(!autoSimulate)}
               variant="outline"
-              className={`text-xs md:text-sm font-semibold border border-white/20 ${
-                autoSimulate
+              className={`text-xs md:text-sm font-semibold border border-white/20 ${autoSimulate
                   ? "bg-emerald-600 text-white border-emerald-400"
                   : "bg-white/10 text-white hover:bg-white/20"
-              }`}
+                }`}
             >
               <RefreshCw className={`w-4 h-4 mr-1.5 ${autoSimulate ? "animate-spin" : ""}`} />
               {autoSimulate ? "Auto Radar ON" : "Turn Auto Radar ON"}
@@ -569,11 +567,10 @@ const LiveFlightTracker: React.FC = () => {
             <button
               key={st}
               onClick={() => setSelectedStatus(st)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
-                selectedStatus === st
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${selectedStatus === st
                   ? "bg-blue-600 text-white shadow-xs"
                   : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-              }`}
+                }`}
             >
               {st === "ALL" ? "All Flights" : st.replace("_", " ")}
             </button>
@@ -598,9 +595,8 @@ const LiveFlightTracker: React.FC = () => {
             return (
               <div
                 key={flight.id || flight.flightNumber}
-                className={`bg-white rounded-2xl border transition-all duration-200 hover:shadow-lg flex flex-col justify-between overflow-hidden ${
-                  isTracked ? "border-blue-500 ring-2 ring-blue-500/20" : "border-slate-200"
-                }`}
+                className={`bg-white rounded-2xl border transition-all duration-200 hover:shadow-lg flex flex-col justify-between overflow-hidden ${isTracked ? "border-blue-500 ring-2 ring-blue-500/20" : "border-slate-200"
+                  }`}
               >
 
                 <div className="p-5 pb-4">
@@ -624,11 +620,10 @@ const LiveFlightTracker: React.FC = () => {
                       <button
                         onClick={() => toggleTrackFlight(flight.flightNumber)}
                         title={isTracked ? "Untrack flight" : "Track flight simultaneously"}
-                        className={`p-1.5 rounded-lg border transition-all ${
-                          isTracked
+                        className={`p-1.5 rounded-lg border transition-all ${isTracked
                             ? "bg-blue-50 border-blue-300 text-blue-600"
                             : "bg-slate-50 border-slate-200 text-slate-400 hover:text-blue-600"
-                        }`}
+                          }`}
                       >
                         {isTracked ? (
                           <BookmarkCheck className="w-4 h-4" />
@@ -815,11 +810,10 @@ const LiveFlightTracker: React.FC = () => {
                 {/* Real-Time Application Feedback Response Banner */}
                 {emailFeedback && (
                   <div
-                    className={`p-3 rounded-lg border text-xs flex items-start gap-2 animate-in fade-in zoom-in-95 ${
-                      emailFeedback.success
+                    className={`p-3 rounded-lg border text-xs flex items-start gap-2 animate-in fade-in zoom-in-95 ${emailFeedback.success
                         ? "bg-emerald-950/80 border-emerald-500 text-emerald-200"
                         : "bg-amber-950/80 border-amber-500 text-amber-200"
-                    }`}
+                      }`}
                   >
                     {emailFeedback.success ? (
                       <Check className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />

@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BACKEND_URL = "http://localhost:8081";
+const BACKEND_URL = "https://make-my-trip-7m1d.onrender.com";
 
 const apiClient = axios.create({
   baseURL: BACKEND_URL,
