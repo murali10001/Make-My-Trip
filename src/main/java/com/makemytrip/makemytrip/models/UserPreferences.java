@@ -15,12 +15,10 @@ public class UserPreferences {
     private String userId;
     private String userEmail;
 
-    // Saved flight seat selection preferences
-    private String preferredSeatType = "Window"; // "Window", "Extra Legroom", "Aisle", "Front Row"
+    private String preferredSeatType = "Window";
     private String preferredSeatNo = "3A";
 
-    // Saved hotel room selection preferences
-    private String preferredRoomType = "Executive Ocean View Suite"; // "Standard Comfort", "Deluxe Suite", "Executive Ocean View Suite", "Presidential Suite"
+    private String preferredRoomType = "Executive Ocean View Suite";
     private String preferredBedType = "King Size Bed";
     private String preferredFloorView = "High Floor Panoramic View";
     private String updatedAt;

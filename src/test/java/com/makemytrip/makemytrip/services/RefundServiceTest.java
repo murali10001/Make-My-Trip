@@ -169,7 +169,7 @@ class RefundServiceTest {
         assertEquals("PENDING", refund.getStatus());
         assertEquals(5000.0, refund.getRefundAmount());
         assertEquals("CANCELLED", flightBooking.getStatus());
-        assertEquals(52, testFlight.getAvailableSeats()); // 50 + 2 restored
+        assertEquals(52, testFlight.getAvailableSeats());
 
         verify(flightRepository).save(testFlight);
         verify(userRepository).save(testUser);
@@ -189,7 +189,7 @@ class RefundServiceTest {
         );
 
         assertNotNull(refund);
-        assertEquals(11, testHotel.getAvailableRooms()); // 10 + 1 restored
+        assertEquals(11, testHotel.getAvailableRooms());
         verify(hotelRepository).save(testHotel);
     }
 

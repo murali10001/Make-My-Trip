@@ -20,7 +20,6 @@ public class Hotel {
     private int availableRooms;
     private String amenities;
 
-    // Extended dynamic fields
     private String imageUrl;
     private List<String> imageUrls = new ArrayList<>();
     private String description;
@@ -36,7 +35,6 @@ public class Hotel {
     private String reviewsText = "Very Good";
     private String distance;
 
-    // Getters and Setters
     public String getId() {
         return _id;
     }
@@ -84,8 +82,6 @@ public class Hotel {
     public void setAmenities(String amenities) {
         this.amenities = amenities;
     }
-
-
 
     public String getImageUrl() {
         return imageUrl;

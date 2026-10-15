@@ -44,7 +44,6 @@ export const HotelRoomPicker: React.FC<HotelRoomPickerProps> = ({
   const [loading, setLoading] = useState<boolean>(true);
   const [activeRoom, setActiveRoom] = useState<any | null>(null);
 
-  // 3D Preview Modal state
   const [modalRoom3D, setModalRoom3D] = useState<any | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
 
@@ -59,7 +58,7 @@ export const HotelRoomPicker: React.FC<HotelRoomPickerProps> = ({
         const data = await getHotelRoomOptions(hotelId);
         if (isMounted) {
           setRoomOptions(data || []);
-          // Do not automatically choose any room option - leave selection to user
+
         }
       } catch (err) {
         console.error("Failed to load room options:", err);
@@ -116,7 +115,7 @@ export const HotelRoomPicker: React.FC<HotelRoomPickerProps> = ({
 
   return (
     <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6">
-      {/* Header */}
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
         <div>
           <div className="flex items-center gap-2">
@@ -151,7 +150,6 @@ export const HotelRoomPicker: React.FC<HotelRoomPickerProps> = ({
         )}
       </div>
 
-      {/* Room Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {roomOptions.map((room) => {
           const isSelected = activeRoom?.roomTypeName === room.roomTypeName;
@@ -173,7 +171,7 @@ export const HotelRoomPicker: React.FC<HotelRoomPickerProps> = ({
               )}
 
               <div className="space-y-3">
-                {/* Image & 3D Preview Button */}
+
                 <div className="relative h-44 rounded-xl overflow-hidden bg-slate-100 group">
                   {room.imageUrls && room.imageUrls.length > 0 ? (
                     <img
@@ -207,7 +205,6 @@ export const HotelRoomPicker: React.FC<HotelRoomPickerProps> = ({
                   </div>
                 </div>
 
-                {/* Title & Upgrade Price */}
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <h4 className="font-extrabold text-slate-900 text-base">{room.roomTypeName}</h4>
@@ -226,7 +223,6 @@ export const HotelRoomPicker: React.FC<HotelRoomPickerProps> = ({
                   </div>
                 </div>
 
-                {/* Key Attributes */}
                 <div className="flex flex-wrap gap-2 text-[11px] text-slate-600 pt-1">
                   <span className="bg-slate-100 px-2 py-0.5 rounded-md flex items-center gap-1">
                     <Bed className="w-3.5 h-3.5 text-indigo-500" /> {room.bedType}
@@ -239,7 +235,6 @@ export const HotelRoomPicker: React.FC<HotelRoomPickerProps> = ({
                   </span>
                 </div>
 
-                {/* Amenity tags */}
                 <div className="flex flex-wrap gap-1 pt-1">
                   {room.amenities &&
                     room.amenities.slice(0, 3).map((a: string, i: number) => (
@@ -250,7 +245,6 @@ export const HotelRoomPicker: React.FC<HotelRoomPickerProps> = ({
                 </div>
               </div>
 
-              {/* Radio Selection Toggle */}
               <div className="mt-4 border-t border-slate-100 pt-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div
@@ -270,7 +264,6 @@ export const HotelRoomPicker: React.FC<HotelRoomPickerProps> = ({
         })}
       </div>
 
-      {/* Save Preference Toggle */}
       {userId && (
         <div className="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs">
           <label className="flex items-center gap-2 cursor-pointer">
@@ -293,7 +286,6 @@ export const HotelRoomPicker: React.FC<HotelRoomPickerProps> = ({
         </div>
       )}
 
-      {/* 3D Interactive Room Preview & Photo Gallery Modal */}
       <Dialog open={!!modalRoom3D} onOpenChange={() => setModalRoom3D(null)}>
         <DialogContent className="max-w-3xl bg-white rounded-2xl p-6 shadow-2xl">
           <DialogHeader>
@@ -308,7 +300,7 @@ export const HotelRoomPicker: React.FC<HotelRoomPickerProps> = ({
 
           {modalRoom3D && (
             <div className="space-y-4 py-2">
-              {/* Image Carousel */}
+
               <div className="relative h-72 rounded-2xl overflow-hidden bg-slate-950 group">
                 {modalRoom3D.imageUrls && modalRoom3D.imageUrls.length > 0 ? (
                   <img
@@ -352,7 +344,6 @@ export const HotelRoomPicker: React.FC<HotelRoomPickerProps> = ({
                 </div>
               </div>
 
-              {/* 3D Virtual Tour Badge Banner */}
               <div className="bg-gradient-to-r from-slate-900 to-indigo-950 text-white p-4 rounded-xl border border-indigo-500/30 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-indigo-600/30 text-indigo-300 flex items-center justify-center font-bold">
@@ -368,7 +359,6 @@ export const HotelRoomPicker: React.FC<HotelRoomPickerProps> = ({
                 </span>
               </div>
 
-              {/* Amenities Grid */}
               <div>
                 <h5 className="font-bold text-slate-800 text-xs mb-2">Room Amenities & Services Included:</h5>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">

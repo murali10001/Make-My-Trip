@@ -26,7 +26,7 @@ const FlightList = ({ onSelect }: any) => {
     };
     fetchflight();
   }, []);
-  
+
   if (loading) {
     return <Loader />;
   }

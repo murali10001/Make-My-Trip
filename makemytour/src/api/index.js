@@ -85,9 +85,13 @@ export const editprofile = async (
   }
 };
 
-export const getflight = async () => {
+export const getflight = async (from = "", to = "") => {
   try {
-    const res = await apiClient.get(`/flight`);
+    const params = new URLSearchParams();
+    if (from && typeof from === "string" && from.trim()) params.append("from", from.trim());
+    if (to && typeof to === "string" && to.trim()) params.append("to", to.trim());
+    const queryStr = params.toString() ? `?${params.toString()}` : "";
+    const res = await apiClient.get(`/flight${queryStr}`);
     if (res.status === 200 && Array.isArray(res.data)) {
       return res.data;
     }
@@ -150,9 +154,13 @@ export const editflight = async (...args) => {
   }
 };
 
-export const gethotel = async () => {
+export const gethotel = async (location = "", query = "") => {
   try {
-    const res = await apiClient.get(`/hotel`);
+    const params = new URLSearchParams();
+    if (location && typeof location === "string" && location.trim()) params.append("location", location.trim());
+    if (query && typeof query === "string" && query.trim()) params.append("query", query.trim());
+    const queryStr = params.toString() ? `?${params.toString()}` : "";
+    const res = await apiClient.get(`/hotel${queryStr}`);
     if (res.status === 200 && Array.isArray(res.data)) {
       return res.data;
     }
@@ -224,9 +232,10 @@ export const edithotel = async (...args) => {
   }
 };
 
-export const handleflightbooking = async (userId, flightId, seats, price) => {
+export const handleflightbooking = async (userId, flightId, seats, price, freezeId = "") => {
   try {
-    const url = `/booking/flight?userId=${encodeURIComponent(userId)}&flightId=${encodeURIComponent(flightId)}&seats=${seats}&price=${price}`;
+    const freezeParam = freezeId ? `&freezeId=${encodeURIComponent(freezeId)}` : "";
+    const url = `/booking/flight?userId=${encodeURIComponent(userId)}&flightId=${encodeURIComponent(flightId)}&seats=${seats}&price=${price}${freezeParam}`;
     const res = await apiClient.post(url);
     return res.data;
   } catch (error) {
@@ -235,9 +244,10 @@ export const handleflightbooking = async (userId, flightId, seats, price) => {
   }
 };
 
-export const handlehotelbooking = async (userId, hotelId, rooms, price) => {
+export const handlehotelbooking = async (userId, hotelId, rooms, price, freezeId = "") => {
   try {
-    const url = `/booking/hotel?userId=${encodeURIComponent(userId)}&hotelId=${encodeURIComponent(hotelId)}&rooms=${rooms}&price=${price}`;
+    const freezeParam = freezeId ? `&freezeId=${encodeURIComponent(freezeId)}` : "";
+    const url = `/booking/hotel?userId=${encodeURIComponent(userId)}&hotelId=${encodeURIComponent(hotelId)}&rooms=${rooms}&price=${price}${freezeParam}`;
     const res = await apiClient.post(url);
     return res.data;
   } catch (error) {
@@ -245,8 +255,6 @@ export const handlehotelbooking = async (userId, hotelId, rooms, price) => {
     throw error;
   }
 };
-
-/* --- TASK 1: LIVE FLIGHT STATUS API METHODS --- */
 
 export const getFlightStatuses = async (query = "", status = "ALL") => {
   try {
@@ -316,8 +324,6 @@ export const sendFlightEmailNotification = async (flightNumber, email) => {
     throw error;
   }
 };
-
-/* --- DYNAMIC PRICING ENGINE & E-CART OFFERS API METHODS --- */
 
 export const getDynamicPricing = async (
   itemId = "FL-101",
@@ -448,9 +454,12 @@ export const getAppNotifications = async (userId = "") => {
   }
 };
 
-export const deleteAppNotification = async (id) => {
+export const deleteAppNotification = async (id, userId = "") => {
   try {
-    const res = await apiClient.delete(`/api/notifications/${encodeURIComponent(id)}`);
+    const params = new URLSearchParams();
+    if (userId) params.append("userId", userId);
+    const query = params.toString() ? `?${params.toString()}` : "";
+    const res = await apiClient.delete(`/api/notifications/${encodeURIComponent(id)}${query}`);
     if (res.status === 200) return res.data;
     return null;
   } catch (error) {
@@ -664,3 +673,44 @@ export const moderateReview = async (reviewId, action) => {
     throw error;
   }
 };
+
+export const getRecommendations = async (userId = "", category = "ALL") => {
+  try {
+    const params = new URLSearchParams();
+    if (userId) params.append("userId", userId);
+    if (category) params.append("category", category);
+    const res = await apiClient.get(`/api/recommendations?${params.toString()}`);
+    if (res.status === 200 && Array.isArray(res.data)) return res.data;
+    return [];
+  } catch (error) {
+    console.error("Failed to fetch personalized recommendations:", error);
+    return [];
+  }
+};
+
+export const submitRecommendationFeedback = async (recommendationId, userId = "", feedbackType = "HELPFUL", notes = "") => {
+  try {
+    const res = await apiClient.post(`/api/recommendations/${encodeURIComponent(recommendationId)}/feedback`, {
+      userId,
+      feedbackType,
+      notes,
+    });
+    if (res.status === 200) return res.data;
+    throw new Error(res.data?.message || "Failed to submit recommendation feedback");
+  } catch (error) {
+    console.error("Failed to submit recommendation feedback:", error);
+    throw error;
+  }
+};
+
+export const seedRecommendations = async () => {
+  try {
+    const res = await apiClient.post("/api/recommendations/seed");
+    if (res.status === 200) return res.data;
+    return null;
+  } catch (error) {
+    console.error("Failed to seed recommendations:", error);
+    return null;
+  }
+};
+

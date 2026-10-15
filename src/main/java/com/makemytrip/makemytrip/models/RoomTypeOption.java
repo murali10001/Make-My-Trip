@@ -16,15 +16,15 @@ public class RoomTypeOption {
     @JsonProperty("id")
     private String _id;
     private String hotelId;
-    private String roomTypeName; // "Standard Comfort", "Deluxe Executive", "Ocean View Suite", "Presidential Suite"
-    private double priceUpgradeAddon; // 0.0, 1500.0, 3200.0, 7500.0
+    private String roomTypeName;
+    private double priceUpgradeAddon;
     private int availableRooms = 5;
     private String bedType = "King Size Bed";
     private String roomSize = "450 sq.ft";
     private String viewType = "Panoramic City View";
     private List<String> amenities = new ArrayList<>();
     private List<String> imageUrls = new ArrayList<>();
-    private String preview3dModelUrl; // 3D Interactive Room Preview Model Link / Embed
+    private String preview3dModelUrl;
     private String description;
     private boolean isPopularUpsell = false;
 

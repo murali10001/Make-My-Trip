@@ -4,7 +4,7 @@ const Footer = () => {
   return (
     <footer className="bg-black text-gray-300 pt-12 pb-8">
       <div className="max-w-7xl mx-auto px-4">
-        {/* Why MakeMyTour Section */}
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
           <div>
             <h3 className="text-xl font-bold mb-4">Why MakeMyTour?</h3>
@@ -37,7 +37,6 @@ const Footer = () => {
           </div>
         </div>
 
-        {/* Quick Links */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
           <div>
             <h4 className="font-semibold mb-3">ABOUT THE SITE</h4>
@@ -121,7 +120,6 @@ const Footer = () => {
           </div>
         </div>
 
-        {/* Social Links & Copyright */}
         <div className="border-t border-gray-700 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex space-x-6 mb-4 md:mb-0">

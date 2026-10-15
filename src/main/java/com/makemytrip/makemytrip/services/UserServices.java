@@ -41,7 +41,6 @@ public class UserServices {
         }
         Users savedUser = userRepository.save(user);
 
-        // Dynamically create welcome notification in DB for new user
         notificationService.createNotification(
             savedUser.getId(),
             "Welcome to MakeMyTour!",
@@ -65,7 +64,6 @@ public class UserServices {
         return userRepository.findById(id.trim()).orElse(null);
     }
 
-
     public Users editprofile(String id, Users updatedUser) {
         Optional<Users> userOptional = userRepository.findById(id);
         if (userOptional.isPresent()) {
@@ -74,7 +72,14 @@ public class UserServices {
             user.setLastName(updatedUser.getLastName());
             user.setPhoneNumber(updatedUser.getPhoneNumber());
             if (updatedUser.getEmail() != null && !updatedUser.getEmail().trim().isEmpty()) {
-                user.setEmail(updatedUser.getEmail().trim());
+                String newEmail = updatedUser.getEmail().trim();
+                if (!newEmail.equalsIgnoreCase(user.getEmail())) {
+                    Users existing = userRepository.findByEmail(newEmail);
+                    if (existing != null && existing.getId() != null && !existing.getId().equals(user.getId())) {
+                        throw new EmailAlreadyExistsException("Email '" + newEmail + "' is already registered to another account");
+                    }
+                }
+                user.setEmail(newEmail);
             }
             return userRepository.save(user);
         }

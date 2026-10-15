@@ -53,7 +53,6 @@ public class PricingController {
         return ResponseEntity.ok(freeze);
     }
 
-
     @DeleteMapping("/freeze/{freezeId}")
     public ResponseEntity<Map<String, String>> deleteFreeze(@PathVariable String freezeId) {
         pricingService.deleteFreeze(freezeId);

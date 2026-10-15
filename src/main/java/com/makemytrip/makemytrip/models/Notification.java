@@ -8,7 +8,7 @@ public class Notification {
 
     @Id
     private String id;
-    private String userId; // Specific user ID or "ALL"
+    private String userId;
     private String title;
     private String desc;
     private String time;
@@ -71,5 +71,18 @@ public class Notification {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    private java.util.List<String> dismissedUserIds = new java.util.ArrayList<>();
+
+    public java.util.List<String> getDismissedUserIds() {
+        if (dismissedUserIds == null) {
+            dismissedUserIds = new java.util.ArrayList<>();
+        }
+        return dismissedUserIds;
+    }
+
+    public void setDismissedUserIds(java.util.List<String> dismissedUserIds) {
+        this.dismissedUserIds = dismissedUserIds;
     }
 }

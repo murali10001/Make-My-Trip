@@ -18,7 +18,6 @@ public class Flight {
     private double price;
     private int availableSeats;
 
-    // Extended dynamic fields
     private String flightNo;
     private String aircraft = "Unknown";
     private String airline;
@@ -30,8 +29,6 @@ public class Flight {
     private double taxes = 0;
     private double otherServices = 0;
     private double discounts = 0;
-
-    // Getters and Setters
 
     public String getId() {
         return _id;

@@ -52,7 +52,6 @@ public class FlightStatusService {
         List<FlightStatus> flights = flightStatusRepository.findAll();
         if (flights.isEmpty()) return null;
 
-        // Prioritize active flights in BOARDING or IN_FLIGHT status so they reach LANDED state smoothly
         List<FlightStatus> activeFlights = flights.stream()
             .filter(f -> f != null && ("BOARDING".equalsIgnoreCase(f.getStatus()) || "IN_FLIGHT".equalsIgnoreCase(f.getStatus())))
             .collect(Collectors.toList());

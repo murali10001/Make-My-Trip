@@ -1,12 +1,3 @@
-/**
- * MakeMyTrip / MakeMyTour Load & Performance Testing Suite
- * Simulates high concurrent user load against Spring Boot backend endpoints.
- * 
- * Metrics evaluated:
- * - Throughput (Requests per second)
- * - Response time percentiles (p50, p90, p95, p99)
- * - Error rate percentage
- */
 
 const http = require('http');
 

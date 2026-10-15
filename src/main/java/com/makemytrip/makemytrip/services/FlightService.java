@@ -22,6 +22,35 @@ public class FlightService {
         return flightRepository.findAll();
     }
 
+    public List<Flight> getFlights(String from, String to) {
+        String cleanFrom = (from != null && !from.trim().isEmpty() && !"null".equalsIgnoreCase(from) && !"undefined".equalsIgnoreCase(from)) ? from.trim() : null;
+        String cleanTo = (to != null && !to.trim().isEmpty() && !"null".equalsIgnoreCase(to) && !"undefined".equalsIgnoreCase(to)) ? to.trim() : null;
+
+        if (cleanFrom != null && cleanTo != null) {
+            List<Flight> matches = flightRepository.findByFromContainingIgnoreCaseAndToContainingIgnoreCase(cleanFrom, cleanTo);
+            if (!matches.isEmpty()) {
+                return matches;
+            }
+            String baseFrom = cleanFrom.replaceAll("\\s*\\([A-Za-z0-9\\s]+\\)\\s*", "").trim();
+            String baseTo = cleanTo.replaceAll("\\s*\\([A-Za-z0-9\\s]+\\)\\s*", "").trim();
+            if (!baseFrom.isEmpty() && !baseTo.isEmpty()) {
+                matches = flightRepository.findByFromContainingIgnoreCaseAndToContainingIgnoreCase(baseFrom, baseTo);
+                if (!matches.isEmpty()) {
+                    return matches;
+                }
+            }
+            return java.util.Collections.emptyList();
+        } else if (cleanFrom != null) {
+            String baseFrom = cleanFrom.replaceAll("\\s*\\([A-Za-z0-9\\s]+\\)\\s*", "").trim();
+            return flightRepository.findByFromContainingIgnoreCase(baseFrom.isEmpty() ? cleanFrom : baseFrom);
+        } else if (cleanTo != null) {
+            String baseTo = cleanTo.replaceAll("\\s*\\([A-Za-z0-9\\s]+\\)\\s*", "").trim();
+            return flightRepository.findByToContainingIgnoreCase(baseTo.isEmpty() ? cleanTo : baseTo);
+        }
+
+        return flightRepository.findAll();
+    }
+
     public Flight getFlightById(String id) {
         return flightRepository.findById(id)
             .orElseThrow(() -> new FlightNotFoundException("Flight with ID " + id + " not found"));

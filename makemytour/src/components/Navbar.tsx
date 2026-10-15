@@ -25,7 +25,7 @@ import {
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback } from "./ui/avatar";
 import { clearUser } from "@/store";
-import { useRouter } from "next/navigation";
+import { useRouter } from "next/router";
 import { getAppNotifications, deleteAppNotification } from "@/api";
 
 const Navbar = () => {
@@ -61,7 +61,7 @@ const Navbar = () => {
   useEffect(() => {
     if (typeof window !== "undefined" && "Notification" in window) {
       setWebPushPermission(Notification.permission);
-      // Auto-prompt permission if default on page load
+
       if (Notification.permission === "default") {
         Notification.requestPermission().then((perm) => {
           setWebPushPermission(perm);
@@ -91,13 +91,13 @@ const Navbar = () => {
         );
 
         if (isFirstLoadRef.current) {
-          // On first load, record existing past notifications so we don't dump old popups
+
           filtered.forEach((n: any) => {
             if (n && n.id) seenNotifIdsRef.current.add(n.id);
           });
           isFirstLoadRef.current = false;
         } else {
-          // On subsequent polls, check for unseen notifications
+
           filtered.forEach((n: any) => {
             if (n && n.id && !seenNotifIdsRef.current.has(n.id)) {
               if (typeof window !== "undefined" && "Notification" in window) {
@@ -112,7 +112,7 @@ const Navbar = () => {
                     console.error("Failed to fire browser push notification", e);
                   }
                 } else if (Notification.permission === "default") {
-                  // Do not add to seen set yet, ask for permission so popup fires when granted
+
                   Notification.requestPermission().then((perm) => {
                     setWebPushPermission(perm);
                     if (perm === "granted") {
@@ -150,7 +150,8 @@ const Navbar = () => {
   const removeNotif = async (id: string | number) => {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
     try {
-      await deleteAppNotification(id);
+      const userId = user?.id || user?._id || "";
+      await deleteAppNotification(id, userId);
     } catch (err) {
       console.error("Failed to delete notification", err);
     }
@@ -159,7 +160,7 @@ const Navbar = () => {
   return (
     <header className="bg-white/95 backdrop-blur-md py-3 sticky top-0 z-50 border-b border-slate-200 shadow-2xs">
       <div className="container mx-auto px-4 flex items-center justify-between">
-        {/* Logo */}
+
         <div
           onClick={() => router.push("/")}
           className="flex items-center space-x-2 cursor-pointer group"
@@ -172,10 +173,8 @@ const Navbar = () => {
           </span>
         </div>
 
-        {/* Center / Right Links */}
         <div className="flex items-center space-x-3">
-          
-          {/* Features & Updates Dropdown Menu (Clean & Integrated) */}
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -215,7 +214,6 @@ const Navbar = () => {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Notification Bell Icon */}
           <div className="relative">
             <button
               onClick={() => {
@@ -236,7 +234,6 @@ const Navbar = () => {
               )}
             </button>
 
-            {/* Notification Slide-out Drawer */}
             {showNotifDrawer && (
               <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-2xl border border-slate-200 p-4 z-50 animate-in fade-in zoom-in-95 space-y-3">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-2">

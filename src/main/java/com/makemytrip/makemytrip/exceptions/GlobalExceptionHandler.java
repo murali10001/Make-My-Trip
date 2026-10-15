@@ -41,7 +41,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleGenericException(Exception ex, HttpServletRequest request) {
         logger.severe("Unhandled Exception on " + request.getRequestURI() + ": " + ex.getMessage());
-        
+
         ApiErrorResponse response = new ApiErrorResponse(
             HttpStatus.INTERNAL_SERVER_ERROR.value(),
             "Internal Server Error",

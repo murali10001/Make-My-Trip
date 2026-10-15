@@ -31,7 +31,6 @@ export const FlightSeatPicker: React.FC<FlightSeatPickerProps> = ({
         const data = await getSeatMap(flightId);
         setSeatMap(data);
 
-        // Fetch user preferences to auto-highlight matching seat
         if (userId) {
           const userPrefs = await getUserPreferences(userId);
           if (userPrefs && userPrefs.preferredSeatNo && data?.seats) {
@@ -57,7 +56,6 @@ export const FlightSeatPicker: React.FC<FlightSeatPickerProps> = ({
     setActiveSeat(seat);
     onSeatSelect({ seatNo: seat.seatNo, tier: seat.tier, priceAddon: seat.priceAddon });
 
-    // Auto save preference if checked and logged in
     if (savePreferenceChecked && userId) {
       try {
         await saveUserPreferences({
@@ -86,7 +84,6 @@ export const FlightSeatPicker: React.FC<FlightSeatPickerProps> = ({
   const seats = seatMap?.seats || [];
   const rowsCount = seatMap?.totalRows || 12;
 
-  // Group seats by row
   const rowsMap: { [key: number]: any[] } = {};
   seats.forEach((seat: any) => {
     if (!rowsMap[seat.row]) rowsMap[seat.row] = [];
@@ -95,7 +92,7 @@ export const FlightSeatPicker: React.FC<FlightSeatPickerProps> = ({
 
   return (
     <div className="bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white rounded-2xl p-6 border border-slate-800 shadow-2xl space-y-6">
-      {/* Header */}
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
         <div>
           <div className="flex items-center gap-2">
@@ -126,7 +123,6 @@ export const FlightSeatPicker: React.FC<FlightSeatPickerProps> = ({
         )}
       </div>
 
-      {/* Legend */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] bg-slate-900/90 p-3.5 rounded-xl border border-slate-800">
         <div className="flex items-center gap-2">
           <div className="w-3.5 h-3.5 rounded bg-cyan-600 border border-cyan-300 ring-1 ring-cyan-400/50" />
@@ -146,15 +142,13 @@ export const FlightSeatPicker: React.FC<FlightSeatPickerProps> = ({
         </div>
       </div>
 
-      {/* Aircraft Fuselage Layout */}
       <div className="max-w-md mx-auto bg-slate-900/60 p-4 rounded-3xl border border-slate-800/80 space-y-3 relative">
-        {/* Cockpit Front */}
+
         <div className="text-center text-[10px] font-mono text-slate-500 uppercase tracking-widest border-b border-slate-800 pb-2 flex items-center justify-center gap-2">
           <Plane className="w-3.5 h-3.5 text-cyan-400 rotate-90" />
           <span>FRONT OF AIRCRAFT / COCKPIT</span>
         </div>
 
-        {/* Rows Grid */}
         <div className="space-y-2">
           {Object.keys(rowsMap).map((rowStr) => {
             const rowNum = parseInt(rowStr);
@@ -164,7 +158,7 @@ export const FlightSeatPicker: React.FC<FlightSeatPickerProps> = ({
 
             return (
               <div key={rowNum} className="flex items-center justify-between gap-2">
-                {/* Left Column A, B, C */}
+
                 <div className="flex items-center gap-1.5">
                   {leftSeats.map((s) => {
                     const isSelected = activeSeat?.seatNo === s.seatNo;
@@ -208,12 +202,10 @@ export const FlightSeatPicker: React.FC<FlightSeatPickerProps> = ({
                   })}
                 </div>
 
-                {/* Aisle & Row Label */}
                 <div className={`text-[10px] font-mono font-bold px-1 rounded px-1.5 py-0.5 ${rowNum === 6 ? "bg-purple-950 text-purple-300 border border-purple-800" : "text-slate-500"}`}>
                   {rowNum === 6 ? "EXIT" : `R${rowNum}`}
                 </div>
 
-                {/* Right Column D, E, F */}
                 <div className="flex items-center gap-1.5">
                   {rightSeats.map((s) => {
                     const isSelected = activeSeat?.seatNo === s.seatNo;
@@ -262,7 +254,6 @@ export const FlightSeatPicker: React.FC<FlightSeatPickerProps> = ({
         </div>
       </div>
 
-      {/* Save Preference Toggle */}
       {userId && (
         <div className="flex items-center justify-between bg-slate-900/80 p-3 rounded-xl border border-slate-800 text-xs">
           <label className="flex items-center gap-2 cursor-pointer">

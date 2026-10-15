@@ -13,16 +13,16 @@ public class RefundRequest {
     private String bookingId;
     private String userId;
     private String userEmail;
-    private String bookingType; // "Flight" or "Hotel"
+    private String bookingType;
     private double originalAmount;
     private double refundAmount;
-    private double refundPercentage; // e.g. 50.0 or 80.0
+    private double refundPercentage;
     private String cancellationReason;
     private String comment;
     private String requestDate;
-    private String status; // "PENDING", "PROCESSED", "COMPLETED", "REJECTED"
+    private String status;
     private String estimatedCompletionDate;
-    private int currentStep; // 1: Requested, 2: Processing, 3: Completed
+    private int currentStep;
     private String policyApplied;
     private long lastUpdatedEpochMs;
     private String transactionRef;
@@ -30,7 +30,6 @@ public class RefundRequest {
     public RefundRequest() {
         this.lastUpdatedEpochMs = System.currentTimeMillis();
     }
-
 
     public String getId() {
         return id;

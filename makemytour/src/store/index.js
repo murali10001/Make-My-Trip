@@ -1,6 +1,5 @@
 import { configureStore, createSlice } from "@reduxjs/toolkit";
 
-
 const saveusertolocalstorage = (user) => {
   if (typeof window !== "undefined" && localStorage) {
     localStorage.setItem("user", JSON.stringify(user));

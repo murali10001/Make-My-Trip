@@ -80,7 +80,6 @@ public class EmailService {
             }
         }
 
-        // MailSender bean is null -> Automatic test simulation mode
         logger.info("JavaMailSender bean unconfigured. Simulated Test Mode Email Payload:\n" + body);
         result.put("success", true);
         result.put("available", true);

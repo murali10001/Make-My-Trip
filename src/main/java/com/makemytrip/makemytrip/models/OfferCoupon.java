@@ -11,12 +11,12 @@ public class OfferCoupon {
     private String code;
     private String title;
     private String description;
-    private String bankName; // "HDFC Bank", "ICICI Bank", "SBI Card", "MakeMyTour Special"
+    private String bankName;
     private String bankLogo;
     private double discountPercentage;
     private double maxDiscountAmount;
     private double minBookingAmount;
-    private String badgeText; // "10% Instant Discount", "Flat ₹1500 Cashback", "20% OFF"
+    private String badgeText;
     private boolean active;
 
     public OfferCoupon() {}

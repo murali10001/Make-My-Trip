@@ -15,11 +15,11 @@ public class Users {
     private String firstName;
     private String lastName;
     private String email;
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
     private String role;
     private String phoneNumber;
     private List<Booking> bookings = new ArrayList<>();;
-
 
     public String getFirstName() {return firstName;}
     public String getId() {
@@ -57,7 +57,6 @@ public class Users {
         this.bookings = bookings;
     }
 
-
     public static class Booking{
         private String type;
         private String bookingId;
@@ -65,12 +64,11 @@ public class Users {
         private String bookingTimestamp;
         private int quantity;
         private double totalPrice;
-        private String status = "CONFIRMED"; // "CONFIRMED" or "CANCELLED"
-        private String targetId; // Flight or Hotel ID
+        private String status = "CONFIRMED";
+        private String targetId;
         private String cancellationReason;
         private String refundId;
 
-        // Getters and Setters
         public String getBookingTimestamp() {
             return bookingTimestamp;
         }

@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
+import org.springframework.web.bind.annotation.RequestParam;
+
 import java.util.List;
 
 @RestController
@@ -29,8 +31,10 @@ public class RootController {
     }
 
     @GetMapping("/hotel")
-    public ResponseEntity<List<Hotel>> getallhotel() {
-        List<Hotel> hotels = hotelService.getAllHotels();
+    public ResponseEntity<List<Hotel>> getallhotel(
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false) String query) {
+        List<Hotel> hotels = hotelService.getHotels(location, query);
         return ResponseEntity.ok(hotels);
     }
 
@@ -41,8 +45,10 @@ public class RootController {
     }
 
     @GetMapping("/flight")
-    public ResponseEntity<List<Flight>> getallflights() {
-        List<Flight> flights = flightService.getAllFlights();
+    public ResponseEntity<List<Flight>> getallflights(
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to) {
+        List<Flight> flights = flightService.getFlights(from, to);
         return ResponseEntity.ok(flights);
     }
 

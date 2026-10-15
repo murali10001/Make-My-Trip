@@ -18,7 +18,7 @@ public class FlightStatus {
     private String scheduledArrival;
     private String revisedDeparture;
     private String revisedArrival;
-    private String status; // ON_TIME, DELAYED, BOARDING, IN_FLIGHT, LANDED, CANCELLED
+    private String status;
     private String delayReason;
     private String gate;
     private String terminal;

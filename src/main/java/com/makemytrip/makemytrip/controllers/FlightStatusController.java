@@ -35,7 +35,7 @@ public class FlightStatusController {
 
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter streamFlightUpdates() {
-        SseEmitter emitter = new SseEmitter(1800000L); // 30 mins
+        SseEmitter emitter = new SseEmitter(1800000L);
         emitters.add(emitter);
         emitter.onCompletion(() -> emitters.remove(emitter));
         emitter.onTimeout(() -> emitters.remove(emitter));
@@ -49,7 +49,6 @@ public class FlightStatusController {
     public void broadcastUpdate(FlightStatus status) {
         if (status == null) return;
 
-        // Persist notification in MongoDB for Navbar bell
         try {
             if (notificationService != null) {
                 String title = "Flight " + status.getFlightNumber() + " is " + (status.getStatus() != null ? status.getStatus() : "UPDATED");
@@ -78,7 +77,6 @@ public class FlightStatusController {
         }
         emitters.removeAll(deadEmitters);
     }
-
 
     @GetMapping
     public ResponseEntity<List<FlightStatus>> getAllFlights(
@@ -140,7 +138,6 @@ public class FlightStatusController {
 
         broadcastUpdate(updated);
 
-        // Send email notification automatically if email provided
         String email = (String) payload.get("email");
         if (email != null && !email.isEmpty()) {
             emailService.sendFlightStatusEmail(email, updated);

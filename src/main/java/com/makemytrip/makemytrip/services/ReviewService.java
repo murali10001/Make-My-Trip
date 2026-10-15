@@ -21,9 +21,6 @@ public class ReviewService {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a");
 
-    /**
-     * Retrieve reviews for targetId (Flight or Hotel) dynamically from MongoDB.
-     */
     public ReviewSummaryDTO getReviewsForTarget(String targetId, String targetType, String sort, Integer minRating, Boolean withPhotosOnly) {
         if (targetId == null || targetId.trim().isEmpty()) {
             throw new InvalidReviewException("Target ID cannot be empty");
@@ -31,7 +28,6 @@ public class ReviewService {
 
         List<Review> allReviews = reviewRepository.findByTargetId(targetId);
 
-        // Calculate summary metrics across all active/non-removed reviews
         int totalCount = allReviews.size();
         double sumRating = 0;
         Map<Integer, Integer> distribution = new LinkedHashMap<>();
@@ -51,7 +47,6 @@ public class ReviewService {
 
         double averageRating = totalCount > 0 ? Math.round((sumRating / totalCount) * 10.0) / 10.0 : 0.0;
 
-        // Apply filters
         List<Review> filtered = allReviews.stream()
                 .filter(r -> {
                     if (minRating != null && minRating > 0 && r.getRating() < minRating) {
@@ -64,7 +59,6 @@ public class ReviewService {
                 })
                 .collect(Collectors.toList());
 
-        // Apply sorting
         String sortOption = sort != null ? sort.toLowerCase().trim() : "helpful";
         switch (sortOption) {
             case "newest":
@@ -94,9 +88,6 @@ public class ReviewService {
         return new ReviewSummaryDTO(filtered, totalCount, averageRating, distribution, photoCount);
     }
 
-    /**
-     * Submit a new traveler review and save it directly to MongoDB.
-     */
     public Review addReview(Review review) {
         if (review.getTargetId() == null || review.getTargetId().trim().isEmpty()) {
             throw new InvalidReviewException("Target booking identifier is required.");
@@ -111,7 +102,7 @@ public class ReviewService {
             throw new InvalidReviewException("Detailed review feedback cannot be empty.");
         }
 
-        review.setId(null); // Ensure MongoDB generates a new ID
+        review.setId(null);
         review.setCreatedAt(LocalDateTime.now().format(DATE_FORMATTER));
         review.setCreatedAtEpochMs(System.currentTimeMillis());
         if (review.getUserName() == null || review.getUserName().trim().isEmpty()) {
@@ -130,9 +121,6 @@ public class ReviewService {
         return reviewRepository.save(review);
     }
 
-    /**
-     * Add a conversational reply to an existing review.
-     */
     public Review addReply(String reviewId, Review.ReviewReply reply) {
         Review review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new ReviewNotFoundException("Review not found with ID: " + reviewId));
@@ -152,9 +140,6 @@ public class ReviewService {
         return reviewRepository.save(review);
     }
 
-    /**
-     * Toggle or vote 'helpful' on a review.
-     */
     public Review toggleHelpful(String reviewId, String userId) {
         Review review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new ReviewNotFoundException("Review not found with ID: " + reviewId));
@@ -164,6 +149,10 @@ public class ReviewService {
         }
 
         List<String> voters = review.getHelpfulUserIds();
+        if (voters == null) {
+            voters = new ArrayList<>();
+            review.setHelpfulUserIds(voters);
+        }
         if (voters.contains(userId)) {
             voters.remove(userId);
             review.setHelpfulCount(Math.max(0, review.getHelpfulCount() - 1));
@@ -175,9 +164,6 @@ public class ReviewService {
         return reviewRepository.save(review);
     }
 
-    /**
-     * Flag a review as inappropriate for moderator review.
-     */
     public Review flagReview(String reviewId, String userId, String reason) {
         Review review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new ReviewNotFoundException("Review not found with ID: " + reviewId));
@@ -189,16 +175,10 @@ public class ReviewService {
         return reviewRepository.save(review);
     }
 
-    /**
-     * Retrieve all flagged reviews for moderator inspection.
-     */
     public List<Review> getFlaggedReviews() {
         return reviewRepository.findByFlagged(true);
     }
 
-    /**
-     * Moderator action on flagged review: DISMISS or REMOVE.
-     */
     public Map<String, Object> moderateReview(String reviewId, String action) {
         Review review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new ReviewNotFoundException("Review not found with ID: " + reviewId));

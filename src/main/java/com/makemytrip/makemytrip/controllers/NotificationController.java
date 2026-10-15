@@ -19,14 +19,16 @@ public class NotificationController {
     @GetMapping(value = {"", "/{userId}"})
     public ResponseEntity<List<Notification>> getNotifications(
             @PathVariable(required = false) String userId,
-            @RequestParam(required = false) String userIdParam) {
-        String targetUserId = userId != null ? userId : userIdParam;
+            @RequestParam(name = "userId", required = false) String userIdParam) {
+        String targetUserId = (userId != null && !userId.trim().isEmpty()) ? userId : userIdParam;
         return ResponseEntity.ok(notificationService.getNotificationsForUser(targetUserId));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<java.util.Map<String, String>> deleteNotification(@PathVariable String id) {
-        notificationService.deleteNotification(id);
+    public ResponseEntity<java.util.Map<String, String>> deleteNotification(
+            @PathVariable String id,
+            @RequestParam(name = "userId", required = false) String userId) {
+        notificationService.deleteNotification(id, userId);
         java.util.Map<String, String> res = new java.util.HashMap<>();
         res.put("message", "Notification deleted successfully");
         return ResponseEntity.ok(res);

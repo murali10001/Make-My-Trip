@@ -83,7 +83,6 @@ const BookFlightPage = () => {
   const user = useSelector((state: any) => state.user.user);
   const dispatch = useDispatch();
 
-  // Dynamic Offers & Pricing state
   const [offers, setOffers] = useState<any[]>([]);
   const [couponCodeInput, setCouponCodeInput] = useState<string>("");
   const [appliedCoupon, setAppliedCoupon] = useState<{
@@ -95,15 +94,12 @@ const BookFlightPage = () => {
   const [couponError, setCouponError] = useState<string | null>(null);
   const [couponApplying, setCouponApplying] = useState<boolean>(false);
 
-  // Price Freeze Locker state
   const [priceFrozen, setPriceFrozen] = useState<any | null>(null);
   const [freezeLoading, setFreezeLoading] = useState<boolean>(false);
 
-  // Price History graph modal state
   const [showHistoryModal, setShowHistoryModal] = useState<boolean>(false);
   const [dynamicPricingInfo, setDynamicPricingInfo] = useState<any | null>(null);
 
-  // Seat selection state
   const [selectedSeat, setSelectedSeat] = useState<{ seatNo: string; tier: string; priceAddon: number } | null>(null);
 
   useEffect(() => {
@@ -131,7 +127,6 @@ const BookFlightPage = () => {
           );
           setDynamicPricingInfo(priceInfo);
 
-          // Check if user has active price freeze for this item
           let found: any = null;
           if (typeof window !== "undefined") {
             try {
@@ -204,7 +199,6 @@ const BookFlightPage = () => {
   const cabinBaggage = flight.cabinBaggage || "7 Kgs / Adult";
   const checkInBaggage = flight.checkInBaggage || "15 Kgs (1 piece only) / Adult";
 
-  // Effective unit fare prioritizing Price Freeze, then Dynamic Pricing Rate, then Base Price
   const unitPrice = priceFrozen
     ? priceFrozen.frozenPrice
     : (dynamicPricingInfo ? dynamicPricingInfo.finalPrice : (flight.price || 5500));
@@ -309,7 +303,8 @@ const BookFlightPage = () => {
         user?.id || user?._id,
         flight?.id || flight?._id,
         quantity,
-        grandTotal
+        grandTotal,
+        priceFrozen?.freezeId || ""
       );
       const updateuser = {
         ...user,
@@ -435,7 +430,6 @@ const BookFlightPage = () => {
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-          {/* Main Flight Details Left Column */}
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-white rounded-xl shadow-sm p-6">
               <div className="flex flex-wrap justify-between items-start gap-4 mb-6">
@@ -459,7 +453,6 @@ const BookFlightPage = () => {
                   </div>
                 </div>
 
-                {/* Price Lock & Trend Graph Actions */}
                 <div className="flex items-center gap-2">
                   <Button
                     onClick={handleFreezePrice}
@@ -540,7 +533,6 @@ const BookFlightPage = () => {
               </div>
             </div>
 
-            {/* Interactive Flight Seat Picker */}
             <FlightSeatPicker
               flightId={flight.id || flight._id || "101"}
               userId={user?.id || user?._id || ""}
@@ -549,7 +541,6 @@ const BookFlightPage = () => {
               selectedSeatNo={selectedSeat?.seatNo || ""}
             />
 
-            {/* Price Freeze Active Banner if locked */}
             {priceFrozen && (
               <div className="bg-gradient-to-r from-blue-900 to-indigo-950 text-white p-4 rounded-xl shadow-md border border-cyan-500/30 flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -565,7 +556,6 @@ const BookFlightPage = () => {
               </div>
             )}
 
-            {/* Reviews & Traveler Ratings Section */}
             <ReviewsSection
               targetId={flight.id || flight._id || (id as string)}
               targetType="FLIGHT"
@@ -574,7 +564,6 @@ const BookFlightPage = () => {
             />
           </div>
 
-          {/* Fare Summary & Bank Coupon Cards Right Column */}
           <div className="lg:col-span-1 space-y-6">
             <div className="bg-white rounded-xl shadow-sm p-6 sticky top-24 space-y-6">
               <h2 className="text-lg font-bold flex items-center border-b pb-3">
@@ -628,7 +617,6 @@ const BookFlightPage = () => {
                 </div>
               </div>
 
-              {/* Bank Card Offers & Coupon Apply Box */}
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
                 <div className="flex items-center gap-1.5 font-bold text-xs text-slate-900">
                   <Tag className="w-4 h-4 text-emerald-600" />
@@ -673,7 +661,6 @@ const BookFlightPage = () => {
                   </div>
                 )}
 
-                {/* Bank Card Deals List */}
                 <div className="space-y-2 pt-1 border-t border-slate-200">
                   <p className="text-[11px] font-bold text-slate-700">Select Bank Card Deal:</p>
                   {offers.map((offer) => (
@@ -725,7 +712,6 @@ const BookFlightPage = () => {
         </div>
       </div>
 
-      {/* Price Trend History Modal */}
       {showHistoryModal && dynamicPricingInfo && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4">

@@ -88,16 +88,14 @@ const DynamicPricingEngine: React.FC = () => {
 
   const [demandLevel, setDemandLevel] = useState<string>("HIGH");
   const [seasonType, setSeasonType] = useState<string>("HOLIDAY_PEAK");
-  
+
   const [pricingData, setPricingData] = useState<DynamicPriceData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  
-  // Price Freeze state
+
   const [frozenPrice, setFrozenPrice] = useState<FrozenPriceData | null>(null);
   const [freezeLoading, setFreezeLoading] = useState<boolean>(false);
   const [countdownSeconds, setCountdownSeconds] = useState<number>(86400);
 
-  // Offers state
   const [offers, setOffers] = useState<OfferCouponData[]>([]);
   const [couponCodeInput, setCouponCodeInput] = useState<string>("");
   const [appliedCoupon, setAppliedCoupon] = useState<{
@@ -109,7 +107,6 @@ const DynamicPricingEngine: React.FC = () => {
   const [couponError, setCouponError] = useState<string | null>(null);
   const [couponApplying, setCouponApplying] = useState<boolean>(false);
 
-  // Load real items from database (Flights & Hotels)
   const loadDatabaseItems = async () => {
     try {
       const flights = await getflight();
@@ -154,7 +151,6 @@ const DynamicPricingEngine: React.FC = () => {
     }
   };
 
-  // Fetch offers
   const fetchOffers = async () => {
     try {
       const list = await getPromotionalOffers();
@@ -169,7 +165,6 @@ const DynamicPricingEngine: React.FC = () => {
     fetchOffers();
   }, []);
 
-  // Recalculate pricing when item or parameters change
   const fetchPricing = async () => {
     if (!selectedItem) return;
     setLoading(true);
@@ -221,7 +216,6 @@ const DynamicPricingEngine: React.FC = () => {
     }
   }, [selectedItem, demandLevel, seasonType]);
 
-  // Countdown timer for price freeze
   useEffect(() => {
     let timer: any = null;
     if (frozenPrice && countdownSeconds > 0) {
@@ -290,7 +284,6 @@ const DynamicPricingEngine: React.FC = () => {
         setFrozenPrice(res);
         setCountdownSeconds(86400);
 
-        // Save to localStorage for instant user profile tracking
         if (typeof window !== "undefined") {
           try {
             const savedList = JSON.parse(localStorage.getItem("user_price_freezes") || "[]");
@@ -339,7 +332,7 @@ const DynamicPricingEngine: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Item Selector & Dynamic Controls Bar */}
+
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4">
           <div>
@@ -350,7 +343,6 @@ const DynamicPricingEngine: React.FC = () => {
             <p className="text-xs text-slate-500">Pick any real item from your database to calculate dynamic rates, view price trends, or lock fares.</p>
           </div>
 
-          {/* Database Item Selector Dropdown */}
           <div className="w-full md:w-96">
             <select
               value={selectedItemId}
@@ -366,7 +358,6 @@ const DynamicPricingEngine: React.FC = () => {
           </div>
         </div>
 
-        {/* Selected Item Info Banner */}
         {selectedItem && (
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-200 gap-3 text-xs">
             <div className="flex items-center gap-3">
@@ -404,13 +395,10 @@ const DynamicPricingEngine: React.FC = () => {
         )}
       </div>
 
-      {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Left 2 Columns: Dynamic Rate Breakdown & History Graph */}
+
         <div className="lg:col-span-2 space-y-6">
-          
-          {/* Live Dynamic Rate Box */}
+
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-6">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
@@ -484,7 +472,6 @@ const DynamicPricingEngine: React.FC = () => {
             ) : null}
           </div>
 
-          {/* Price History Graph */}
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
@@ -543,10 +530,8 @@ const DynamicPricingEngine: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Column: Price Freeze Locker & E-Cart Offers */}
         <div className="space-y-6">
 
-          {/* Active Price Freeze Locker */}
           <div className="bg-gradient-to-b from-blue-900 to-indigo-950 text-white rounded-2xl p-6 shadow-md border border-blue-800/40 space-y-4">
             <div className="flex items-center gap-2 border-b border-blue-800/60 pb-3">
               <Snowflake className="w-5 h-5 text-cyan-400" />
@@ -616,7 +601,6 @@ const DynamicPricingEngine: React.FC = () => {
             )}
           </div>
 
-          {/* E-Cart Offers & Coupon Section */}
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-5">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
@@ -628,7 +612,6 @@ const DynamicPricingEngine: React.FC = () => {
               </span>
             </div>
 
-            {/* Coupon Code Input */}
             <div className="space-y-2">
               <label className="text-xs font-semibold text-slate-700 block">Apply Coupon Code</label>
               <div className="flex gap-2">
@@ -651,7 +634,6 @@ const DynamicPricingEngine: React.FC = () => {
                 </Button>
               </div>
 
-              {/* Applied Coupon Success Banner */}
               {appliedCoupon && (
                 <div className="p-3 bg-emerald-50 border border-emerald-300 rounded-xl text-xs space-y-1.5 animate-in fade-in">
                   <div className="flex items-center justify-between font-bold text-emerald-800">
@@ -661,7 +643,7 @@ const DynamicPricingEngine: React.FC = () => {
                     <span className="text-emerald-700 font-extrabold">-₹{appliedCoupon.discountAmount.toLocaleString()}</span>
                   </div>
                   <p className="text-slate-600 text-[11px]">{appliedCoupon.message}</p>
-                  
+
                   {pricingData && (
                     <div className="pt-1.5 border-t border-emerald-200 text-[11px] text-slate-700 space-y-0.5 font-mono">
                       <div className="flex justify-between text-slate-500">
@@ -681,7 +663,6 @@ const DynamicPricingEngine: React.FC = () => {
                 </div>
               )}
 
-              {/* Coupon Error Banner */}
               {couponError && (
                 <div className="p-3 bg-amber-50 border border-amber-300 rounded-xl text-xs flex items-center gap-2 text-amber-800 animate-in fade-in">
                   <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0" />
@@ -690,7 +671,6 @@ const DynamicPricingEngine: React.FC = () => {
               )}
             </div>
 
-            {/* Offer Cards List */}
             <div className="space-y-3 pt-2">
               <p className="text-xs font-bold text-slate-800">Available Bank Card Deals</p>
 

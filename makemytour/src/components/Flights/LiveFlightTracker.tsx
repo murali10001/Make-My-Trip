@@ -62,8 +62,7 @@ const LiveFlightTracker: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedStatus, setSelectedStatus] = useState<string>("ALL");
-  
-  // Tracked flight numbers (Multi-flight tracking)
+
   const [trackedNumbers, setTrackedNumbers] = useState<string[]>([]);
   const [isMounted, setIsMounted] = useState<boolean>(false);
 
@@ -81,7 +80,6 @@ const LiveFlightTracker: React.FC = () => {
     }
   }, []);
 
-  // Push notifications state
   const [notifications, setNotifications] = useState<PushNotification[]>([]);
   const [selectedFlight, setSelectedFlight] = useState<FlightStatusItem | null>(null);
   const [simulationLoading, setSimulationLoading] = useState<boolean>(false);
@@ -91,7 +89,6 @@ const LiveFlightTracker: React.FC = () => {
   const [emailFeedback, setEmailFeedback] = useState<{ success: boolean; message: string } | null>(null);
   const [webPushPermission, setWebPushPermission] = useState<string>("default");
 
-  // Check initial Notification permission
   useEffect(() => {
     if (typeof window !== "undefined" && "Notification" in window) {
       setWebPushPermission(Notification.permission);
@@ -114,7 +111,6 @@ const LiveFlightTracker: React.FC = () => {
     }
   };
 
-  // Fetch flights
   const fetchFlights = async () => {
     try {
       const data = await getFlightStatuses(searchQuery, selectedStatus);
@@ -135,7 +131,6 @@ const LiveFlightTracker: React.FC = () => {
     trackedNumbersRef.current = trackedNumbers;
   }, [trackedNumbers]);
 
-  // Server-Sent Events (SSE) Real-Time Flight Stream Listener
   useEffect(() => {
     let eventSource: EventSource | null = null;
     if (typeof window !== "undefined") {
@@ -147,7 +142,15 @@ const LiveFlightTracker: React.FC = () => {
           try {
             const updatedFlight: FlightStatusItem = JSON.parse(event.data);
             if (updatedFlight) {
-              fetchFlights();
+              setFlights((prev) => {
+                const idx = prev.findIndex((f) => f.flightNumber === updatedFlight.flightNumber);
+                if (idx >= 0) {
+                  const copy = [...prev];
+                  copy[idx] = updatedFlight;
+                  return copy;
+                }
+                return [updatedFlight, ...prev];
+              });
               const isTracked = trackedNumbersRef.current.includes(updatedFlight.flightNumber);
               let notifType: "delay" | "boarding" | "gate" | "info" = "info";
               let title = `Radar SSE Update: ${updatedFlight.flightNumber}`;
@@ -189,14 +192,12 @@ const LiveFlightTracker: React.FC = () => {
     };
   }, []);
 
-  // Save tracked flights to localStorage
   useEffect(() => {
     if (typeof window !== "undefined" && isMounted) {
       localStorage.setItem("tracked_flights", JSON.stringify(trackedNumbers));
     }
   }, [trackedNumbers, isMounted]);
 
-  // Auto polling simulation if enabled
   useEffect(() => {
     let interval: any = null;
     if (autoSimulate) {
@@ -209,7 +210,6 @@ const LiveFlightTracker: React.FC = () => {
     };
   }, [autoSimulate, trackedNumbers]);
 
-  // Toggle tracking a flight
   const toggleTrackFlight = (flightNumber: string) => {
     if (trackedNumbers.includes(flightNumber)) {
       setTrackedNumbers((prev) => prev.filter((num) => num !== flightNumber));
@@ -234,11 +234,9 @@ const LiveFlightTracker: React.FC = () => {
     }
   };
 
-  // Add push notification (In-App Drawer + Native OS/Browser Web Push)
   const addNotification = (notif: PushNotification) => {
     setNotifications((prev) => [notif, ...prev.slice(0, 9)]);
 
-    // Trigger Native OS/Browser Push Notification if permission granted or request permission
     if (typeof window !== "undefined" && "Notification" in window) {
       if (Notification.permission === "granted") {
         try {
@@ -265,23 +263,20 @@ const LiveFlightTracker: React.FC = () => {
     }
   };
 
-  // Dismiss notification
   const dismissNotification = (id: string) => {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
   };
 
-  // Run random simulation
   const handleRandomSimulation = async (isBackground = false) => {
     if (!isBackground) setSimulationLoading(true);
     try {
       const updatedFlight: FlightStatusItem = await triggerRandomFlightSimulation();
       if (updatedFlight) {
-        // Refresh list
+
         await fetchFlights();
 
-        // Check if tracked or notify anyway
         const isTracked = trackedNumbers.includes(updatedFlight.flightNumber);
-        
+
         let notifType: "delay" | "boarding" | "gate" | "info" = "info";
         let title = `Update for ${updatedFlight.flightNumber}`;
 
@@ -319,7 +314,6 @@ const LiveFlightTracker: React.FC = () => {
     }
   };
 
-  // Real-Time Email Notification Handler
   const handleSendEmailNotification = async (flightNumber: string) => {
     setEmailSending(true);
     setEmailFeedback(null);
@@ -417,7 +411,7 @@ const LiveFlightTracker: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header & Dashboard Stats */}
+
       <div className="bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 text-white rounded-2xl p-6 shadow-xl relative overflow-hidden">
         <div className="absolute right-0 top-0 opacity-10 pointer-events-none transform translate-x-10 -translate-y-10">
           <Plane className="w-96 h-96 text-white" />
@@ -444,7 +438,6 @@ const LiveFlightTracker: React.FC = () => {
             </p>
           </div>
 
-          {/* Action Simulation Buttons */}
           <div className="flex flex-wrap items-center gap-2">
             <Button
               onClick={requestWebPushPermission}
@@ -483,7 +476,6 @@ const LiveFlightTracker: React.FC = () => {
           </div>
         </div>
 
-        {/* Metric Badges */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-4 border-t border-white/10">
           <div className="bg-white/5 rounded-xl p-3 border border-white/10">
             <p className="text-xs text-slate-400 font-medium">Active Flights</p>
@@ -504,7 +496,6 @@ const LiveFlightTracker: React.FC = () => {
         </div>
       </div>
 
-      {/* Multi-Flight Simultaneous Tracking Bar */}
       <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
@@ -560,7 +551,6 @@ const LiveFlightTracker: React.FC = () => {
         )}
       </div>
 
-      {/* Search & Filter Controls */}
       <div className="flex flex-col md:flex-row gap-3 justify-between items-center bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
         <div className="relative w-full md:w-96">
           <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
@@ -573,7 +563,6 @@ const LiveFlightTracker: React.FC = () => {
           />
         </div>
 
-        {/* Status Filter Tabs */}
         <div className="flex items-center gap-1 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
           <SlidersHorizontal className="w-4 h-4 text-slate-400 mr-1 hidden md:block" />
           {["ALL", "ON_TIME", "DELAYED", "BOARDING", "IN_FLIGHT", "LANDED"].map((st) => (
@@ -592,7 +581,6 @@ const LiveFlightTracker: React.FC = () => {
         </div>
       </div>
 
-      {/* Flight Cards Grid */}
       {loading ? (
         <div className="py-12 flex justify-center">
           <Loader />
@@ -614,7 +602,7 @@ const LiveFlightTracker: React.FC = () => {
                   isTracked ? "border-blue-500 ring-2 ring-blue-500/20" : "border-slate-200"
                 }`}
               >
-                {/* Card Top Header */}
+
                 <div className="p-5 pb-4">
                   <div className="flex justify-between items-start mb-3">
                     <div>
@@ -651,7 +639,6 @@ const LiveFlightTracker: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Route & Times */}
                   <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 mb-3">
                     <div className="flex items-center justify-between text-center">
                       <div className="text-left">
@@ -684,7 +671,6 @@ const LiveFlightTracker: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Additional Delay Context */}
                   <div className="space-y-1.5 text-xs text-slate-600 bg-amber-50/50 p-2.5 rounded-lg border border-amber-100">
                     <div className="flex items-start gap-1.5">
                       <Info className="w-3.5 h-3.5 text-amber-600 mt-0.5 flex-shrink-0" />
@@ -696,7 +682,6 @@ const LiveFlightTracker: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Footer Action */}
                 <div className="px-5 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-xs">
                   <span className="text-slate-400 font-mono text-[10px]">
                     Updated: {flight.lastUpdated}
@@ -731,7 +716,6 @@ const LiveFlightTracker: React.FC = () => {
         </div>
       )}
 
-      {/* Flight Detail & Real-Time Email Modal */}
       {selectedFlight && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 relative animate-in fade-in zoom-in-95">
@@ -759,13 +743,12 @@ const LiveFlightTracker: React.FC = () => {
             </div>
 
             <div className="space-y-4">
-              {/* Status Banner */}
+
               <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
                 <span className="text-xs font-semibold text-slate-500">Current Radar Status</span>
                 {getStatusBadge(selectedFlight.status)}
               </div>
 
-              {/* Schedule breakdown */}
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
                   <p className="text-slate-400 font-medium">Scheduled Departure</p>
@@ -779,7 +762,6 @@ const LiveFlightTracker: React.FC = () => {
                 </div>
               </div>
 
-              {/* Gate & Delay Reason */}
               <div className="p-4 bg-blue-50/60 rounded-xl border border-blue-100 text-xs space-y-2">
                 <div className="flex justify-between border-b border-blue-100 pb-2">
                   <span className="text-slate-600 font-semibold">Terminal & Gate:</span>

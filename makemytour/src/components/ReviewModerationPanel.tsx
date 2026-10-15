@@ -81,7 +81,7 @@ export const ReviewModerationPanel: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Moderation Queue Header */}
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900 text-white p-6 rounded-2xl">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
@@ -126,7 +126,6 @@ export const ReviewModerationPanel: React.FC = () => {
         </div>
       )}
 
-      {/* Moderation List */}
       {loading ? (
         <div className="py-16 text-center text-slate-500 space-y-3">
           <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto" />
@@ -149,7 +148,7 @@ export const ReviewModerationPanel: React.FC = () => {
                 key={rev.id}
                 className="bg-white border-2 border-amber-300/80 rounded-2xl p-6 shadow-sm space-y-4"
               >
-                {/* Reason & Target Header */}
+
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
                   <div className="flex items-center gap-2">
                     <span className="bg-rose-100 text-rose-800 border border-rose-300 text-xs font-black px-2.5 py-1 rounded-md flex items-center gap-1">
@@ -163,7 +162,6 @@ export const ReviewModerationPanel: React.FC = () => {
                   <span className="text-[11px] text-slate-400 font-mono">ID: {rev.id}</span>
                 </div>
 
-                {/* Review Details */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -189,7 +187,6 @@ export const ReviewModerationPanel: React.FC = () => {
                   </p>
                 </div>
 
-                {/* Attached Photos if present */}
                 {rev.photoUrls && rev.photoUrls.length > 0 && (
                   <div className="space-y-1">
                     <span className="text-[11px] font-bold text-slate-500 flex items-center gap-1">
@@ -211,7 +208,6 @@ export const ReviewModerationPanel: React.FC = () => {
                   </div>
                 )}
 
-                {/* Moderator Decision Action Buttons */}
                 <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
                   <Button
                     onClick={() => handleAction(rev.id, "DISMISS")}

@@ -57,7 +57,6 @@ public class BookingService {
             throw new InsufficientCapacityException("Not enough seats available. Requested: " + seats + ", Available: " + flight.getAvailableSeats());
         }
 
-        // Server-Side Authoritative Price Verification: Prevents client-side price tampering
         double unitPrice = flight.getPrice();
         if (freezeId != null && !freezeId.trim().isEmpty() && priceFreezeRepository != null) {
             Optional<PriceFreeze> freezeOpt = priceFreezeRepository.findById(freezeId.trim());
@@ -65,12 +64,14 @@ public class BookingService {
                 PriceFreeze freeze = freezeOpt.get();
                 if (freeze.isActive() && LocalDateTime.now().isBefore(freeze.getExpiresAt()) && flightId.equals(freeze.getItemId())) {
                     unitPrice = freeze.getFrozenPrice();
+                    freeze.setActive(false);
+                    priceFreezeRepository.save(freeze);
                 }
             }
         }
 
         double authoritativeTotal = unitPrice * seats;
-        // If client provided a price below 50% of authoritative total, clamp to authoritative price to defeat tampering
+
         if (price <= 0 || price < (authoritativeTotal * 0.5)) {
             price = authoritativeTotal;
         }
@@ -93,7 +94,6 @@ public class BookingService {
         user.getBookings().add(booking);
         userRepository.save(user);
 
-        // Dynamically create notification in DB for user
         notificationService.createNotification(
             userId,
             "Flight Booking Confirmed!",
@@ -123,7 +123,6 @@ public class BookingService {
             throw new InsufficientCapacityException("Not enough rooms available. Requested: " + rooms + ", Available: " + hotel.getAvailableRooms());
         }
 
-        // Server-Side Authoritative Price Verification: Prevents client-side price tampering
         double unitPrice = hotel.getPricePerNight();
         if (freezeId != null && !freezeId.trim().isEmpty() && priceFreezeRepository != null) {
             Optional<PriceFreeze> freezeOpt = priceFreezeRepository.findById(freezeId.trim());
@@ -131,6 +130,8 @@ public class BookingService {
                 PriceFreeze freeze = freezeOpt.get();
                 if (freeze.isActive() && LocalDateTime.now().isBefore(freeze.getExpiresAt()) && hotelId.equals(freeze.getItemId())) {
                     unitPrice = freeze.getFrozenPrice();
+                    freeze.setActive(false);
+                    priceFreezeRepository.save(freeze);
                 }
             }
         }
@@ -158,7 +159,6 @@ public class BookingService {
         user.getBookings().add(booking);
         userRepository.save(user);
 
-        // Dynamically create notification in DB for user
         notificationService.createNotification(
             userId,
             "Hotel Booking Confirmed!",

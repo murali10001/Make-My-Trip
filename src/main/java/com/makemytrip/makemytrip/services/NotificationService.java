@@ -27,21 +27,53 @@ public class NotificationService {
     }
 
     public List<Notification> getNotificationsForUser(String userId) {
-        List<Notification> all = notificationRepository.findAll();
-        return all.stream()
+        final String cleanUserId = (userId == null || userId.trim().isEmpty() || "null".equalsIgnoreCase(userId) || "undefined".equalsIgnoreCase(userId))
+                ? null
+                : userId.trim();
+
+        List<String> targetIds;
+        if (cleanUserId == null) {
+            targetIds = List.of("ALL", "all");
+        } else {
+            targetIds = List.of(cleanUserId, "ALL", "all");
+        }
+
+        List<Notification> notifications = notificationRepository.findByUserIdIn(targetIds);
+        return notifications.stream()
                 .filter(n -> n != null)
                 .filter(n -> {
-                    if (userId == null || userId.trim().isEmpty() || "null".equalsIgnoreCase(userId) || "undefined".equalsIgnoreCase(userId)) {
-                        return "ALL".equalsIgnoreCase(n.getUserId());
+                    if (cleanUserId != null && n.getDismissedUserIds() != null && n.getDismissedUserIds().contains(cleanUserId)) {
+                        return false;
                     }
-                    return userId.equalsIgnoreCase(n.getUserId()) || "ALL".equalsIgnoreCase(n.getUserId());
+                    return true;
                 })
                 .filter(n -> !"freeze".equalsIgnoreCase(n.getType()) && (n.getTitle() == null || !n.getTitle().contains("Fare Locked")))
                 .collect(Collectors.toList());
     }
 
     public void deleteNotification(String id) {
-        if (notificationRepository.existsById(id)) {
+        deleteNotification(id, null);
+    }
+
+    public void deleteNotification(String id, String userId) {
+        if (id == null) return;
+        java.util.Optional<Notification> opt = notificationRepository.findById(id);
+        if (!opt.isPresent()) return;
+
+        Notification notif = opt.get();
+        if ("ALL".equalsIgnoreCase(notif.getUserId())) {
+            if (userId != null && !userId.trim().isEmpty() && !"ALL".equalsIgnoreCase(userId)) {
+                if (notif.getDismissedUserIds() == null) {
+                    notif.setDismissedUserIds(new java.util.ArrayList<>());
+                }
+                if (!notif.getDismissedUserIds().contains(userId.trim())) {
+                    notif.getDismissedUserIds().add(userId.trim());
+                    notificationRepository.save(notif);
+                }
+            } else {
+                notificationRepository.deleteById(id);
+            }
+        } else {
             notificationRepository.deleteById(id);
         }
     }

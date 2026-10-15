@@ -85,7 +85,7 @@ class BookingServiceTest {
         assertEquals(2, booking.getQuantity());
         assertEquals(10000.0, booking.getTotalPrice());
 
-        assertEquals(8, testFlight.getAvailableSeats()); // 10 - 2
+        assertEquals(8, testFlight.getAvailableSeats());
         verify(flightRepository).save(testFlight);
         verify(userRepository).save(testUser);
         verify(notificationService).createNotification(eq("USR-100"), anyString(), anyString(), eq("flight"));
@@ -98,7 +98,7 @@ class BookingServiceTest {
         when(flightRepository.findById("FL-555")).thenReturn(Optional.of(testFlight));
 
         assertThrows(InsufficientCapacityException.class, () ->
-                bookingService.bookFlight("USR-100", "FL-555", 15, 75000.0) // requested 15, available 10
+                bookingService.bookFlight("USR-100", "FL-555", 15, 75000.0)
         );
     }
 
@@ -126,7 +126,7 @@ class BookingServiceTest {
         assertEquals(3, booking.getQuantity());
         assertEquals(36000.0, booking.getTotalPrice());
 
-        assertEquals(2, testHotel.getAvailableRooms()); // 5 - 3
+        assertEquals(2, testHotel.getAvailableRooms());
         verify(hotelRepository).save(testHotel);
         verify(userRepository).save(testUser);
         verify(notificationService).createNotification(eq("USR-100"), anyString(), anyString(), eq("hotel"));

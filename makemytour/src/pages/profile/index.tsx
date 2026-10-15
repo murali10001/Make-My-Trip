@@ -25,7 +25,9 @@ import {
   ArrowRight,
   RefreshCw,
   BookmarkCheck,
+  Sparkles,
 } from "lucide-react";
+import PersonalizedRecommendations from "@/components/PersonalizedRecommendations";
 import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "next/router";
 import { clearUser, setUser } from "@/store";
@@ -62,13 +64,12 @@ const ProfileDashboardPage = () => {
   const user = useSelector((state: any) => state.user.user);
   const router = useRouter();
 
-  const [activeTab, setActiveTab] = useState<"bookings" | "refunds" | "freezes" | "preferences">("bookings");
+  const [activeTab, setActiveTab] = useState<"bookings" | "refunds" | "freezes" | "preferences" | "recommendations">("bookings");
   const [frozenPrices, setFrozenPrices] = useState<any[]>([]);
   const [userRefunds, setUserRefunds] = useState<any[]>([]);
   const [loadingRefunds, setLoadingRefunds] = useState<boolean>(false);
   const [userPrefs, setUserPrefs] = useState<any | null>(null);
 
-  // Cancellation Modal State
   const [cancelModalOpen, setCancelModalOpen] = useState<boolean>(false);
   const [selectedBookingForCancel, setSelectedBookingForCancel] = useState<any | null>(null);
   const [cancellationReason, setCancellationReason] = useState<string>("");
@@ -79,7 +80,6 @@ const ProfileDashboardPage = () => {
   const [cancelError, setCancelError] = useState<string | null>(null);
   const [cancelSuccessMsg, setCancelSuccessMsg] = useState<string | null>(null);
 
-  // Edit Profile State
   const [isEditing, setIsEditing] = useState(false);
   const [userData, setUserData] = useState({
     firstName: user?.firstName ? user?.firstName : "",
@@ -99,11 +99,10 @@ const ProfileDashboardPage = () => {
 
     setLoadingRefunds(true);
     try {
-      // Fetch latest user refund records
+
       const refunds = await getUserRefunds(userId);
       setUserRefunds(refunds || []);
 
-      // Refresh user profile details from backend to sync bookings status
       if (user?.email) {
         const freshUser = await getuserbyemail(user.email);
         if (freshUser) {
@@ -171,7 +170,6 @@ const ProfileDashboardPage = () => {
     }
   }, [activeTab, user?.id, user?._id]);
 
-
   const handleRemoveFreeze = async (freezeId: string) => {
     setFrozenPrices((prev) => prev.filter((f: any) => f.freezeId !== freezeId));
 
@@ -216,7 +214,6 @@ const ProfileDashboardPage = () => {
     }
   };
 
-  // Trigger Cancellation Modal & Calculate Refund Breakdown Preview
   const handleOpenCancelModal = async (booking: any) => {
     setSelectedBookingForCancel(booking);
     setCancellationReason(PREDEFINED_CANCELLATION_REASONS[0]);
@@ -235,7 +232,7 @@ const ProfileDashboardPage = () => {
         const preview = await calculateRefundPreview(userId, bookingId);
         setRefundPreview(preview);
       } catch (err: any) {
-        // Fallback local preview based on 50% / 80% rule if API fails
+
         const total = booking?.totalPrice || booking?.price || 0;
         const refundAmt = Math.round(total * 0.5);
         setRefundPreview({
@@ -251,7 +248,6 @@ const ProfileDashboardPage = () => {
     }
   };
 
-  // Submit Cancellation Request
   const handleConfirmCancellation = async () => {
     if (!cancellationReason) {
       setCancelError("Please select a valid cancellation reason from the dropdown menu.");
@@ -281,7 +277,6 @@ const ProfileDashboardPage = () => {
         `Booking ${bookingId} cancelled successfully! Refund Request ID: ${refundRecord?.refundId || 'RF-SUCCESS'}`
       );
 
-      // Refresh refund records and user profile
       await fetchUserDataAndRefunds();
 
       setTimeout(() => {
@@ -310,7 +305,7 @@ const ProfileDashboardPage = () => {
   return (
     <div className="min-h-screen bg-slate-50 pt-8 pb-16 px-4">
       <div className="max-w-6xl mx-auto space-y-8">
-        {/* Top Header Banner */}
+
         <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-2xl shadow-xl p-6 text-white border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -367,11 +362,22 @@ const ProfileDashboardPage = () => {
               <BookmarkCheck className="w-3.5 h-3.5" />
               Travel Preferences
             </button>
+            <button
+              onClick={() => setActiveTab("recommendations")}
+              className={`px-4 py-2 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 ${
+                activeTab === "recommendations"
+                  ? "bg-gradient-to-r from-amber-400 to-orange-400 text-slate-950 shadow-md font-black"
+                  : "bg-slate-800/80 hover:bg-slate-800 text-slate-300"
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              Picks For You
+            </button>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Profile Sidebar */}
+
           <div className="md:col-span-1">
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
               <div className="flex justify-between items-center border-b border-slate-100 pb-4">
@@ -473,9 +479,8 @@ const ProfileDashboardPage = () => {
             </div>
           </div>
 
-          {/* Main Dashboard Content Tabs */}
           <div className="md:col-span-2 space-y-6">
-            {/* TAB 1: My Bookings */}
+
             {activeTab === "bookings" && (
               <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-4">
@@ -591,7 +596,6 @@ const ProfileDashboardPage = () => {
               </div>
             )}
 
-            {/* TAB 2: Live Refund Status Tracker */}
             {activeTab === "refunds" && (
               <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-4">
@@ -661,7 +665,6 @@ const ProfileDashboardPage = () => {
                             </div>
                           </div>
 
-                          {/* Predefined Policy Notice */}
                           <div className="bg-amber-50/80 border border-amber-200/60 rounded-xl p-3 text-xs text-amber-900 flex items-start gap-2">
                             <ShieldCheck className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
                             <div>
@@ -672,11 +675,10 @@ const ProfileDashboardPage = () => {
                             </div>
                           </div>
 
-                          {/* Interactive Step Timeline Bar */}
                           <div className="pt-2">
                             <p className="text-xs font-bold text-slate-700 mb-3">Live Progress Tracker:</p>
                             <div className="grid grid-cols-3 gap-2 text-center relative">
-                              {/* Step 1 */}
+
                               <div className="flex flex-col items-center">
                                 <div className="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-xs shadow-sm">
                                   <Check className="w-4 h-4" />
@@ -685,7 +687,6 @@ const ProfileDashboardPage = () => {
                                 <span className="text-[9px] text-slate-400">{rf.requestDate?.split(" ")[0] || "Done"}</span>
                               </div>
 
-                              {/* Step 2 */}
                               <div className="flex flex-col items-center">
                                 <div
                                   className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-sm ${
@@ -700,7 +701,6 @@ const ProfileDashboardPage = () => {
                                 <span className="text-[9px] text-slate-500">{currentStep >= 2 ? "Verified" : "In Progress"}</span>
                               </div>
 
-                              {/* Step 3 */}
                               <div className="flex flex-col items-center">
                                 <div
                                   className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-sm ${
@@ -734,7 +734,6 @@ const ProfileDashboardPage = () => {
               </div>
             )}
 
-            {/* TAB 3: Price Freeze Locker */}
             {activeTab === "freezes" && (
               <div className="bg-gradient-to-r from-blue-900 to-indigo-950 text-white rounded-2xl shadow-xl p-6 border border-blue-800 space-y-6">
                 <div className="flex items-center justify-between border-b border-blue-800/60 pb-4">
@@ -820,7 +819,6 @@ const ProfileDashboardPage = () => {
               </div>
             )}
 
-            {/* TAB 4: Travel Preferences */}
             {activeTab === "preferences" && (
               <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-4">
@@ -839,7 +837,7 @@ const ProfileDashboardPage = () => {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Flight Seat Preference */}
+
                   <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-3">
                     <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
                       <Plane className="w-4 h-4 text-cyan-600" />
@@ -856,7 +854,6 @@ const ProfileDashboardPage = () => {
                     </p>
                   </div>
 
-                  {/* Hotel Room Preference */}
                   <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-3">
                     <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
                       <Building2 className="w-4 h-4 text-indigo-600" />
@@ -875,11 +872,16 @@ const ProfileDashboardPage = () => {
                 </div>
               </div>
             )}
+
+            {activeTab === "recommendations" && (
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
+                <PersonalizedRecommendations />
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* CANCELLATION & REFUND MODAL */}
       <Dialog open={cancelModalOpen} onOpenChange={setCancelModalOpen}>
         <DialogContent className="max-w-lg bg-white rounded-2xl p-6 shadow-2xl">
           <DialogHeader>
@@ -900,7 +902,7 @@ const ProfileDashboardPage = () => {
             </div>
           ) : (
             <div className="space-y-5 py-2">
-              {/* Booking Info Header */}
+
               <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex justify-between items-center text-xs">
                 <div>
                   <p className="font-bold text-slate-900 text-sm">
@@ -916,7 +918,6 @@ const ProfileDashboardPage = () => {
                 </div>
               </div>
 
-              {/* Dynamic Policy & Refund Breakdown */}
               <div className="bg-amber-50/80 border border-amber-200 p-4 rounded-xl space-y-2 text-xs">
                 <div className="flex items-center justify-between font-bold text-amber-900">
                   <span className="flex items-center gap-1.5">
@@ -944,7 +945,6 @@ const ProfileDashboardPage = () => {
                 </div>
               </div>
 
-              {/* Predefined Dropdown Reason */}
               <div className="space-y-1.5">
                 <label className="block text-xs font-bold text-slate-800">
                   Select Reason for Cancellation <span className="text-red-500">*</span>
@@ -962,7 +962,6 @@ const ProfileDashboardPage = () => {
                 </select>
               </div>
 
-              {/* Optional Comments */}
               <div className="space-y-1.5">
                 <label className="block text-xs font-bold text-slate-800">Additional Comments (Optional)</label>
                 <textarea
@@ -981,7 +980,6 @@ const ProfileDashboardPage = () => {
                 </div>
               )}
 
-              {/* Modal Buttons */}
               <div className="flex gap-3 pt-2">
                 <Button
                   variant="outline"

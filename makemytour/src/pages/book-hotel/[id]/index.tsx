@@ -87,7 +87,6 @@ const BookHotelPage = () => {
   const [open, setopem] = useState(false);
   const dispatch = useDispatch();
 
-  // Dynamic Offers & Pricing state
   const [offers, setOffers] = useState<any[]>([]);
   const [couponCodeInput, setCouponCodeInput] = useState<string>("");
   const [appliedCoupon, setAppliedCoupon] = useState<{
@@ -99,15 +98,12 @@ const BookHotelPage = () => {
   const [couponError, setCouponError] = useState<string | null>(null);
   const [couponApplying, setCouponApplying] = useState<boolean>(false);
 
-  // Price Freeze Locker state
   const [priceFrozen, setPriceFrozen] = useState<any | null>(null);
   const [freezeLoading, setFreezeLoading] = useState<boolean>(false);
 
-  // Price History graph modal state
   const [showHistoryModal, setShowHistoryModal] = useState<boolean>(false);
   const [dynamicPricingInfo, setDynamicPricingInfo] = useState<any | null>(null);
 
-  // Room type selection state
   const [selectedRoom, setSelectedRoom] = useState<{ roomTypeName: string; priceUpgradeAddon: number } | null>(null);
 
   useEffect(() => {
@@ -138,7 +134,6 @@ const BookHotelPage = () => {
           );
           setDynamicPricingInfo(priceInfo);
 
-          // Check active price freeze for this item
           let found: any = null;
           if (typeof window !== "undefined") {
             try {
@@ -207,7 +202,6 @@ const BookHotelPage = () => {
   const amenitiesList = hotel.amenities ? hotel.amenities.split(",").map((a) => a.trim()).filter(Boolean) : [];
   const roomType = hotel.roomType || "Standard Room";
 
-  // Effective unit rate prioritizing Price Freeze, then Dynamic Pricing Rate, then Base Price
   const basePricePerNight = priceFrozen
     ? priceFrozen.frozenPrice
     : (dynamicPricingInfo ? dynamicPricingInfo.finalPrice : (hotel.pricePerNight || 4200));
@@ -304,7 +298,8 @@ const BookHotelPage = () => {
         userId,
         hotel?.id || hotel?._id,
         quantity,
-        grandTotal
+        grandTotal,
+        priceFrozen?.freezeId || ""
       );
       const updateuser = {
         ...user,
@@ -384,8 +379,7 @@ const BookHotelPage = () => {
   return (
     <div className="min-h-screen bg-gray-50 pb-12">
       <div className="max-w-7xl mx-auto px-4 py-8 space-y-6">
-        
-        {/* Header Title Bar */}
+
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
@@ -426,10 +420,8 @@ const BookHotelPage = () => {
           </div>
         </div>
 
-        {/* Main Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
-          {/* Left Column: Image & Details */}
+
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-4">
               {mainImage && (
@@ -441,7 +433,7 @@ const BookHotelPage = () => {
               )}
               <h2 className="font-bold text-lg text-slate-900">About {hotel.hotelName}</h2>
               <p className="text-xs text-slate-600 leading-relaxed">{description}</p>
-              
+
               <div className="pt-2 border-t">
                 <p className="text-xs font-bold text-slate-800 mb-2">Amenities:</p>
                 <div className="flex flex-wrap gap-2">
@@ -454,7 +446,6 @@ const BookHotelPage = () => {
               </div>
             </div>
 
-            {/* Interactive Hotel Room Picker & 3D Tour */}
             <HotelRoomPicker
               hotelId={hotel.id || hotel._id || "ht-101"}
               hotelName={hotel.hotelName || "Hotel"}
@@ -479,7 +470,6 @@ const BookHotelPage = () => {
               </div>
             )}
 
-            {/* Reviews & Guest Ratings Section */}
             <ReviewsSection
               targetId={hotel.id || hotel._id || (id as string)}
               targetType="HOTEL"
@@ -488,7 +478,6 @@ const BookHotelPage = () => {
             />
           </div>
 
-          {/* Right Column: Rate Summary & Bank Coupons */}
           <div className="lg:col-span-1 space-y-6">
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 sticky top-24 space-y-6">
               <h2 className="text-lg font-bold border-b pb-3 flex items-center">
@@ -497,7 +486,7 @@ const BookHotelPage = () => {
               </h2>
 
               <div className="space-y-3 text-sm">
-                {/* Room Counter Selector */}
+
                 <div className="flex items-center justify-between bg-slate-50 p-2.5 rounded-xl border border-slate-200">
                   <div>
                     <span className="font-extrabold text-slate-900 text-xs block">Rooms to Book</span>
@@ -563,7 +552,6 @@ const BookHotelPage = () => {
                 </div>
               </div>
 
-              {/* Bank Card Offers & Coupon Apply Box */}
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
                 <div className="flex items-center gap-1.5 font-bold text-xs text-slate-900">
                   <Tag className="w-4 h-4 text-emerald-600" />
@@ -659,7 +647,6 @@ const BookHotelPage = () => {
         </div>
       </div>
 
-      {/* Price Trend History Modal */}
       {showHistoryModal && dynamicPricingInfo && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4">

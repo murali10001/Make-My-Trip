@@ -41,9 +41,6 @@ public class SelectionService {
     @Autowired(required = false)
     private FlightRepository flightRepository;
 
-    /**
-     * Get or dynamically generate standard flight seat map with premium options.
-     */
     public SeatMap getSeatMapForFlight(String flightId) {
         return seatMapRepository.findByFlightId(flightId).orElseGet(() -> {
             SeatMap map = new SeatMap();
@@ -73,7 +70,6 @@ public class SelectionService {
                     String desc = "Standard Seat";
                     String status = "AVAILABLE";
 
-                    // Pre-occupy a few seats for realism
                     if (seatNo.equals("1B") || seatNo.equals("2D") || seatNo.equals("5A") || seatNo.equals("8F") || seatNo.equals("10C")) {
                         status = "OCCUPIED";
                     }
@@ -106,7 +102,7 @@ public class SelectionService {
                             addon = 250.0;
                             desc = "Front Zone Premium Middle Seat";
                         }
-                    } else if (r == 6) { // Emergency Exit Row
+                    } else if (r == 6) {
                         if (isWindow) {
                             tier = "WINDOW_EXIT_ROW";
                             addon = 650.0;
@@ -120,14 +116,14 @@ public class SelectionService {
                             addon = 400.0;
                             desc = "Emergency Exit Row Middle Seat (Extra Legroom)";
                         }
-                    } else { // Standard Rows 4-5 & 7-12
+                    } else {
                         if (isWindow) {
                             tier = "WINDOW_STANDARD";
-                            addon = 350.0; // Window Seat Extra Charge
+                            addon = 350.0;
                             desc = "Standard Window Seat (+₹350 Window Charge)";
                         } else if (isAisle) {
                             tier = "AISLE_STANDARD";
-                            addon = 200.0; // Aisle Access Charge
+                            addon = 200.0;
                             desc = "Standard Aisle Seat (+₹200 Aisle Charge)";
                         } else {
                             tier = "MIDDLE_STANDARD";
@@ -145,9 +141,6 @@ public class SelectionService {
         });
     }
 
-    /**
-     * Dynamically reserve a seat in real time.
-     */
     public SeatMap reserveSeat(String flightId, String seatNo, String userId) {
         SeatMap map = getSeatMapForFlight(flightId);
 
@@ -169,9 +162,6 @@ public class SelectionService {
         return map;
     }
 
-    /**
-     * Get hotel room-type grid options dynamically from database or hotel entity.
-     */
     public List<RoomTypeOption> getRoomOptionsForHotel(String hotelId) {
         if (hotelId == null || hotelId.trim().isEmpty()) {
             return Collections.emptyList();
@@ -224,9 +214,6 @@ public class SelectionService {
         return Collections.emptyList();
     }
 
-    /**
-     * Save or update user seat/room preferences for future bookings.
-     */
     public UserPreferences saveUserPreferences(UserPreferences prefs) {
         if (prefs.getUserId() == null || prefs.getUserId().trim().isEmpty()) {
             throw new IllegalArgumentException("User ID is required to save preferences.");
@@ -245,9 +232,6 @@ public class SelectionService {
         return userPreferencesRepository.save(existing);
     }
 
-    /**
-     * Retrieve user seat/room preferences.
-     */
     public UserPreferences getUserPreferences(String userId) {
         return userPreferencesRepository.findByUserId(userId).orElseGet(() -> {
             UserPreferences defaultPrefs = new UserPreferences();

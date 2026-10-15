@@ -13,15 +13,15 @@ public class Review {
 
     @Id
     private String id;
-    private String targetId;      // e.g., flightId or hotelId
-    private String targetType;    // "FLIGHT" or "HOTEL"
-    private String targetTitle;   // e.g., "Air India AI-101" or "The Oberoi Palace"
+    private String targetId;
+    private String targetType;
+    private String targetTitle;
     private String userId;
     private String userName;
     private String userEmail;
-    private int rating;           // 1 to 5 stars
-    private String title;         // Review title / summary
-    private String comment;       // Detailed review text
+    private int rating;
+    private String title;
+    private String comment;
     private List<String> photoUrls = new ArrayList<>();
     private int helpfulCount = 0;
     private List<String> helpfulUserIds = new ArrayList<>();

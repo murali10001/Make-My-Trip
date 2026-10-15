@@ -6,14 +6,14 @@ import java.util.Map;
 public class DynamicPrice {
 
     private String itemId;
-    private String itemType; // "FLIGHT" or "HOTEL"
+    private String itemType;
     private double basePrice;
     private double finalPrice;
-    private String demandLevel; // "HIGH", "MEDIUM", "NORMAL"
-    private String seasonType; // "HOLIDAY_PEAK", "WEEKEND", "OFF_PEAK"
-    private double demandSurgePercentage; // e.g. 20.0 for +20%
-    private double seasonalMultiplier; // e.g. 1.20
-    private String surgeReason; // e.g. "High Demand & Peak Holiday Surge (+20%)"
+    private String demandLevel;
+    private String seasonType;
+    private double demandSurgePercentage;
+    private double seasonalMultiplier;
+    private String surgeReason;
     private List<Map<String, Object>> priceHistory;
 
     public DynamicPrice() {}

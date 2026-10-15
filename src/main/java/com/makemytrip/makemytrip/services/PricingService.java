@@ -37,8 +37,6 @@ public class PricingService {
     @Autowired
     private NotificationService notificationService;
 
-
-
     public DynamicPrice calculateDynamicPrice(String itemId, String itemType, double basePrice, String demandLevel, String seasonType) {
         if (itemId != null && !itemId.trim().isEmpty()) {
             if ("FLIGHT".equalsIgnoreCase(itemType) && flightRepository != null) {
@@ -167,7 +165,6 @@ public class PricingService {
     public List<OfferCoupon> getAvailableOffers() {
         return offerCouponRepository.findAll();
     }
-
 
     public Map<String, Object> applyCoupon(String code, double bookingAmount) {
         if (code == null || code.trim().isEmpty()) {

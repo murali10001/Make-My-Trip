@@ -41,9 +41,6 @@ public class RefundService {
     @Autowired
     private NotificationService notificationService;
 
-    /**
-     * Preview refund calculation based on 24-hour reservation policy rules.
-     */
     public Map<String, Object> calculateRefundPreview(String userId, String bookingId) {
         Users user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User with ID '" + userId + "' not found"));
@@ -57,7 +54,6 @@ public class RefundService {
         double refundPercentage = 80.0;
         String policyApplied = "Standard Cancellation Policy (80% Refund)";
 
-        // Policy Rule: 50% refund if cancelled within 24 hours of reservation date/time
         if (booking.getBookingTimestamp() != null && !booking.getBookingTimestamp().trim().isEmpty()) {
             try {
                 LocalDateTime bookingTime = LocalDateTime.parse(booking.getBookingTimestamp());
@@ -82,7 +78,7 @@ public class RefundService {
                     policyApplied = "24-Hour Reservation Policy (50% Refund)";
                 }
             } catch (Exception e) {
-                // Default to 50% refund policy if date parsing fails
+
                 refundPercentage = 50.0;
                 policyApplied = "24-Hour Reservation Policy (50% Refund)";
             }
@@ -104,9 +100,6 @@ public class RefundService {
         return preview;
     }
 
-    /**
-     * Process booking cancellation, restore inventory, and create refund request.
-     */
     public RefundRequest processCancellationAndRequestRefund(String userId, String bookingId, String reason, String comment) {
         if (reason == null || reason.trim().isEmpty()) {
             throw new IllegalArgumentException("A cancellation reason must be selected from the predefined list.");
@@ -120,26 +113,21 @@ public class RefundService {
             throw new CancellationNotAllowedException("Booking '" + bookingId + "' is already cancelled.");
         }
 
-        // Calculate refund breakdown
         Map<String, Object> preview = calculateRefundPreview(userId, bookingId);
         double originalAmount = (double) preview.get("originalAmount");
         double refundAmount = (double) preview.get("refundAmount");
         double refundPercentage = (double) preview.get("refundPercentage");
         String policyApplied = (String) preview.get("policyApplied");
 
-        // Generate Refund ID
         String refundId = "RF-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 
-        // Update booking state in User object
         booking.setStatus("CANCELLED");
         booking.setCancellationReason(reason);
         booking.setRefundId(refundId);
         userRepository.save(user);
 
-        // Restore flight / hotel capacity inventory
         restoreInventory(booking);
 
-        // Build RefundRequest Document
         RefundRequest refundRequest = new RefundRequest();
         refundRequest.setRefundId(refundId);
         refundRequest.setBookingId(bookingId);
@@ -153,7 +141,7 @@ public class RefundService {
         refundRequest.setComment(comment != null ? comment : "");
         refundRequest.setRequestDate(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
         refundRequest.setStatus("PENDING");
-        refundRequest.setCurrentStep(1); // 1: Requested, 2: Processing, 3: Completed
+        refundRequest.setCurrentStep(1);
         refundRequest.setPolicyApplied(policyApplied);
 
         String estDate = LocalDate.now().plusDays(2).format(DateTimeFormatter.ofPattern("MMM dd, yyyy"));
@@ -161,7 +149,6 @@ public class RefundService {
 
         RefundRequest savedRequest = refundRepository.save(refundRequest);
 
-        // Create live notification for user in MongoDB
         notificationService.createNotification(
                 userId,
                 "Booking Cancelled & Refund Initiated",
@@ -172,32 +159,19 @@ public class RefundService {
         return savedRequest;
     }
 
-    /**
-     * Get all refund requests in the database.
-     */
     public List<RefundRequest> getAllRefunds() {
         return refundRepository.findAll();
     }
 
-    /**
-     * Get all refund requests for a specific user.
-     */
     public List<RefundRequest> getUserRefunds(String userId) {
         return refundRepository.findByUserId(userId);
     }
 
-
-    /**
-     * Get a refund request by refund ID.
-     */
     public RefundRequest getRefundByRefundId(String refundId) {
         return refundRepository.findByRefundId(refundId)
                 .orElseThrow(() -> new RefundNotFoundException("Refund request with ID '" + refundId + "' not found"));
     }
 
-    /**
-     * Admin/System update for refund status: PENDING -> PROCESSED -> COMPLETED.
-     */
     public RefundRequest updateRefundStatus(String refundId, String newStatus) {
         RefundRequest refund = getRefundByRefundId(refundId);
         String upperStatus = newStatus.toUpperCase();
@@ -214,7 +188,6 @@ public class RefundService {
 
         RefundRequest updated = refundRepository.save(refund);
 
-        // Notify user about status change
         notificationService.createNotification(
                 refund.getUserId(),
                 "Refund Status Update (" + refundId + ")",
@@ -256,7 +229,7 @@ public class RefundService {
                 }
             }
         } catch (Exception e) {
-            // Inventory restore exception logged silently to avoid breaking cancellation flow
+
             System.err.println("Failed to restore inventory for booking target " + booking.getTargetId() + ": " + e.getMessage());
         }
     }

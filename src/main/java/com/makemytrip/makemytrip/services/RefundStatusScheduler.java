@@ -17,16 +17,13 @@ public class RefundStatusScheduler {
     @Autowired
     private NotificationService notificationService;
 
-    // Time intervals for banking workflow simulation:
-    // PENDING -> PROCESSED: 5 seconds delay
-    // PROCESSED -> COMPLETED: 10 seconds delay
     private static final long STEP_1_TO_2_DELAY_MS = 5_000L;
     private static final long STEP_2_TO_3_DELAY_MS = 10_000L;
 
     @Scheduled(fixedRate = 2000)
     public void monitorRefundStatuses() {
         long nowMs = System.currentTimeMillis();
-        // Only query active refund requests pending banking clearance
+
         List<RefundRequest> refunds = refundRepository.findByStatusIn(java.util.List.of("PENDING", "PROCESSED"));
 
         for (RefundRequest refund : refunds) {
@@ -34,7 +31,6 @@ public class RefundStatusScheduler {
 
             String status = refund.getStatus().toUpperCase();
 
-            // Initialize lastUpdatedEpochMs for legacy records if 0
             if (refund.getLastUpdatedEpochMs() <= 0) {
                 refund.setLastUpdatedEpochMs(nowMs);
                 refundRepository.save(refund);
@@ -55,7 +51,6 @@ public class RefundStatusScheduler {
 
                     System.out.println("[REAL-TIME REFUND SCHEDULER] Refund " + refund.getRefundId() + " passed 5s verification. Status updated to PROCESSED (" + bankRef + ")");
 
-                    // Notify User in MongoDB
                     if (notificationService != null) {
                         String targetUser = refund.getUserId() != null && !refund.getUserId().trim().isEmpty() ? refund.getUserId() : "ALL";
                         notificationService.createNotification(
@@ -64,14 +59,6 @@ public class RefundStatusScheduler {
                             "Refund " + refund.getRefundId() + " for Booking " + refund.getBookingId() + " is now PROCESSED by bank (" + bankRef + ").",
                             "refund"
                         );
-                        if (!"ALL".equals(targetUser)) {
-                            notificationService.createNotification(
-                                "ALL",
-                                "Refund Status Update: PROCESSED (" + refund.getRefundId() + ")",
-                                "Refund " + refund.getRefundId() + " for Booking " + refund.getBookingId() + " is now PROCESSED by bank (" + bankRef + ").",
-                                "refund"
-                            );
-                        }
                     }
                 }
             } else if ("PROCESSED".equals(status)) {
@@ -86,7 +73,6 @@ public class RefundStatusScheduler {
 
                     System.out.println("[REAL-TIME REFUND SCHEDULER] Refund " + refund.getRefundId() + " passed 10s clearance. Status updated to COMPLETED (UTR: " + utrRef + ")");
 
-                    // Notify User in MongoDB
                     if (notificationService != null) {
                         String targetUser = refund.getUserId() != null && !refund.getUserId().trim().isEmpty() ? refund.getUserId() : "ALL";
                         notificationService.createNotification(
@@ -95,14 +81,6 @@ public class RefundStatusScheduler {
                             "Refund " + refund.getRefundId() + " (INR " + refund.getRefundAmount() + ") has been COMPLETED and credited (UTR: " + utrRef + ").",
                             "refund"
                         );
-                        if (!"ALL".equals(targetUser)) {
-                            notificationService.createNotification(
-                                "ALL",
-                                "Refund Completed & Credited (" + refund.getRefundId() + ")",
-                                "Refund " + refund.getRefundId() + " (INR " + refund.getRefundAmount() + ") has been COMPLETED and credited (UTR: " + utrRef + ").",
-                                "refund"
-                            );
-                        }
                     }
                 }
             }

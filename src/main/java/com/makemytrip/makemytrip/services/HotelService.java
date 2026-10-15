@@ -20,6 +20,26 @@ public class HotelService {
         return hotelRepository.findAll();
     }
 
+    public List<Hotel> getHotels(String location, String query) {
+        String search = null;
+        if (location != null && !location.trim().isEmpty() && !"null".equalsIgnoreCase(location) && !"undefined".equalsIgnoreCase(location)) {
+            search = location.trim();
+        } else if (query != null && !query.trim().isEmpty() && !"null".equalsIgnoreCase(query) && !"undefined".equalsIgnoreCase(query)) {
+            search = query.trim();
+        }
+
+        if (search != null) {
+            String baseSearch = search.replaceAll("\\s*\\([A-Za-z0-9\\s]+\\)\\s*", "").trim();
+            String term = baseSearch.isEmpty() ? search : baseSearch;
+            List<Hotel> matches = hotelRepository.findByLocationContainingIgnoreCase(term);
+            if (matches.isEmpty()) {
+                matches = hotelRepository.findByHotelNameContainingIgnoreCase(term);
+            }
+            return matches;
+        }
+        return hotelRepository.findAll();
+    }
+
     public Hotel getHotelById(String id) {
         return hotelRepository.findById(id)
             .orElseThrow(() -> new HotelNotFoundException("Hotel with ID " + id + " not found"));

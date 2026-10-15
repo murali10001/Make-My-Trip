@@ -63,12 +63,12 @@ public class SeatMap {
     }
 
     public static class SeatItem {
-        private String seatNo; // e.g. "1A", "12F"
+        private String seatNo;
         private int row;
-        private String column; // "A", "B", "C", "D", "E", "F"
-        private String tier; // "EXTRA_LEGROOM", "PREMIUM_FRONT", "STANDARD_WINDOW", "STANDARD"
-        private double priceAddon; // e.g. 750.0, 450.0, 250.0, 0.0
-        private String status; // "AVAILABLE", "OCCUPIED"
+        private String column;
+        private String tier;
+        private double priceAddon;
+        private String status;
         private String featureDescription;
 
         public SeatItem() {}

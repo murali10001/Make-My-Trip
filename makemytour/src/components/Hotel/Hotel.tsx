@@ -27,7 +27,7 @@ const HotelList = ({ onSelect }: any) => {
     };
     fetchhotel();
   }, []);
-  
+
   if (loading) {
     return <Loader />;
   }

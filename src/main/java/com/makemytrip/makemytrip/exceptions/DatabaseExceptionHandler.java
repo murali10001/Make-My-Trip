@@ -19,7 +19,6 @@ public class DatabaseExceptionHandler {
     public ResponseEntity<?> handleDatabaseException(DataAccessException ex, HttpServletRequest request) {
         logger.warning("Database access exception occurred on URI " + request.getRequestURI() + ": " + ex.getMessage());
 
-        // For list endpoints (/hotel, /flight), return empty list instead of crashing with HTTP 500!
         String uri = request.getRequestURI();
         if (uri.endsWith("/hotel") || uri.endsWith("/flight")) {
             return ResponseEntity.ok(Collections.emptyList());

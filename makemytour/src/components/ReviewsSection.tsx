@@ -90,8 +90,6 @@ const FLAG_REASONS = [
   "Irrelevant or Off-topic Content",
 ];
 
-
-
 export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
   targetId,
   targetType,
@@ -104,14 +102,12 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
     : "Verified Traveler";
   const currentUserEmail = currentUser?.email || "guest@traveler.com";
 
-  // Data state
   const [data, setData] = useState<ReviewsSummaryData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [sortOption, setSortOption] = useState<string>("helpful");
-  const [filterRating, setFilterRating] = useState<number>(0); // 0 means all
+  const [filterRating, setFilterRating] = useState<number>(0);
   const [photosOnly, setPhotosOnly] = useState<boolean>(false);
 
-  // Write Review Modal state
   const [writeModalOpen, setWriteModalOpen] = useState<boolean>(false);
   const [formRating, setFormRating] = useState<number>(5);
   const [formHoverRating, setFormHoverRating] = useState<number>(0);
@@ -123,21 +119,17 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
   const [formError, setFormError] = useState<string | null>(null);
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
 
-  // Flag Modal state
   const [flagModalOpen, setFlagModalOpen] = useState<boolean>(false);
   const [flagTargetReview, setFlagTargetReview] = useState<ReviewItem | null>(null);
   const [selectedFlagReason, setSelectedFlagReason] = useState<string>(FLAG_REASONS[0]);
   const [flagSubmitting, setFlagSubmitting] = useState<boolean>(false);
 
-  // Photo Lightbox modal
   const [lightboxPhoto, setLightboxPhoto] = useState<string | null>(null);
 
-  // Expanded replies state: key is reviewId
   const [openReplyBox, setOpenReplyBox] = useState<Record<string, boolean>>({});
   const [replyInputs, setReplyInputs] = useState<Record<string, string>>({});
   const [replySubmitting, setReplySubmitting] = useState<Record<string, boolean>>({});
 
-  // Fetch reviews from DB
   const fetchReviewsData = async () => {
     if (!targetId) return;
     setLoading(true);
@@ -157,7 +149,6 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
     fetchReviewsData();
   }, [targetId, targetType, sortOption, filterRating, photosOnly]);
 
-  // Handle Review Submission
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formTitle.trim()) {
@@ -202,7 +193,6 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
     }
   };
 
-  // Add photo URL
   const handleAddPhotoUrl = () => {
     if (photoInputUrl.trim() && !formPhotoUrls.includes(photoInputUrl.trim())) {
       setFormPhotoUrls([...formPhotoUrls, photoInputUrl.trim()]);
@@ -210,13 +200,10 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
     }
   };
 
-
-
   const handleRemovePhoto = (index: number) => {
     setFormPhotoUrls(formPhotoUrls.filter((_, i) => i !== index));
   };
 
-  // Handle Helpful Vote
   const handleToggleHelpful = async (reviewId: string) => {
     try {
       await toggleReviewHelpful(reviewId, currentUserId);
@@ -226,14 +213,12 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
     }
   };
 
-  // Open flag modal
   const handleOpenFlagModal = (review: ReviewItem) => {
     setFlagTargetReview(review);
     setSelectedFlagReason(FLAG_REASONS[0]);
     setFlagModalOpen(true);
   };
 
-  // Submit flag
   const handleSubmitFlag = async () => {
     if (!flagTargetReview) return;
     setFlagSubmitting(true);
@@ -248,7 +233,6 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
     }
   };
 
-  // Handle Reply Submit
   const handleSendReply = async (reviewId: string) => {
     const text = replyInputs[reviewId]?.trim();
     if (!text) return;
@@ -281,7 +265,7 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
-      {/* Header and Rating Overview */}
+
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-6">
         <div>
           <div className="flex items-center gap-2">
@@ -310,10 +294,9 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
         </Button>
       </div>
 
-      {/* Aggregate Score & Distribution Breakdown */}
       {data && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-slate-50/70 p-5 rounded-2xl border border-slate-100">
-          {/* Main Average Score */}
+
           <div className="flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-slate-200 pb-4 md:pb-0 pr-0 md:pr-4 text-center">
             <div className="text-4xl font-black text-slate-900 tracking-tight">
               {data.averageRating > 0 ? data.averageRating.toFixed(1) : "5.0"}
@@ -342,7 +325,6 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
             )}
           </div>
 
-          {/* Star Distribution Bars */}
           <div className="md:col-span-2 space-y-1.5 flex flex-col justify-center">
             {[5, 4, 3, 2, 1].map((star) => {
               const count = data.ratingDistribution[star] || 0;
@@ -377,9 +359,8 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
         </div>
       )}
 
-      {/* Filter and Sort Controls */}
       <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-        {/* Star Rating Filters */}
+
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="text-xs font-bold text-slate-500 flex items-center gap-1 mr-1">
             <Filter className="w-3.5 h-3.5" /> Filter:
@@ -421,7 +402,6 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
           </button>
         </div>
 
-        {/* Sorting Dropdown */}
         <div className="flex items-center gap-2">
           <span className="text-xs font-bold text-slate-500">Sort By:</span>
           <select
@@ -437,7 +417,6 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
         </div>
       </div>
 
-      {/* Review Cards List */}
       {loading ? (
         <div className="py-12 flex flex-col items-center justify-center text-slate-400 space-y-2">
           <div className="w-7 h-7 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
@@ -476,7 +455,7 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                     : "border-slate-200 hover:border-slate-300 shadow-xs"
                 }`}
               >
-                {/* Author Info & Date Header */}
+
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-full bg-linear-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center font-bold text-sm shadow-xs">
@@ -493,7 +472,6 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                     </div>
                   </div>
 
-                  {/* Flag Status or Flag Button */}
                   {rev.flagged ? (
                     <span className="text-[11px] font-bold text-amber-700 bg-amber-100/80 px-2 py-1 rounded-md flex items-center gap-1 border border-amber-300">
                       <ShieldAlert className="w-3.5 h-3.5" /> Flagged for Moderation
@@ -510,7 +488,6 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                   )}
                 </div>
 
-                {/* Star Rating & Title */}
                 <div>
                   <div className="flex items-center gap-1.5 mb-1">
                     <div className="flex text-amber-400">
@@ -530,12 +507,10 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                   <h4 className="font-extrabold text-slate-900 text-sm leading-snug">{rev.title}</h4>
                 </div>
 
-                {/* Review Body */}
                 <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line">
                   {rev.comment}
                 </p>
 
-                {/* Photos Gallery */}
                 {rev.photoUrls && rev.photoUrls.length > 0 && (
                   <div className="pt-1">
                     <p className="text-[11px] font-bold text-slate-500 mb-1.5 flex items-center gap-1">
@@ -562,10 +537,9 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                   </div>
                 )}
 
-                {/* Helpful and Reply Actions Bar */}
                 <div className="flex items-center justify-between pt-2 border-t border-slate-100">
                   <div className="flex items-center gap-3">
-                    {/* Thumbs up / Helpful Vote */}
+
                     <button
                       onClick={() => handleToggleHelpful(rev.id)}
                       className={`text-xs px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 transition-all ${
@@ -578,7 +552,6 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                       <span>Helpful ({rev.helpfulCount})</span>
                     </button>
 
-                    {/* Reply Toggle */}
                     <button
                       onClick={() =>
                         setOpenReplyBox((prev) => ({
@@ -601,10 +574,9 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                   </div>
                 </div>
 
-                {/* Threaded Replies Section */}
                 {isReplyOpen && (
                   <div className="bg-slate-50 rounded-xl p-3.5 border border-slate-200/80 space-y-3 mt-2">
-                    {/* Existing Replies List */}
+
                     {rev.replies && rev.replies.length > 0 ? (
                       <div className="space-y-2">
                         {rev.replies.map((rep) => (
@@ -629,7 +601,6 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                       <p className="text-xs text-slate-400 italic">No replies yet. Start the conversation below!</p>
                     )}
 
-                    {/* Inline Reply Input */}
                     <div className="flex gap-2 pt-1">
                       <input
                         type="text"
@@ -666,7 +637,6 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
         </div>
       )}
 
-      {/* Write Review Dialog / Modal */}
       <Dialog open={writeModalOpen} onOpenChange={setWriteModalOpen}>
         <DialogContent className="bg-white max-w-xl max-h-[90vh] overflow-y-auto rounded-2xl p-6">
           <DialogHeader>
@@ -694,7 +664,6 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
               </div>
             )}
 
-            {/* Interactive 1-5 Star Picker */}
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-700">Overall Rating (1–5 Stars)</label>
               <div className="flex items-center gap-2">
@@ -724,7 +693,6 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
               </div>
             </div>
 
-            {/* Review Title */}
             <div className="space-y-1">
               <label className="text-xs font-bold text-slate-700">Review Headline</label>
               <input
@@ -737,7 +705,6 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
               />
             </div>
 
-            {/* Review Comment */}
             <div className="space-y-1">
               <label className="text-xs font-bold text-slate-700">Detailed Feedback</label>
               <textarea
@@ -750,7 +717,6 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
               />
             </div>
 
-            {/* Photo Attachment Section */}
             <div className="space-y-2 pt-1 border-t border-slate-100">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-bold text-slate-700 flex items-center gap-1">
@@ -760,7 +726,6 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                 <span className="text-[11px] text-slate-400">{formPhotoUrls.length} photos added</span>
               </div>
 
-              {/* Photo URL Input Bar */}
               <div className="flex gap-2">
                 <input
                   type="url"
@@ -778,8 +743,6 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                 </Button>
               </div>
 
-
-              {/* Uploaded Photo Previews */}
               {formPhotoUrls.length > 0 && (
                 <div className="flex flex-wrap gap-2 pt-2">
                   {formPhotoUrls.map((photo, idx) => (
@@ -801,7 +764,6 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
               )}
             </div>
 
-            {/* Traveler info preview */}
             <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs flex items-center justify-between">
               <div>
                 <span className="text-slate-500 text-[11px]">Posting as:</span>
@@ -812,7 +774,6 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
               </span>
             </div>
 
-            {/* Submit Button */}
             <div className="flex justify-end gap-2 pt-2">
               <Button
                 type="button"
@@ -834,7 +795,6 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
         </DialogContent>
       </Dialog>
 
-      {/* Flag Inappropriate Content Modal */}
       <Dialog open={flagModalOpen} onOpenChange={setFlagModalOpen}>
         <DialogContent className="bg-white max-w-md rounded-2xl p-6">
           <DialogHeader>
@@ -902,7 +862,6 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
         </DialogContent>
       </Dialog>
 
-      {/* Photo Lightbox Modal */}
       {lightboxPhoto && (
         <div
           className="fixed inset-0 bg-black/80 backdrop-blur-xs z-50 flex items-center justify-center p-4 cursor-pointer"

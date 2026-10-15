@@ -35,7 +35,6 @@ public class FlightStatusScheduler {
         int currentMinutes = now.getHour() * 60 + now.getMinute();
         String formattedNow12 = now.format(DateTimeFormatter.ofPattern("hh:mm a", Locale.ENGLISH));
 
-        // Only query active flights that need time progression, avoiding full-table scans
         List<FlightStatus> flights = flightStatusRepository.findByStatusIn(List.of("BOARDING", "IN_FLIGHT"));
         for (FlightStatus flight : flights) {
             if (flight == null || flight.getStatus() == null) continue;
@@ -95,10 +94,11 @@ public class FlightStatusScheduler {
 
     private boolean isTimeReached(int currentMinutes, int targetMinutes) {
         if (currentMinutes >= targetMinutes) {
-            return true;
+            return (currentMinutes - targetMinutes) <= 720;
         }
-        // Handle midnight wraparound (e.g. target was 23:50 and current is 00:10)
-        return (currentMinutes + 1440 - targetMinutes) <= 720;
+
+        int elapsedSinceTarget = (currentMinutes + 1440) - targetMinutes;
+        return targetMinutes >= 1320 && currentMinutes <= 240 && elapsedSinceTarget <= 120;
     }
 
     private Integer parseTimeToMinutes(String timeStr) {

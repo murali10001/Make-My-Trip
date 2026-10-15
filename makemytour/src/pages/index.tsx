@@ -2,6 +2,7 @@ import { getflight, gethotel, getHomeContent } from "@/api";
 import Loader from "@/components/Loader";
 import { SearchSelect } from "@/components/SearchSelect";
 import SignupDialog from "@/components/SignupDialog";
+import PersonalizedRecommendations from "@/components/PersonalizedRecommendations";
 import { Button } from "@/components/ui/button";
 import {
   Bus,
@@ -121,7 +122,23 @@ export default function Home() {
     fetchdata();
   }, [user]);
 
-  // Context-aware & Deduplicated options for Flights
+  useEffect(() => {
+    if (!router.isReady) return;
+    const qFrom = typeof router.query.from === "string" ? router.query.from : "";
+    const qTo = typeof router.query.to === "string" ? router.query.to : "";
+    const qLoc = typeof router.query.location === "string" ? router.query.location : "";
+    const qType = typeof router.query.type === "string" ? router.query.type : "";
+
+    if (qLoc) {
+      setbookingtype("hotels");
+      setto(qLoc);
+    } else if (qFrom || qTo || qType === "flights") {
+      setbookingtype("flights");
+      if (qFrom) setfrom(qFrom);
+      if (qTo) setto(qTo);
+    }
+  }, [router.isReady, router.query]);
+
   const flightCityOptions = useMemo(() => {
     const cityMap = new Map<string, string>();
     (flight || []).forEach((f) => {
@@ -142,7 +159,6 @@ export default function Home() {
       .map((city) => ({ value: city, label: city }));
   }, [flight]);
 
-  // Context-aware & Clean city names for Hotels (without stray airport codes)
   const hotelCityOptions = useMemo(() => {
     const citySet = new Set<string>();
     (hotel || []).forEach((h) => {
@@ -245,7 +261,6 @@ export default function Home() {
             <NavItem icon={<Shield />} text="Insurance" />
           </div>
         </nav>
-
 
         <div className="bg-white rounded-xl shadow-lg mx-auto max-w-5xl p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -372,7 +387,9 @@ export default function Home() {
           )}
         </div>
         <div className="max-w-7xl mx-auto px-4">
-          {/* Offers Section */}
+
+          <PersonalizedRecommendations />
+
           {homeContent?.offers && homeContent.offers.length > 0 && (
             <section className="my-16">
               <h2 className="text-2xl font-bold mb-8 text-white">Best Offers</h2>
@@ -384,7 +401,6 @@ export default function Home() {
             </section>
           )}
 
-          {/* Collections Section */}
           {homeContent?.collections && homeContent.collections.length > 0 && (
             <section className="my-16">
               <div className="flex justify-between items-center mb-8">
@@ -400,7 +416,6 @@ export default function Home() {
             </section>
           )}
 
-          {/* Wonders Section */}
           {homeContent?.wonders && homeContent.wonders.length > 0 && (
             <section className="my-16">
               <div className="flex justify-between items-center mb-8">
@@ -416,7 +431,6 @@ export default function Home() {
             </section>
           )}
 
-          {/* Download App Section */}
           <DownloadApp content={homeContent} />
         </div>
       </main>
