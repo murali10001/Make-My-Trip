@@ -220,6 +220,8 @@ export default function Home() {
     }
   };
   const formatDate = (dateString: string): string => {
+    if (!dateString) return "--";
+    const trimmed = String(dateString).trim();
     const options: Intl.DateTimeFormatOptions = {
       year: "numeric",
       month: "long",
@@ -227,8 +229,27 @@ export default function Home() {
       hour: "2-digit",
       minute: "2-digit",
     };
-    const date = new Date(dateString);
-    return date.toLocaleString("en-US", options);
+
+    const date = new Date(trimmed);
+    if (!isNaN(date.getTime())) {
+      return date.toLocaleString("en-US", options);
+    }
+
+    // Try parsing time-only strings like "06:00 AM", "14:30"
+    const timeMatch = trimmed.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
+    if (timeMatch) {
+      let hours = parseInt(timeMatch[1], 10);
+      const minutes = parseInt(timeMatch[2], 10);
+      const ampm = timeMatch[3] ? timeMatch[3].toUpperCase() : null;
+      if (ampm === "PM" && hours < 12) hours += 12;
+      if (ampm === "AM" && hours === 12) hours = 0;
+
+      const fallbackDate = new Date();
+      fallbackDate.setHours(hours, minutes, 0, 0);
+      return fallbackDate.toLocaleString("en-US", options);
+    }
+
+    return trimmed;
   };
   const handlebooknow = (id: any) => {
     if (bookingtype === "flights") {

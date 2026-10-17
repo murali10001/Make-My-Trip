@@ -85,4 +85,26 @@ public class Notification {
     public void setDismissedUserIds(java.util.List<String> dismissedUserIds) {
         this.dismissedUserIds = dismissedUserIds;
     }
+
+    private boolean isRead = false;
+
+    public boolean isRead() {
+        return isRead;
+    }
+
+    public void setRead(boolean read) {
+        isRead = read;
+    }
+
+    private Long createdAt = System.currentTimeMillis();
+
+    public Long getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Long createdAt) {
+        this.createdAt = createdAt;
+    }
 }
+
+

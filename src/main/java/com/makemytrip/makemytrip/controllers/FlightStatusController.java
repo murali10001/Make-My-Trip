@@ -49,22 +49,31 @@ public class FlightStatusController {
     public void broadcastUpdate(FlightStatus status) {
         if (status == null) return;
 
+        // Routine radar telemetry is broadcast via SSE to connected flight tracker clients.
+        // We do NOT persist spam notifications into MongoDB on every tick, which previously
+        // flooded user accounts with hundreds of telemetry rows.
         try {
-            if (notificationService != null) {
-                String title = "Flight " + status.getFlightNumber() + " is " + (status.getStatus() != null ? status.getStatus() : "UPDATED");
-                String reason = status.getDelayReason() != null && !status.getDelayReason().isEmpty()
-                                ? status.getDelayReason()
-                                : "Status updated to " + status.getStatus();
-                String message = status.getAirline() + " (" + status.getOrigin() + " to " + status.getDestination() + "): " + reason;
-                notificationService.createNotification(
-                    "ALL",
-                    title,
-                    message,
-                    "flight"
-                );
+            if (notificationService != null && status.getStatus() != null) {
+                String st = status.getStatus().toUpperCase();
+                if ("DELAYED".equals(st) || "CANCELLED".equals(st)) {
+                    String title = "⚠️ Flight " + status.getFlightNumber() + " " + st;
+                    String reason = status.getDelayReason() != null && !status.getDelayReason().isEmpty()
+                                    ? status.getDelayReason()
+                                    : "Flight has been " + st.toLowerCase();
+                    String message = status.getAirline() + " (" + status.getOrigin() + " to " + status.getDestination() + "): " + reason;
+                    com.makemytrip.makemytrip.models.Notification alert = new com.makemytrip.makemytrip.models.Notification(
+                        "FLIGHT-ALERT-" + status.getFlightNumber(),
+                        "ALL",
+                        title,
+                        message,
+                        "Just now",
+                        "flight"
+                    );
+                    notificationService.broadcastRealTimeNotification(alert);
+                }
             }
         } catch (Exception e) {
-            System.err.println("Failed to persist notification in MongoDB: " + e.getMessage());
+            System.err.println("Failed to broadcast real-time flight alert: " + e.getMessage());
         }
 
         List<SseEmitter> deadEmitters = new ArrayList<>();
@@ -78,10 +87,28 @@ public class FlightStatusController {
         emitters.removeAll(deadEmitters);
     }
 
+    @RequestMapping(value = "/validate-db", method = {RequestMethod.GET, RequestMethod.POST})
+    public ResponseEntity<Map<String, Object>> validateAndSyncDatabase() {
+        List<FlightStatus> validated = flightStatusService.validateAndSyncAllFlights();
+        for (FlightStatus f : validated) {
+            broadcastUpdate(f);
+        }
+        return ResponseEntity.ok(Map.of(
+            "success", true,
+            "message", "Flight statuses validated and synchronized with real-time Indian Standard Time.",
+            "totalFlights", validated.size(),
+            "flights", validated
+        ));
+    }
+
     @GetMapping
     public ResponseEntity<List<FlightStatus>> getAllFlights(
             @RequestParam(required = false) String query,
-            @RequestParam(required = false) String status) {
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false, defaultValue = "false") boolean validate) {
+        if (validate) {
+            flightStatusService.validateAndSyncAllFlights();
+        }
         List<FlightStatus> flights = flightStatusService.getAllFlights(query, status);
         return ResponseEntity.ok(flights);
     }

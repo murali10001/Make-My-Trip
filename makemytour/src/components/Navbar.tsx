@@ -12,6 +12,8 @@ import {
   CheckCircle,
   X,
   RotateCcw,
+  CheckCheck,
+  Trash2,
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -26,7 +28,13 @@ import { Button } from "./ui/button";
 import { Avatar, AvatarFallback } from "./ui/avatar";
 import { clearUser } from "@/store";
 import { useRouter } from "next/router";
-import { getAppNotifications, deleteAppNotification } from "@/api";
+import {
+  getAppNotifications,
+  deleteAppNotification,
+  clearAllAppNotifications,
+  markAllAppNotificationsRead,
+  BACKEND_URL,
+} from "@/api";
 
 const Navbar = () => {
   const dispatch = useDispatch();
@@ -34,8 +42,52 @@ const Navbar = () => {
   const router = useRouter();
   const [showNotifDrawer, setShowNotifDrawer] = useState<boolean>(false);
   const [notifications, setNotifications] = useState<any[]>([]);
+  const [readNotifIds, setReadNotifIds] = useState<Set<string>>(new Set());
   const [webPushPermission, setWebPushPermission] = useState<string>("default");
-  const seenNotifIdsRef = React.useRef<Set<string>>(new Set());
+
+  // Load read notification IDs from localStorage on mount and user change
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storageKey = `read_notif_ids_${user?.id || user?._id || "guest"}`;
+      try {
+        const stored = localStorage.getItem(storageKey);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) {
+            setReadNotifIds(new Set(parsed));
+          }
+        } else {
+          setReadNotifIds(new Set());
+        }
+      } catch (e) {
+        setReadNotifIds(new Set());
+      }
+    }
+  }, [user]);
+
+  const markIdsAsRead = (ids: string[]) => {
+    if (!ids || ids.length === 0) return;
+    setReadNotifIds((prev) => {
+      const next = new Set(prev);
+      ids.forEach((id) => next.add(id));
+      if (typeof window !== "undefined") {
+        const storageKey = `read_notif_ids_${user?.id || user?._id || "guest"}`;
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(Array.from(next)));
+        } catch (e) { }
+      }
+      return next;
+    });
+  };
+
+  const isUnread = (n: any) => {
+    if (!n || !n.id) return false;
+    if (n.isRead === true || n.read === true) return false;
+    if (readNotifIds.has(n.id)) return false;
+    return true;
+  };
+
+  const unreadCount = notifications.filter(isUnread).length;
 
   const requestBrowserPushPermission = async () => {
     if (typeof window !== "undefined" && "Notification" in window) {
@@ -43,12 +95,12 @@ const Navbar = () => {
         const perm = await Notification.requestPermission();
         setWebPushPermission(perm);
         if (perm === "granted") {
-          new window.Notification("MakeMyTour Desktop Push Active", {
-            body: "Desktop alerts are enabled! You will now see live popups for flight delays and refund status changes.",
+          new window.Notification("MakeMyTour Real-Time Alerts Active", {
+            body: "Desktop alerts enabled! You will now see instant popups for flight updates & refund status changes.",
             icon: "/favicon.ico",
           });
         } else if (perm === "denied") {
-          alert("Browser notifications are blocked in your browser settings. Please click the site settings / lock icon in your address bar and set Notifications to Allow.");
+          alert("Browser notifications are blocked. Please click the lock icon in your address bar to allow Notifications.");
         }
       } catch (err) {
         console.error("Failed to request notification permission", err);
@@ -61,26 +113,14 @@ const Navbar = () => {
   useEffect(() => {
     if (typeof window !== "undefined" && "Notification" in window) {
       setWebPushPermission(Notification.permission);
-
-      if (Notification.permission === "default") {
-        Notification.requestPermission().then((perm) => {
-          setWebPushPermission(perm);
-          if (perm === "granted") {
-            new window.Notification("MakeMyTour Desktop Alerts Active", {
-              body: "Desktop notifications enabled for flight updates & refunds.",
-              icon: "/favicon.ico",
-            });
-          }
-        }).catch(() => {});
-      }
     }
   }, []);
 
-  const isFirstLoadRef = React.useRef<boolean>(true);
-
+  // Real-time SSE connection + initial fetch + gentle background sync
   useEffect(() => {
+    const userId = user?.id || user?._id || "ALL";
+
     const fetchNotifs = async () => {
-      const userId = user?.id || user?._id || "ALL";
       try {
         const data = await getAppNotifications(userId);
         const filtered = (data || []).filter(
@@ -89,58 +129,64 @@ const Navbar = () => {
             n.type !== "freeze" &&
             (!n.title || !n.title.includes("Fare Locked"))
         );
-
-        if (isFirstLoadRef.current) {
-
-          filtered.forEach((n: any) => {
-            if (n && n.id) seenNotifIdsRef.current.add(n.id);
-          });
-          isFirstLoadRef.current = false;
-        } else {
-
-          filtered.forEach((n: any) => {
-            if (n && n.id && !seenNotifIdsRef.current.has(n.id)) {
-              if (typeof window !== "undefined" && "Notification" in window) {
-                if (Notification.permission === "granted") {
-                  try {
-                    new window.Notification(n.title || "Flight Status Alert", {
-                      body: n.desc || "New status update received.",
-                      icon: "/favicon.ico",
-                    });
-                    seenNotifIdsRef.current.add(n.id);
-                  } catch (e) {
-                    console.error("Failed to fire browser push notification", e);
-                  }
-                } else if (Notification.permission === "default") {
-
-                  Notification.requestPermission().then((perm) => {
-                    setWebPushPermission(perm);
-                    if (perm === "granted") {
-                      try {
-                        new window.Notification(n.title || "Flight Status Alert", {
-                          body: n.desc || "New status update received.",
-                          icon: "/favicon.ico",
-                        });
-                        seenNotifIdsRef.current.add(n.id);
-                      } catch (e) {}
-                    }
-                  }).catch(() => {});
-                }
-              } else {
-                seenNotifIdsRef.current.add(n.id);
-              }
-            }
-          });
-        }
-
         setNotifications(filtered);
       } catch (err) {
-        console.error("Failed to fetch navbar notifications", err);
+        console.error("Failed to fetch notifications:", err);
       }
     };
+
     fetchNotifs();
-    const interval = setInterval(fetchNotifs, 3000);
-    return () => clearInterval(interval);
+
+    let eventSource: EventSource | null = null;
+    try {
+      const streamBase = BACKEND_URL;
+      const sseUrl = `${streamBase}/api/notifications/stream?userId=${encodeURIComponent(userId)}`;
+      eventSource = new EventSource(sseUrl);
+
+      eventSource.addEventListener("notification", (event: MessageEvent) => {
+        try {
+          const newNotif = JSON.parse(event.data);
+          if (!newNotif || !newNotif.id) return;
+          if (newNotif.type === "freeze" || newNotif.title?.includes("Fare Locked")) return;
+
+          setNotifications((prev) => {
+            const exists = prev.some((n) => n.id === newNotif.id);
+            if (exists) return prev;
+            return [newNotif, ...prev];
+          });
+
+          if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+            try {
+              new window.Notification(newNotif.title || "MakeMyTour Real-Time Alert", {
+                body: newNotif.desc || "New update received",
+                icon: "/favicon.ico",
+              });
+            } catch (e) { }
+          }
+        } catch (e) {
+          console.error("Failed to parse incoming notification SSE:", e);
+        }
+      });
+
+      eventSource.onerror = () => {
+        // EventSource will automatically reconnect on disconnect
+      };
+    } catch (e) {
+      console.error("SSE notification stream connection failed:", e);
+    }
+
+    // Gentle fallback sync every 60s and when window regains focus
+    const interval = setInterval(fetchNotifs, 60000);
+    const onFocus = () => fetchNotifs();
+    window.addEventListener("focus", onFocus);
+
+    return () => {
+      if (eventSource) {
+        eventSource.close();
+      }
+      clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
+    };
   }, [user]);
 
   const logout = () => {
@@ -154,6 +200,50 @@ const Navbar = () => {
       await deleteAppNotification(id, userId);
     } catch (err) {
       console.error("Failed to delete notification", err);
+    }
+  };
+
+  const toggleDrawer = () => {
+    const nextState = !showNotifDrawer;
+    setShowNotifDrawer(nextState);
+    if (nextState) {
+      // Mark current notifications as read upon opening drawer
+      const currentIds = notifications.map((n) => n.id).filter(Boolean);
+      markIdsAsRead(currentIds);
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+      const userId = user?.id || user?._id;
+      if (userId) {
+        markAllAppNotificationsRead(userId).catch(() => { });
+      }
+      if (webPushPermission === "default") {
+        requestBrowserPushPermission();
+      }
+    }
+  };
+
+  const handleMarkAllRead = async (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    const allIds = notifications.map((n) => n.id).filter(Boolean);
+    markIdsAsRead(allIds);
+    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true, read: true })));
+    const userId = user?.id || user?._id;
+    if (userId) {
+      try {
+        await markAllAppNotificationsRead(userId);
+      } catch (e) { }
+    }
+  };
+
+  const handleClearAll = async (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setNotifications([]);
+    const userId = user?.id || user?._id;
+    if (userId) {
+      try {
+        await clearAllAppNotifications(userId);
+      } catch (e) {
+        console.error("Failed to clear notifications:", e);
+      }
     }
   };
 
@@ -219,37 +309,56 @@ const Navbar = () => {
           <div className="relative">
             <button
               type="button"
-              onClick={() => {
-                const nextState = !showNotifDrawer;
-                setShowNotifDrawer(nextState);
-                if (nextState && webPushPermission === "default") {
-                  requestBrowserPushPermission();
-                }
-              }}
+              onClick={toggleDrawer}
               className="p-1.5 sm:p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 transition-all relative shadow-2xs"
-              title="Notifications & Updates"
+              title="Notifications & Alerts"
             >
               <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-slate-700" />
-              {notifications.length > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center animate-pulse">
-                  {notifications.length}
+              {!showNotifDrawer && unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-extrabold min-w-4 h-4 px-1 rounded-full flex items-center justify-center animate-pulse shadow-sm">
+                  {unreadCount > 9 ? "9+" : unreadCount}
                 </span>
               )}
             </button>
 
             {showNotifDrawer && (
-              <div className="fixed sm:absolute right-2 sm:right-0 top-14 sm:top-auto sm:mt-2 w-[calc(100vw-1rem)] max-w-xs sm:w-80 bg-white rounded-2xl shadow-2xl border border-slate-200 p-4 z-50 animate-in fade-in zoom-in-95 space-y-3">
+              <div className="fixed sm:absolute right-2 sm:right-0 top-14 sm:top-auto sm:mt-2 w-[calc(100vw-1rem)] max-w-xs sm:w-84 bg-white rounded-2xl shadow-2xl border border-slate-200 p-4 z-50 animate-in fade-in zoom-in-95 space-y-3">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                   <div className="flex items-center gap-1.5">
                     <Bell className="w-4 h-4 text-amber-500" />
                     <h3 className="font-extrabold text-slate-900 text-xs">Notifications & Alerts</h3>
                   </div>
-                  <button
-                    onClick={() => setShowNotifDrawer(false)}
-                    className="text-slate-400 hover:text-slate-600"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    {unreadCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={(e) => handleMarkAllRead(e)}
+                        className="text-[10px] text-blue-600 hover:text-blue-800 font-bold flex items-center gap-0.5 px-1.5 py-0.5 bg-blue-50 hover:bg-blue-100 rounded transition-colors"
+                        title="Mark all as read"
+                      >
+                        <CheckCheck className="w-3 h-3" />
+                        <span>Read</span>
+                      </button>
+                    )}
+                    {notifications.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={(e) => handleClearAll(e)}
+                        className="text-[10px] text-slate-500 hover:text-red-600 font-bold flex items-center gap-0.5 px-1.5 py-0.5 bg-slate-100 hover:bg-red-50 rounded transition-colors"
+                        title="Clear all notifications"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        <span>Clear</span>
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setShowNotifDrawer(false)}
+                      className="text-slate-400 hover:text-slate-600 ml-1 p-0.5"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
 
                 {webPushPermission !== "granted" && (
@@ -270,27 +379,45 @@ const Navbar = () => {
                 )}
 
                 {notifications.length === 0 ? (
-                  <p className="text-xs text-slate-500 italic py-4 text-center">No unread notifications.</p>
+                  <p className="text-xs text-slate-500 italic py-6 text-center">No notifications right now.</p>
                 ) : (
                   <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-                    {notifications.map((n) => (
-                      <div
-                        key={n.id}
-                        className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-xs space-y-1 relative group"
-                      >
-                        <div className="flex items-center justify-between font-bold text-slate-900 text-[11px]">
-                          <span>{n.title}</span>
-                          <button
-                            onClick={() => removeNotif(n.id)}
-                            className="text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
+                    {notifications.map((n) => {
+                      const unread = isUnread(n);
+                      return (
+                        <div
+                          key={n.id}
+                          className={`p-2.5 rounded-xl border text-xs space-y-1 relative group transition-colors ${unread
+                              ? "bg-blue-50/70 border-blue-200 shadow-2xs"
+                              : "bg-slate-50 border-slate-200"
+                            }`}
+                        >
+                          <div className="flex items-center justify-between font-bold text-slate-900 text-[11px]">
+                            <div className="flex items-center gap-1.5">
+                              {unread && (
+                                <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0" />
+                              )}
+                              <span>{n.title}</span>
+                            </div>
+                            <button
+                              onClick={() => removeNotif(n.id)}
+                              className="text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                              title="Delete notification"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                          <p className="text-[11px] text-slate-600 leading-tight">{n.desc}</p>
+                          <span className="text-[9px] text-slate-400 font-mono block">{n.time}</span>
                         </div>
-                        <p className="text-[11px] text-slate-600 leading-tight">{n.desc}</p>
-                        <span className="text-[9px] text-slate-400 font-mono block">{n.time}</span>
-                      </div>
-                    ))}
+                      );
+                    })}
+                  </div>
+                )}
+
+                {notifications.length > 0 && (
+                  <div className="border-t border-slate-100 pt-2 flex items-center justify-end text-[10px] text-slate-400">
+                    <span>{notifications.length} {notifications.length === 1 ? "alert" : "alerts"}</span>
                   </div>
                 )}
               </div>

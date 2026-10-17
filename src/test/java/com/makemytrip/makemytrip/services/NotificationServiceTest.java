@@ -80,4 +80,26 @@ public class NotificationServiceTest {
 
         verify(notificationRepository).deleteById("N-2");
     }
+
+    @Test
+    void testClearAllForUser_DeletesUserSpecificAndDismissesBroadcast() {
+        when(notificationRepository.findByUserId("USR-101")).thenReturn(List.of(userNotif));
+        when(notificationRepository.findByUserIdIn(List.of("ALL", "all"))).thenReturn(List.of(broadcastNotif));
+
+        notificationService.clearAllForUser("USR-101");
+
+        verify(notificationRepository).deleteById("N-2");
+        assertTrue(broadcastNotif.getDismissedUserIds().contains("USR-101"));
+        verify(notificationRepository).save(broadcastNotif);
+    }
+
+    @Test
+    void testMarkAllAsReadForUser_MarksUserSpecificRead() {
+        when(notificationRepository.findByUserId("USR-101")).thenReturn(List.of(userNotif));
+
+        notificationService.markAllAsReadForUser("USR-101");
+
+        assertTrue(userNotif.isRead());
+        verify(notificationRepository).save(userNotif);
+    }
 }

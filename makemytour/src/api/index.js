@@ -331,6 +331,21 @@ export const sendFlightEmailNotification = async (flightNumber, email) => {
   }
 };
 
+export const validateFlightStatusDb = async () => {
+  try {
+    const res = await apiClient.get(`/api/flight-status/validate-db`);
+    if (res && res.status === 200) {
+      return res.data;
+    }
+    return null;
+  } catch (error) {
+    console.warn("Backend /validate-db endpoint not available yet on remote server, using live real-time sync.");
+    return null;
+  }
+};
+
+
+
 export const getDynamicPricing = async (
   itemId = "FL-101",
   itemType = "FLIGHT",
@@ -473,6 +488,33 @@ export const deleteAppNotification = async (id, userId = "") => {
     return null;
   }
 };
+
+export const clearAllAppNotifications = async (userId) => {
+  try {
+    const params = new URLSearchParams();
+    if (userId) params.append("userId", userId);
+    const res = await apiClient.delete(`/api/notifications/clear-all?${params.toString()}`);
+    if (res.status === 200) return res.data;
+    return null;
+  } catch (error) {
+    console.error("Failed to clear notifications:", error);
+    return null;
+  }
+};
+
+export const markAllAppNotificationsRead = async (userId) => {
+  try {
+    const params = new URLSearchParams();
+    if (userId) params.append("userId", userId);
+    const res = await apiClient.post(`/api/notifications/mark-read?${params.toString()}`);
+    if (res.status === 200) return res.data;
+    return null;
+  } catch (error) {
+    console.error("Failed to mark notifications read:", error);
+    return null;
+  }
+};
+
 
 export const calculateRefundPreview = async (userId, bookingId) => {
   try {
