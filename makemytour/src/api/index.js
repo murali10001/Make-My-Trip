@@ -1,11 +1,17 @@
 import axios from "axios";
 
-const BACKEND_URL = "https://make-my-trip-7m1d.onrender.com";
 
-const apiClient = axios.create({
+export const BACKEND_URL = (process.env.NEXT_PUBLIC_BACKEND_URL || "")
+  .trim()
+  .replace(/^["']|["']$/g, "")
+  .replace(/;+$/, "")
+  .replace(/\/+$/, "");
+
+export const apiClient = axios.create({
   baseURL: BACKEND_URL,
   validateStatus: (status) => status >= 200 && status < 300,
 });
+
 
 export const login = async (email, password) => {
   try {

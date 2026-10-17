@@ -1,0 +1,1626 @@
+{
+  "version": 1,
+  "generatedAt": "2026-10-17T07:12:58.264Z",
+  "rootPath": "c:\\Users\\manis\\VS Code-work space\\make-my-trip-clone-springboot",
+  "summary": {
+    "totalFiles": 47,
+    "totalEdges": 19,
+    "totalLines": 11827,
+    "languages": [
+      "js"
+    ],
+    "flowStages": {
+      "start": 9,
+      "main": 33,
+      "core": 1,
+      "helpers": 4
+    }
+  },
+  "files": [
+    {
+      "path": "makemytour/next-env.d.ts",
+      "fileType": "module",
+      "stage": "main",
+      "lang": "js",
+      "ext": ".ts",
+      "lines": 6,
+      "size": 218,
+      "collaboration": {
+        "status": "isolated",
+        "impact": "solo",
+        "summary": "No local collaboration links yet.",
+        "score": 0
+      },
+      "crossStageLinks": 0,
+      "impactScore": 0,
+      "isDeadCode": true,
+      "isOrphan": true,
+      "isCircular": false,
+      "hotspotScore": 2,
+      "hotspotLevel": "low",
+      "summary": "Main orchestration code. Type: module",
+      "functions": [],
+      "classes": [],
+      "exports": [],
+      "imports": [],
+      "usedBy": []
+    },
+    {
+      "path": "makemytour/next.config.ts",
+      "fileType": "config",
+      "stage": "helpers",
+      "lang": "js",
+      "ext": ".ts",
+      "lines": 9,
+      "size": 139,
+      "collaboration": {
+        "status": "isolated",
+        "impact": "solo",
+        "summary": "No local collaboration links yet.",
+        "score": 0
+      },
+      "crossStageLinks": 0,
+      "impactScore": 0,
+      "isDeadCode": true,
+      "isOrphan": true,
+      "isCircular": false,
+      "hotspotScore": 2,
+      "hotspotLevel": "low",
+      "summary": "Support or shared utility code. Type: config",
+      "functions": [],
+      "classes": [],
+      "exports": [],
+      "imports": [],
+      "usedBy": []
+    },
+    {
+      "path": "makemytour/postcss.config.mjs",
+      "fileType": "config",
+      "stage": "helpers",
+      "lang": "js",
+      "ext": ".mjs",
+      "lines": 9,
+      "size": 92,
+      "collaboration": {
+        "status": "isolated",
+        "impact": "solo",
+        "summary": "No local collaboration links yet.",
+        "score": 0
+      },
+      "crossStageLinks": 0,
+      "impactScore": 0,
+      "isDeadCode": true,
+      "isOrphan": true,
+      "isCircular": false,
+      "hotspotScore": 2,
+      "hotspotLevel": "low",
+      "summary": "Support or shared utility code. Type: config",
+      "functions": [],
+      "classes": [],
+      "exports": [],
+      "imports": [],
+      "usedBy": []
+    },
+    {
+      "path": "makemytour/src/api/index.js",
+      "fileType": "entry",
+      "stage": "start",
+      "lang": "js",
+      "ext": ".js",
+      "lines": 730,
+      "size": 23155,
+      "collaboration": {
+        "status": "connected",
+        "impact": "leaf",
+        "summary": "Part of the local code flow with a focused role.",
+        "score": 2
+      },
+      "crossStageLinks": 1,
+      "impactScore": 2,
+      "isDeadCode": false,
+      "isOrphan": false,
+      "isCircular": false,
+      "hotspotScore": 10,
+      "hotspotLevel": "low",
+      "summary": "Entry or startup logic. Functions: resolveBackendUrl, login, signup, getuserbyemail",
+      "functions": [
+        "resolveBackendUrl",
+        "login",
+        "signup",
+        "getuserbyemail",
+        "editprofile",
+        "getflight",
+        "getflightbyid",
+        "addflight",
+        "editflight",
+        "gethotel",
+        "gethotelbyid",
+        "getHomeContent",
+        "addhotel",
+        "edithotel",
+        "handleflightbooking",
+        "handlehotelbooking",
+        "getFlightStatuses",
+        "getFlightStatusByNumber",
+        "getTrackedFlights",
+        "simulateFlightUpdate",
+        "triggerRandomFlightSimulation",
+        "sendFlightEmailNotification",
+        "getDynamicPricing",
+        "freezePrice",
+        "getFreezeStatus"
+      ],
+      "classes": [],
+      "exports": [
+        "BACKEND_URL",
+        "apiClient",
+        "login",
+        "signup",
+        "getuserbyemail",
+        "editprofile",
+        "getflight",
+        "getflightbyid",
+        "addflight",
+        "editflight",
+        "gethotel",
+        "gethotelbyid",
+        "getHomeContent",
+        "addhotel",
+        "edithotel",
+        "handleflightbooking",
+        "handlehotelbooking",
+        "getFlightStatuses",
+        "getFlightStatusByNumber",
+        "getTrackedFlights"
+      ],
+      "imports": [],
+      "usedBy": [
+        "makemytour/src/components/SignupDialog.tsx"
+      ]
+    },
+    {
+      "path": "makemytour/src/components/Flights/Flightlist.tsx",
+      "fileType": "module",
+      "stage": "main",
+      "lang": "js",
+      "ext": ".tsx",
+      "lines": 68,
+      "size": 1931,
+      "collaboration": {
+        "status": "connected",
+        "impact": "leaf",
+        "summary": "Part of the local code flow with a focused role.",
+        "score": 2
+      },
+      "crossStageLinks": 0,
+      "impactScore": 2,
+      "isDeadCode": true,
+      "isOrphan": false,
+      "isCircular": false,
+      "hotspotScore": 8,
+      "hotspotLevel": "low",
+      "summary": "Main orchestration code. Functions: FlightList, fetchflight",
+      "functions": [
+        "FlightList",
+        "fetchflight"
+      ],
+      "classes": [],
+      "exports": [],
+      "imports": [
+        "makemytour/src/components/ui/button.tsx",
+        "makemytour/src/components/Loader.tsx"
+      ],
+      "usedBy": []
+    },
+    {
+      "path": "makemytour/src/components/Flights/LiveFlightTracker.tsx",
+      "fileType": "module",
+      "stage": "main",
+      "lang": "js",
+      "ext": ".tsx",
+      "lines": 865,
+      "size": 38194,
+      "collaboration": {
+        "status": "connected",
+        "impact": "leaf",
+        "summary": "Part of the local code flow with a focused role.",
+        "score": 2
+      },
+      "crossStageLinks": 0,
+      "impactScore": 2,
+      "isDeadCode": true,
+      "isOrphan": false,
+      "isCircular": false,
+      "hotspotScore": 11,
+      "hotspotLevel": "medium",
+      "summary": "Main orchestration code. Functions: requestWebPushPermission, fetchFlights, toggleTrackFlight, addNotification",
+      "functions": [
+        "requestWebPushPermission",
+        "fetchFlights",
+        "toggleTrackFlight",
+        "addNotification",
+        "dismissNotification",
+        "handleRandomSimulation",
+        "handleSendEmailNotification",
+        "getStatusBadge"
+      ],
+      "classes": [],
+      "exports": [],
+      "imports": [
+        "makemytour/src/components/Loader.tsx",
+        "makemytour/src/components/ui/button.tsx"
+      ],
+      "usedBy": []
+    },
+    {
+      "path": "makemytour/src/components/FlightSeatPicker.tsx",
+      "fileType": "module",
+      "stage": "main",
+      "lang": "js",
+      "ext": ".tsx",
+      "lines": 283,
+      "size": 13573,
+      "collaboration": {
+        "status": "connected",
+        "impact": "leaf",
+        "summary": "Part of the local code flow with a focused role.",
+        "score": 1
+      },
+      "crossStageLinks": 0,
+      "impactScore": 1,
+      "isDeadCode": true,
+      "isOrphan": false,
+      "isCircular": false,
+      "hotspotScore": 8,
+      "hotspotLevel": "low",
+      "summary": "Main orchestration code. Functions: fetchSeatData, handleSelectSeat",
+      "functions": [
+        "fetchSeatData",
+        "handleSelectSeat"
+      ],
+      "classes": [],
+      "exports": [
+        "FlightSeatPicker"
+      ],
+      "imports": [
+        "makemytour/src/components/ui/button.tsx"
+      ],
+      "usedBy": []
+    },
+    {
+      "path": "makemytour/src/components/Fotter.tsx",
+      "fileType": "module",
+      "stage": "main",
+      "lang": "js",
+      "ext": ".tsx",
+      "lines": 150,
+      "size": 5211,
+      "collaboration": {
+        "status": "isolated",
+        "impact": "solo",
+        "summary": "No local collaboration links yet.",
+        "score": 0
+      },
+      "crossStageLinks": 0,
+      "impactScore": 0,
+      "isDeadCode": true,
+      "isOrphan": true,
+      "isCircular": false,
+      "hotspotScore": 5,
+      "hotspotLevel": "low",
+      "summary": "Main orchestration code. Functions: Footer",
+      "functions": [
+        "Footer"
+      ],
+      "classes": [],
+      "exports": [],
+      "imports": [],
+      "usedBy": []
+    },
+    {
+      "path": "makemytour/src/components/Hotel/Hotel.tsx",
+      "fileType": "module",
+      "stage": "main",
+      "lang": "js",
+      "ext": ".tsx",
+      "lines": 69,
+      "size": 1946,
+      "collaboration": {
+        "status": "connected",
+        "impact": "leaf",
+        "summary": "Part of the local code flow with a focused role.",
+        "score": 2
+      },
+      "crossStageLinks": 0,
+      "impactScore": 2,
+      "isDeadCode": true,
+      "isOrphan": false,
+      "isCircular": false,
+      "hotspotScore": 8,
+      "hotspotLevel": "low",
+      "summary": "Main orchestration code. Functions: HotelList, fetchhotel",
+      "functions": [
+        "HotelList",
+        "fetchhotel"
+      ],
+      "classes": [],
+      "exports": [],
+      "imports": [
+        "makemytour/src/components/ui/button.tsx",
+        "makemytour/src/components/Loader.tsx"
+      ],
+      "usedBy": []
+    },
+    {
+      "path": "makemytour/src/components/HotelRoomPicker.tsx",
+      "fileType": "module",
+      "stage": "main",
+      "lang": "js",
+      "ext": ".tsx",
+      "lines": 383,
+      "size": 17103,
+      "collaboration": {
+        "status": "isolated",
+        "impact": "solo",
+        "summary": "No local collaboration links yet.",
+        "score": 0
+      },
+      "crossStageLinks": 0,
+      "impactScore": 0,
+      "isDeadCode": true,
+      "isOrphan": true,
+      "isCircular": false,
+      "hotspotScore": 6,
+      "hotspotLevel": "low",
+      "summary": "Main orchestration code. Functions: fetchRooms, handleSelectRoom",
+      "functions": [
+        "fetchRooms",
+        "handleSelectRoom"
+      ],
+      "classes": [],
+      "exports": [
+        "HotelRoomPicker"
+      ],
+      "imports": [],
+      "usedBy": []
+    },
+    {
+      "path": "makemytour/src/components/Loader.tsx",
+      "fileType": "module",
+      "stage": "main",
+      "lang": "js",
+      "ext": ".tsx",
+      "lines": 13,
+      "size": 276,
+      "collaboration": {
+        "status": "connected",
+        "impact": "leaf",
+        "summary": "Part of the local code flow with a focused role.",
+        "score": 5
+      },
+      "crossStageLinks": 1,
+      "impactScore": 5,
+      "isDeadCode": false,
+      "isOrphan": false,
+      "isCircular": false,
+      "hotspotScore": 15,
+      "hotspotLevel": "medium",
+      "summary": "Main orchestration code. Functions: Loader",
+      "functions": [
+        "Loader"
+      ],
+      "classes": [],
+      "exports": [],
+      "imports": [],
+      "usedBy": [
+        "makemytour/src/components/Flights/Flightlist.tsx",
+        "makemytour/src/components/Flights/LiveFlightTracker.tsx",
+        "makemytour/src/components/Hotel/Hotel.tsx",
+        "makemytour/src/components/Pricing/DynamicPricingEngine.tsx"
+      ]
+    },
+    {
+      "path": "makemytour/src/components/Navbar.tsx",
+      "fileType": "module",
+      "stage": "main",
+      "lang": "js",
+      "ext": ".tsx",
+      "lines": 377,
+      "size": 16157,
+      "collaboration": {
+        "status": "connected",
+        "impact": "leaf",
+        "summary": "Part of the local code flow with a focused role.",
+        "score": 3
+      },
+      "crossStageLinks": 0,
+      "impactScore": 3,
+      "isDeadCode": true,
+      "isOrphan": false,
+      "isCircular": false,
+      "hotspotScore": 12,
+      "hotspotLevel": "medium",
+      "summary": "Main orchestration code. Functions: Navbar, requestBrowserPushPermission, fetchNotifs, logout",
+      "functions": [
+        "Navbar",
+        "requestBrowserPushPermission",
+        "fetchNotifs",
+        "logout",
+        "removeNotif"
+      ],
+      "classes": [],
+      "exports": [],
+      "imports": [
+        "makemytour/src/components/SignupDialog.tsx",
+        "makemytour/src/components/ui/button.tsx",
+        "makemytour/src/components/ui/avatar.tsx"
+      ],
+      "usedBy": []
+    },
+    {
+      "path": "makemytour/src/components/PersonalizedRecommendations.tsx",
+      "fileType": "module",
+      "stage": "main",
+      "lang": "js",
+      "ext": ".tsx",
+      "lines": 602,
+      "size": 26993,
+      "collaboration": {
+        "status": "isolated",
+        "impact": "solo",
+        "summary": "No local collaboration links yet.",
+        "score": 0
+      },
+      "crossStageLinks": 0,
+      "impactScore": 0,
+      "isDeadCode": true,
+      "isOrphan": true,
+      "isCircular": false,
+      "hotspotScore": 6,
+      "hotspotLevel": "low",
+      "summary": "Main orchestration code. Functions: PersonalizedRecommendations, load, handleCategorySelect, handleFeedback",
+      "functions": [
+        "PersonalizedRecommendations",
+        "load",
+        "handleCategorySelect",
+        "handleFeedback",
+        "openWhyModal"
+      ],
+      "classes": [],
+      "exports": [
+        "PersonalizedRecommendations"
+      ],
+      "imports": [],
+      "usedBy": []
+    },
+    {
+      "path": "makemytour/src/components/Pricing/DynamicPricingEngine.tsx",
+      "fileType": "module",
+      "stage": "core",
+      "lang": "js",
+      "ext": ".tsx",
+      "lines": 719,
+      "size": 30453,
+      "collaboration": {
+        "status": "connected",
+        "impact": "leaf",
+        "summary": "Part of the local code flow with a focused role.",
+        "score": 4
+      },
+      "crossStageLinks": 2,
+      "impactScore": 4,
+      "isDeadCode": true,
+      "isOrphan": false,
+      "isCircular": false,
+      "hotspotScore": 11,
+      "hotspotLevel": "medium",
+      "summary": "Core business logic. Functions: loadDatabaseItems, fetchOffers, fetchPricing, formatCountdown",
+      "functions": [
+        "loadDatabaseItems",
+        "fetchOffers",
+        "fetchPricing",
+        "formatCountdown",
+        "handleBookFrozenItem",
+        "handleRemoveCurrentFreeze",
+        "handleFreezePrice",
+        "handleApplyCoupon"
+      ],
+      "classes": [],
+      "exports": [],
+      "imports": [
+        "makemytour/src/components/Loader.tsx",
+        "makemytour/src/components/ui/button.tsx"
+      ],
+      "usedBy": []
+    },
+    {
+      "path": "makemytour/src/components/ReviewModerationPanel.tsx",
+      "fileType": "module",
+      "stage": "main",
+      "lang": "js",
+      "ext": ".tsx",
+      "lines": 241,
+      "size": 9859,
+      "collaboration": {
+        "status": "isolated",
+        "impact": "solo",
+        "summary": "No local collaboration links yet.",
+        "score": 0
+      },
+      "crossStageLinks": 0,
+      "impactScore": 0,
+      "isDeadCode": true,
+      "isOrphan": true,
+      "isCircular": false,
+      "hotspotScore": 5,
+      "hotspotLevel": "low",
+      "summary": "Main orchestration code. Functions: fetchFlagged, handleAction",
+      "functions": [
+        "fetchFlagged",
+        "handleAction"
+      ],
+      "classes": [],
+      "exports": [
+        "ReviewModerationPanel"
+      ],
+      "imports": [],
+      "usedBy": []
+    },
+    {
+      "path": "makemytour/src/components/ReviewsSection.tsx",
+      "fileType": "module",
+      "stage": "main",
+      "lang": "js",
+      "ext": ".tsx",
+      "lines": 890,
+      "size": 37115,
+      "collaboration": {
+        "status": "isolated",
+        "impact": "solo",
+        "summary": "No local collaboration links yet.",
+        "score": 0
+      },
+      "crossStageLinks": 0,
+      "impactScore": 0,
+      "isDeadCode": true,
+      "isOrphan": true,
+      "isCircular": false,
+      "hotspotScore": 7,
+      "hotspotLevel": "low",
+      "summary": "Main orchestration code. Functions: fetchReviewsData, handleSubmitReview, handleAddPhotoUrl, handleRemovePhoto",
+      "functions": [
+        "fetchReviewsData",
+        "handleSubmitReview",
+        "handleAddPhotoUrl",
+        "handleRemovePhoto",
+        "handleToggleHelpful",
+        "handleOpenFlagModal",
+        "handleSubmitFlag",
+        "handleSendReply"
+      ],
+      "classes": [],
+      "exports": [
+        "ReviewsSection"
+      ],
+      "imports": [],
+      "usedBy": []
+    },
+    {
+      "path": "makemytour/src/components/SearchSelect.tsx",
+      "fileType": "module",
+      "stage": "main",
+      "lang": "js",
+      "ext": ".tsx",
+      "lines": 126,
+      "size": 4932,
+      "collaboration": {
+        "status": "isolated",
+        "impact": "solo",
+        "summary": "No local collaboration links yet.",
+        "score": 0
+      },
+      "crossStageLinks": 0,
+      "impactScore": 0,
+      "isDeadCode": true,
+      "isOrphan": true,
+      "isCircular": false,
+      "hotspotScore": 5,
+      "hotspotLevel": "low",
+      "summary": "Main orchestration code. Functions: SearchSelect, handleClickOutside, handleSelect, handleClear",
+      "functions": [
+        "SearchSelect",
+        "handleClickOutside",
+        "handleSelect",
+        "handleClear"
+      ],
+      "classes": [],
+      "exports": [
+        "SearchSelect"
+      ],
+      "imports": [],
+      "usedBy": []
+    },
+    {
+      "path": "makemytour/src/components/SignupDialog.tsx",
+      "fileType": "module",
+      "stage": "main",
+      "lang": "js",
+      "ext": ".tsx",
+      "lines": 181,
+      "size": 5597,
+      "collaboration": {
+        "status": "connected",
+        "impact": "leaf",
+        "summary": "Part of the local code flow with a focused role.",
+        "score": 7
+      },
+      "crossStageLinks": 1,
+      "impactScore": 7,
+      "isDeadCode": false,
+      "isOrphan": false,
+      "isCircular": false,
+      "hotspotScore": 18,
+      "hotspotLevel": "medium",
+      "summary": "Main orchestration code. Functions: SignupDialog, handleAuth, clearform",
+      "functions": [
+        "SignupDialog",
+        "handleAuth",
+        "clearform"
+      ],
+      "classes": [],
+      "exports": [],
+      "imports": [
+        "makemytour/src/components/ui/dialog.tsx",
+        "makemytour/src/components/ui/button.tsx",
+        "makemytour/src/components/ui/label.tsx",
+        "makemytour/src/components/ui/input.tsx",
+        "makemytour/src/api/index.js"
+      ],
+      "usedBy": [
+        "makemytour/src/components/Navbar.tsx"
+      ]
+    },
+    {
+      "path": "makemytour/src/components/ui/avatar.tsx",
+      "fileType": "module",
+      "stage": "main",
+      "lang": "js",
+      "ext": ".tsx",
+      "lines": 49,
+      "size": 1405,
+      "collaboration": {
+        "status": "connected",
+        "impact": "leaf",
+        "summary": "Part of the local code flow with a focused role.",
+        "score": 1
+      },
+      "crossStageLinks": 0,
+      "impactScore": 1,
+      "isDeadCode": false,
+      "isOrphan": false,
+      "isCircular": false,
+      "hotspotScore": 7,
+      "hotspotLevel": "low",
+      "summary": "Main orchestration code. Type: module",
+      "functions": [],
+      "classes": [],
+      "exports": [],
+      "imports": [],
+      "usedBy": [
+        "makemytour/src/components/Navbar.tsx"
+      ]
+    },
+    {
+      "path": "makemytour/src/components/ui/button.tsx",
+      "fileType": "module",
+      "stage": "main",
+      "lang": "js",
+      "ext": ".tsx",
+      "lines": 58,
+      "size": 1902,
+      "collaboration": {
+        "status": "collaborative",
+        "impact": "hub",
+        "summary": "A shared dependency reused by many files.",
+        "score": 8
+      },
+      "crossStageLinks": 1,
+      "impactScore": 8,
+      "isDeadCode": false,
+      "isOrphan": false,
+      "isCircular": false,
+      "hotspotScore": 25,
+      "hotspotLevel": "medium",
+      "summary": "Main orchestration code. Type: module",
+      "functions": [],
+      "classes": [],
+      "exports": [],
+      "imports": [],
+      "usedBy": [
+        "makemytour/src/components/Flights/Flightlist.tsx",
+        "makemytour/src/components/Flights/LiveFlightTracker.tsx",
+        "makemytour/src/components/FlightSeatPicker.tsx",
+        "makemytour/src/components/Hotel/Hotel.tsx",
+        "makemytour/src/components/Navbar.tsx",
+        "makemytour/src/components/Pricing/DynamicPricingEngine.tsx",
+        "makemytour/src/components/SignupDialog.tsx"
+      ]
+    },
+    {
+      "path": "makemytour/src/components/ui/card.tsx",
+      "fileType": "module",
+      "stage": "main",
+      "lang": "js",
+      "ext": ".tsx",
+      "lines": 77,
+      "size": 1828,
+      "collaboration": {
+        "status": "isolated",
+        "impact": "solo",
+        "summary": "No local collaboration links yet.",
+        "score": 0
+      },
+      "crossStageLinks": 0,
+      "impactScore": 0,
+      "isDeadCode": true,
+      "isOrphan": true,
+      "isCircular": false,
+      "hotspotScore": 4,
+      "hotspotLevel": "low",
+      "summary": "Main orchestration code. Type: module",
+      "functions": [],
+      "classes": [],
+      "exports": [],
+      "imports": [],
+      "usedBy": []
+    },
+    {
+      "path": "makemytour/src/components/ui/dialog.tsx",
+      "fileType": "module",
+      "stage": "main",
+      "lang": "js",
+      "ext": ".tsx",
+      "lines": 121,
+      "size": 3835,
+      "collaboration": {
+        "status": "connected",
+        "impact": "leaf",
+        "summary": "Part of the local code flow with a focused role.",
+        "score": 1
+      },
+      "crossStageLinks": 0,
+      "impactScore": 1,
+      "isDeadCode": false,
+      "isOrphan": false,
+      "isCircular": false,
+      "hotspotScore": 8,
+      "hotspotLevel": "low",
+      "summary": "Main orchestration code. Functions: DialogHeader, DialogFooter",
+      "functions": [
+        "DialogHeader",
+        "DialogFooter"
+      ],
+      "classes": [],
+      "exports": [],
+      "imports": [],
+      "usedBy": [
+        "makemytour/src/components/SignupDialog.tsx"
+      ]
+    },
+    {
+      "path": "makemytour/src/components/ui/dropdown-menu.tsx",
+      "fileType": "module",
+      "stage": "main",
+      "lang": "js",
+      "ext": ".tsx",
+      "lines": 200,
+      "size": 7402,
+      "collaboration": {
+        "status": "isolated",
+        "impact": "solo",
+        "summary": "No local collaboration links yet.",
+        "score": 0
+      },
+      "crossStageLinks": 0,
+      "impactScore": 0,
+      "isDeadCode": true,
+      "isOrphan": true,
+      "isCircular": false,
+      "hotspotScore": 5,
+      "hotspotLevel": "low",
+      "summary": "Main orchestration code. Functions: DropdownMenuShortcut",
+      "functions": [
+        "DropdownMenuShortcut"
+      ],
+      "classes": [],
+      "exports": [],
+      "imports": [],
+      "usedBy": []
+    },
+    {
+      "path": "makemytour/src/components/ui/input.tsx",
+      "fileType": "module",
+      "stage": "main",
+      "lang": "js",
+      "ext": ".tsx",
+      "lines": 23,
+      "size": 768,
+      "collaboration": {
+        "status": "connected",
+        "impact": "leaf",
+        "summary": "Part of the local code flow with a focused role.",
+        "score": 1
+      },
+      "crossStageLinks": 0,
+      "impactScore": 1,
+      "isDeadCode": false,
+      "isOrphan": false,
+      "isCircular": false,
+      "hotspotScore": 6,
+      "hotspotLevel": "low",
+      "summary": "Main orchestration code. Type: module",
+      "functions": [],
+      "classes": [],
+      "exports": [],
+      "imports": [],
+      "usedBy": [
+        "makemytour/src/components/SignupDialog.tsx"
+      ]
+    },
+    {
+      "path": "makemytour/src/components/ui/label.tsx",
+      "fileType": "module",
+      "stage": "main",
+      "lang": "js",
+      "ext": ".tsx",
+      "lines": 25,
+      "size": 710,
+      "collaboration": {
+        "status": "connected",
+        "impact": "leaf",
+        "summary": "Part of the local code flow with a focused role.",
+        "score": 1
+      },
+      "crossStageLinks": 0,
+      "impactScore": 1,
+      "isDeadCode": false,
+      "isOrphan": false,
+      "isCircular": false,
+      "hotspotScore": 6,
+      "hotspotLevel": "low",
+      "summary": "Main orchestration code. Type: module",
+      "functions": [],
+      "classes": [],
+      "exports": [],
+      "imports": [],
+      "usedBy": [
+        "makemytour/src/components/SignupDialog.tsx"
+      ]
+    },
+    {
+      "path": "makemytour/src/components/ui/scroll-area.tsx",
+      "fileType": "module",
+      "stage": "main",
+      "lang": "js",
+      "ext": ".tsx",
+      "lines": 47,
+      "size": 1642,
+      "collaboration": {
+        "status": "isolated",
+        "impact": "solo",
+        "summary": "No local collaboration links yet.",
+        "score": 0
+      },
+      "crossStageLinks": 0,
+      "impactScore": 0,
+      "isDeadCode": true,
+      "isOrphan": true,
+      "isCircular": false,
+      "hotspotScore": 4,
+      "hotspotLevel": "low",
+      "summary": "Main orchestration code. Type: module",
+      "functions": [],
+      "classes": [],
+      "exports": [],
+      "imports": [],
+      "usedBy": []
+    },
+    {
+      "path": "makemytour/src/components/ui/table.tsx",
+      "fileType": "module",
+      "stage": "main",
+      "lang": "js",
+      "ext": ".tsx",
+      "lines": 121,
+      "size": 2859,
+      "collaboration": {
+        "status": "isolated",
+        "impact": "solo",
+        "summary": "No local collaboration links yet.",
+        "score": 0
+      },
+      "crossStageLinks": 0,
+      "impactScore": 0,
+      "isDeadCode": true,
+      "isOrphan": true,
+      "isCircular": false,
+      "hotspotScore": 5,
+      "hotspotLevel": "low",
+      "summary": "Main orchestration code. Type: module",
+      "functions": [],
+      "classes": [],
+      "exports": [],
+      "imports": [],
+      "usedBy": []
+    },
+    {
+      "path": "makemytour/src/components/ui/tabs.tsx",
+      "fileType": "module",
+      "stage": "main",
+      "lang": "js",
+      "ext": ".tsx",
+      "lines": 54,
+      "size": 1877,
+      "collaboration": {
+        "status": "isolated",
+        "impact": "solo",
+        "summary": "No local collaboration links yet.",
+        "score": 0
+      },
+      "crossStageLinks": 0,
+      "impactScore": 0,
+      "isDeadCode": true,
+      "isOrphan": true,
+      "isCircular": false,
+      "hotspotScore": 4,
+      "hotspotLevel": "low",
+      "summary": "Main orchestration code. Type: module",
+      "functions": [],
+      "classes": [],
+      "exports": [],
+      "imports": [],
+      "usedBy": []
+    },
+    {
+      "path": "makemytour/src/components/ui/textarea.tsx",
+      "fileType": "module",
+      "stage": "main",
+      "lang": "js",
+      "ext": ".tsx",
+      "lines": 23,
+      "size": 649,
+      "collaboration": {
+        "status": "isolated",
+        "impact": "solo",
+        "summary": "No local collaboration links yet.",
+        "score": 0
+      },
+      "crossStageLinks": 0,
+      "impactScore": 0,
+      "isDeadCode": true,
+      "isOrphan": true,
+      "isCircular": false,
+      "hotspotScore": 3,
+      "hotspotLevel": "low",
+      "summary": "Main orchestration code. Type: module",
+      "functions": [],
+      "classes": [],
+      "exports": [],
+      "imports": [],
+      "usedBy": []
+    },
+    {
+      "path": "makemytour/src/lib/utils.ts",
+      "fileType": "module",
+      "stage": "helpers",
+      "lang": "js",
+      "ext": ".ts",
+      "lines": 7,
+      "size": 166,
+      "collaboration": {
+        "status": "isolated",
+        "impact": "solo",
+        "summary": "No local collaboration links yet.",
+        "score": 0
+      },
+      "crossStageLinks": 0,
+      "impactScore": 0,
+      "isDeadCode": true,
+      "isOrphan": true,
+      "isCircular": false,
+      "hotspotScore": 2,
+      "hotspotLevel": "low",
+      "summary": "Support or shared utility code. Functions: cn",
+      "functions": [
+        "cn"
+      ],
+      "classes": [],
+      "exports": [
+        "cn"
+      ],
+      "imports": [],
+      "usedBy": []
+    },
+    {
+      "path": "makemytour/src/pages/admin/index.tsx",
+      "fileType": "entry",
+      "stage": "start",
+      "lang": "js",
+      "ext": ".tsx",
+      "lines": 602,
+      "size": 16503,
+      "collaboration": {
+        "status": "isolated",
+        "impact": "solo",
+        "summary": "No local collaboration links yet.",
+        "score": 0
+      },
+      "crossStageLinks": 0,
+      "impactScore": 0,
+      "isDeadCode": false,
+      "isOrphan": true,
+      "isCircular": false,
+      "hotspotScore": 6,
+      "hotspotLevel": "low",
+      "summary": "Entry or startup logic. Functions: UserSearch, AddEditHotel, AddEditFlight, AdminDashboard",
+      "functions": [
+        "UserSearch",
+        "AddEditHotel",
+        "AddEditFlight",
+        "AdminDashboard",
+        "handleSearch",
+        "handleChange",
+        "handleSubmit"
+      ],
+      "classes": [],
+      "exports": [
+        "AdminDashboard"
+      ],
+      "imports": [],
+      "usedBy": []
+    },
+    {
+      "path": "makemytour/src/pages/api/hello.ts",
+      "fileType": "module",
+      "stage": "main",
+      "lang": "js",
+      "ext": ".ts",
+      "lines": 14,
+      "size": 248,
+      "collaboration": {
+        "status": "isolated",
+        "impact": "solo",
+        "summary": "No local collaboration links yet.",
+        "score": 0
+      },
+      "crossStageLinks": 0,
+      "impactScore": 0,
+      "isDeadCode": true,
+      "isOrphan": true,
+      "isCircular": false,
+      "hotspotScore": 3,
+      "hotspotLevel": "low",
+      "summary": "Main orchestration code. Functions: handler",
+      "functions": [
+        "handler"
+      ],
+      "classes": [],
+      "exports": [
+        "handler"
+      ],
+      "imports": [],
+      "usedBy": []
+    },
+    {
+      "path": "makemytour/src/pages/book-flight/[id]/index.tsx",
+      "fileType": "entry",
+      "stage": "start",
+      "lang": "js",
+      "ext": ".tsx",
+      "lines": 765,
+      "size": 31699,
+      "collaboration": {
+        "status": "isolated",
+        "impact": "solo",
+        "summary": "No local collaboration links yet.",
+        "score": 0
+      },
+      "crossStageLinks": 0,
+      "impactScore": 0,
+      "isDeadCode": false,
+      "isOrphan": true,
+      "isCircular": false,
+      "hotspotScore": 7,
+      "hotspotLevel": "low",
+      "summary": "Entry or startup logic. Functions: BookFlightPage, fetchData, handleQuantityChange, handleApplyCoupon",
+      "functions": [
+        "BookFlightPage",
+        "fetchData",
+        "handleQuantityChange",
+        "handleApplyCoupon",
+        "handleFreezePrice",
+        "handlebooking",
+        "BookingContent"
+      ],
+      "classes": [],
+      "exports": [],
+      "imports": [],
+      "usedBy": []
+    },
+    {
+      "path": "makemytour/src/pages/book-hotel/[id]/index.tsx",
+      "fileType": "entry",
+      "stage": "start",
+      "lang": "js",
+      "ext": ".tsx",
+      "lines": 700,
+      "size": 28767,
+      "collaboration": {
+        "status": "isolated",
+        "impact": "solo",
+        "summary": "No local collaboration links yet.",
+        "score": 0
+      },
+      "crossStageLinks": 0,
+      "impactScore": 0,
+      "isDeadCode": false,
+      "isOrphan": true,
+      "isCircular": false,
+      "hotspotScore": 7,
+      "hotspotLevel": "low",
+      "summary": "Entry or startup logic. Functions: BookHotelPage, fetchhotels, handleQuantityChange, handleApplyCoupon",
+      "functions": [
+        "BookHotelPage",
+        "fetchhotels",
+        "handleQuantityChange",
+        "handleApplyCoupon",
+        "handleFreezePrice",
+        "handlebooking",
+        "BookingContent"
+      ],
+      "classes": [],
+      "exports": [],
+      "imports": [],
+      "usedBy": []
+    },
+    {
+      "path": "makemytour/src/pages/dynamic-pricing.tsx",
+      "fileType": "module",
+      "stage": "main",
+      "lang": "js",
+      "ext": ".tsx",
+      "lines": 37,
+      "size": 894,
+      "collaboration": {
+        "status": "isolated",
+        "impact": "solo",
+        "summary": "No local collaboration links yet.",
+        "score": 0
+      },
+      "crossStageLinks": 0,
+      "impactScore": 0,
+      "isDeadCode": true,
+      "isOrphan": true,
+      "isCircular": false,
+      "hotspotScore": 4,
+      "hotspotLevel": "low",
+      "summary": "Main orchestration code. Functions: DynamicPricingPage",
+      "functions": [
+        "DynamicPricingPage"
+      ],
+      "classes": [],
+      "exports": [],
+      "imports": [],
+      "usedBy": []
+    },
+    {
+      "path": "makemytour/src/pages/flight-status.tsx",
+      "fileType": "module",
+      "stage": "main",
+      "lang": "js",
+      "ext": ".tsx",
+      "lines": 37,
+      "size": 860,
+      "collaboration": {
+        "status": "isolated",
+        "impact": "solo",
+        "summary": "No local collaboration links yet.",
+        "score": 0
+      },
+      "crossStageLinks": 0,
+      "impactScore": 0,
+      "isDeadCode": true,
+      "isOrphan": true,
+      "isCircular": false,
+      "hotspotScore": 4,
+      "hotspotLevel": "low",
+      "summary": "Main orchestration code. Functions: FlightStatusPage",
+      "functions": [
+        "FlightStatusPage"
+      ],
+      "classes": [],
+      "exports": [],
+      "imports": [],
+      "usedBy": []
+    },
+    {
+      "path": "makemytour/src/pages/flight.tsx",
+      "fileType": "module",
+      "stage": "main",
+      "lang": "js",
+      "ext": ".tsx",
+      "lines": 659,
+      "size": 30123,
+      "collaboration": {
+        "status": "connected",
+        "impact": "leaf",
+        "summary": "Part of the local code flow with a focused role.",
+        "score": 1
+      },
+      "crossStageLinks": 0,
+      "impactScore": 1,
+      "isDeadCode": false,
+      "isOrphan": false,
+      "isCircular": false,
+      "hotspotScore": 9,
+      "hotspotLevel": "low",
+      "summary": "Main orchestration code. Functions: getBaseCity, getCodeFromCity, matchCity, FlightSearchPage",
+      "functions": [
+        "getBaseCity",
+        "getCodeFromCity",
+        "matchCity",
+        "FlightSearchPage",
+        "fetchFlights",
+        "handleSearch",
+        "toggleAirline",
+        "formatFlightTime",
+        "formatFlightDate"
+      ],
+      "classes": [],
+      "exports": [
+        "FlightSearchPage"
+      ],
+      "imports": [],
+      "usedBy": [
+        "makemytour/src/pages/flights.tsx"
+      ]
+    },
+    {
+      "path": "makemytour/src/pages/flights.tsx",
+      "fileType": "module",
+      "stage": "main",
+      "lang": "js",
+      "ext": ".tsx",
+      "lines": 2,
+      "size": 36,
+      "collaboration": {
+        "status": "connected",
+        "impact": "leaf",
+        "summary": "Part of the local code flow with a focused role.",
+        "score": 1
+      },
+      "crossStageLinks": 0,
+      "impactScore": 1,
+      "isDeadCode": true,
+      "isOrphan": false,
+      "isCircular": false,
+      "hotspotScore": 3,
+      "hotspotLevel": "low",
+      "summary": "Main orchestration code. Type: module",
+      "functions": [],
+      "classes": [],
+      "exports": [],
+      "imports": [
+        "makemytour/src/pages/flight.tsx"
+      ],
+      "usedBy": []
+    },
+    {
+      "path": "makemytour/src/pages/hotel.tsx",
+      "fileType": "module",
+      "stage": "main",
+      "lang": "js",
+      "ext": ".tsx",
+      "lines": 617,
+      "size": 29302,
+      "collaboration": {
+        "status": "connected",
+        "impact": "leaf",
+        "summary": "Part of the local code flow with a focused role.",
+        "score": 1
+      },
+      "crossStageLinks": 0,
+      "impactScore": 1,
+      "isDeadCode": false,
+      "isOrphan": false,
+      "isCircular": false,
+      "hotspotScore": 9,
+      "hotspotLevel": "low",
+      "summary": "Main orchestration code. Functions: getDestinationImage, getBaseCity, matchCity, HotelSearchPage",
+      "functions": [
+        "getDestinationImage",
+        "getBaseCity",
+        "matchCity",
+        "HotelSearchPage",
+        "fetchHotels",
+        "handleSearch",
+        "toggleAmenity"
+      ],
+      "classes": [],
+      "exports": [
+        "HotelSearchPage"
+      ],
+      "imports": [],
+      "usedBy": [
+        "makemytour/src/pages/hotels.tsx"
+      ]
+    },
+    {
+      "path": "makemytour/src/pages/hotels.tsx",
+      "fileType": "module",
+      "stage": "main",
+      "lang": "js",
+      "ext": ".tsx",
+      "lines": 2,
+      "size": 35,
+      "collaboration": {
+        "status": "connected",
+        "impact": "leaf",
+        "summary": "Part of the local code flow with a focused role.",
+        "score": 1
+      },
+      "crossStageLinks": 0,
+      "impactScore": 1,
+      "isDeadCode": true,
+      "isOrphan": false,
+      "isCircular": false,
+      "hotspotScore": 3,
+      "hotspotLevel": "low",
+      "summary": "Main orchestration code. Type: module",
+      "functions": [],
+      "classes": [],
+      "exports": [],
+      "imports": [
+        "makemytour/src/pages/hotel.tsx"
+      ],
+      "usedBy": []
+    },
+    {
+      "path": "makemytour/src/pages/index.tsx",
+      "fileType": "entry",
+      "stage": "start",
+      "lang": "js",
+      "ext": ".tsx",
+      "lines": 570,
+      "size": 20659,
+      "collaboration": {
+        "status": "isolated",
+        "impact": "solo",
+        "summary": "No local collaboration links yet.",
+        "score": 0
+      },
+      "crossStageLinks": 0,
+      "impactScore": 0,
+      "isDeadCode": false,
+      "isOrphan": true,
+      "isCircular": false,
+      "hotspotScore": 6,
+      "hotspotLevel": "low",
+      "summary": "Entry or startup logic. Functions: getBaseCity, getCodeFromCity, matchCity, Home",
+      "functions": [
+        "getBaseCity",
+        "getCodeFromCity",
+        "matchCity",
+        "Home",
+        "NavItem",
+        "SearchInput",
+        "fetchdata",
+        "handlesearch",
+        "handlebooknow",
+        "OfferCard",
+        "CollectionCard",
+        "DownloadApp",
+        "WonderCard"
+      ],
+      "classes": [],
+      "exports": [
+        "Home"
+      ],
+      "imports": [],
+      "usedBy": []
+    },
+    {
+      "path": "makemytour/src/pages/profile/index.tsx",
+      "fileType": "entry",
+      "stage": "start",
+      "lang": "js",
+      "ext": ".tsx",
+      "lines": 1009,
+      "size": 48832,
+      "collaboration": {
+        "status": "isolated",
+        "impact": "solo",
+        "summary": "No local collaboration links yet.",
+        "score": 0
+      },
+      "crossStageLinks": 0,
+      "impactScore": 0,
+      "isDeadCode": false,
+      "isOrphan": true,
+      "isCircular": false,
+      "hotspotScore": 7,
+      "hotspotLevel": "low",
+      "summary": "Entry or startup logic. Functions: ProfileDashboardPage, logout, fetchUserDataAndRefunds, fetchUserFreezes",
+      "functions": [
+        "ProfileDashboardPage",
+        "logout",
+        "fetchUserDataAndRefunds",
+        "fetchUserFreezes",
+        "fetchUserPreferencesData",
+        "handleRemoveFreeze",
+        "handleSaveProfile",
+        "handleOpenCancelModal",
+        "handleConfirmCancellation",
+        "formatDate"
+      ],
+      "classes": [],
+      "exports": [],
+      "imports": [],
+      "usedBy": []
+    },
+    {
+      "path": "makemytour/src/pages/_app.tsx",
+      "fileType": "entry",
+      "stage": "start",
+      "lang": "js",
+      "ext": ".tsx",
+      "lines": 37,
+      "size": 991,
+      "collaboration": {
+        "status": "isolated",
+        "impact": "solo",
+        "summary": "No local collaboration links yet.",
+        "score": 0
+      },
+      "crossStageLinks": 0,
+      "impactScore": 0,
+      "isDeadCode": false,
+      "isOrphan": true,
+      "isCircular": false,
+      "hotspotScore": 4,
+      "hotspotLevel": "low",
+      "summary": "Entry or startup logic. Functions: App, Myapp",
+      "functions": [
+        "App",
+        "Myapp"
+      ],
+      "classes": [],
+      "exports": [
+        "App"
+      ],
+      "imports": [],
+      "usedBy": []
+    },
+    {
+      "path": "makemytour/src/pages/_document.tsx",
+      "fileType": "module",
+      "stage": "main",
+      "lang": "js",
+      "ext": ".tsx",
+      "lines": 14,
+      "size": 257,
+      "collaboration": {
+        "status": "isolated",
+        "impact": "solo",
+        "summary": "No local collaboration links yet.",
+        "score": 0
+      },
+      "crossStageLinks": 0,
+      "impactScore": 0,
+      "isDeadCode": true,
+      "isOrphan": true,
+      "isCircular": false,
+      "hotspotScore": 3,
+      "hotspotLevel": "low",
+      "summary": "Main orchestration code. Functions: Document",
+      "functions": [
+        "Document"
+      ],
+      "classes": [],
+      "exports": [
+        "Document"
+      ],
+      "imports": [],
+      "usedBy": []
+    },
+    {
+      "path": "makemytour/src/store/index.js",
+      "fileType": "entry",
+      "stage": "start",
+      "lang": "js",
+      "ext": ".js",
+      "lines": 38,
+      "size": 845,
+      "collaboration": {
+        "status": "isolated",
+        "impact": "solo",
+        "summary": "No local collaboration links yet.",
+        "score": 0
+      },
+      "crossStageLinks": 0,
+      "impactScore": 0,
+      "isDeadCode": false,
+      "isOrphan": true,
+      "isCircular": false,
+      "hotspotScore": 4,
+      "hotspotLevel": "low",
+      "summary": "Entry or startup logic. Functions: saveusertolocalstorage",
+      "functions": [
+        "saveusertolocalstorage"
+      ],
+      "classes": [],
+      "exports": [],
+      "imports": [],
+      "usedBy": []
+    },
+    {
+      "path": "makemytour/tailwind.config.ts",
+      "fileType": "config",
+      "stage": "helpers",
+      "lang": "js",
+      "ext": ".ts",
+      "lines": 98,
+      "size": 2616,
+      "collaboration": {
+        "status": "isolated",
+        "impact": "solo",
+        "summary": "No local collaboration links yet.",
+        "score": 0
+      },
+      "crossStageLinks": 0,
+      "impactScore": 0,
+      "isDeadCode": true,
+      "isOrphan": true,
+      "isCircular": false,
+      "hotspotScore": 5,
+      "hotspotLevel": "low",
+      "summary": "Support or shared utility code. Type: config",
+      "functions": [],
+      "classes": [],
+      "exports": [],
+      "imports": [],
+      "usedBy": []
+    },
+    {
+      "path": "testing/load/run_load_test.js",
+      "fileType": "test",
+      "stage": "start",
+      "lang": "js",
+      "ext": ".js",
+      "lines": 100,
+      "size": 4033,
+      "collaboration": {
+        "status": "isolated",
+        "impact": "solo",
+        "summary": "No local collaboration links yet.",
+        "score": 0
+      },
+      "crossStageLinks": 0,
+      "impactScore": 0,
+      "isDeadCode": false,
+      "isOrphan": true,
+      "isCircular": false,
+      "hotspotScore": 5,
+      "hotspotLevel": "low",
+      "summary": "Entry or startup logic. Functions: makeRequest, runLoadTest",
+      "functions": [
+        "makeRequest",
+        "runLoadTest"
+      ],
+      "classes": [],
+      "exports": [],
+      "imports": [],
+      "usedBy": []
+    }
+  ]
+}

@@ -257,6 +257,7 @@ export default function FlightSearchPage() {
                 <SearchSelect
                   placeholder="From City"
                   options={cityOptions}
+                  isLoading={loading}
                   value={from}
                   onChange={setFrom}
                   icon={<Plane className="w-4 h-4 text-blue-600 rotate-45" />}
@@ -283,6 +284,7 @@ export default function FlightSearchPage() {
                 <SearchSelect
                   placeholder="To City"
                   options={cityOptions}
+                  isLoading={loading}
                   value={to}
                   onChange={setTo}
                   icon={<Plane className="w-4 h-4 text-emerald-600 -rotate-45" />}

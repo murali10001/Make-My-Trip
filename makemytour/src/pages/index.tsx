@@ -84,6 +84,31 @@ function matchCity(recordCity: string, queryCity: string): boolean {
   return false;
 }
 
+const POPULAR_FLIGHT_CITIES = [
+  { value: "Delhi (DEL)", label: "Delhi (DEL)" },
+  { value: "Mumbai (BOM)", label: "Mumbai (BOM)" },
+  { value: "Bengaluru (BLR)", label: "Bengaluru (BLR)" },
+  { value: "Goa (GOI)", label: "Goa (GOI)" },
+  { value: "Kolkata (CCU)", label: "Kolkata (CCU)" },
+  { value: "Chennai (MAA)", label: "Chennai (MAA)" },
+  { value: "Hyderabad (HYD)", label: "Hyderabad (HYD)" },
+  { value: "Pune (PNQ)", label: "Pune (PNQ)" },
+  { value: "Ahmedabad (AMD)", label: "Ahmedabad (AMD)" },
+  { value: "Kochi (COK)", label: "Kochi (COK)" },
+];
+
+const POPULAR_HOTEL_CITIES = [
+  { value: "Goa", label: "Goa" },
+  { value: "Delhi", label: "Delhi" },
+  { value: "Mumbai", label: "Mumbai" },
+  { value: "Bengaluru", label: "Bengaluru" },
+  { value: "Jaipur", label: "Jaipur" },
+  { value: "Kerala", label: "Kerala" },
+  { value: "Manali", label: "Manali" },
+  { value: "Udaipur", label: "Udaipur" },
+  { value: "Shimla", label: "Shimla" },
+];
+
 export default function Home() {
   const [bookingtype, setbookingtype] = useState("flights");
   const [from, setfrom] = useState("");
@@ -154,9 +179,10 @@ export default function Home() {
         }
       });
     });
-    return Array.from(cityMap.values())
+    const parsed = Array.from(cityMap.values())
       .sort((a, b) => a.localeCompare(b))
       .map((city) => ({ value: city, label: city }));
+    return parsed.length > 0 ? parsed : POPULAR_FLIGHT_CITIES;
   }, [flight]);
 
   const hotelCityOptions = useMemo(() => {
@@ -166,9 +192,10 @@ export default function Home() {
       const base = getBaseCity(h.location);
       if (base) citySet.add(base);
     });
-    return Array.from(citySet)
+    const parsed = Array.from(citySet)
       .sort((a, b) => a.localeCompare(b))
       .map((city) => ({ value: city, label: city }));
+    return parsed.length > 0 ? parsed : POPULAR_HOTEL_CITIES;
   }, [hotel]);
 
   const activeCityOptions = bookingtype === "flights" ? flightCityOptions : hotelCityOptions;
@@ -268,6 +295,7 @@ export default function Home() {
               <div className="col-span-1">
                 <SearchSelect
                   options={flightCityOptions}
+                  isLoading={loading}
                   placeholder="From"
                   value={from}
                   onChange={setfrom}
@@ -280,6 +308,7 @@ export default function Home() {
             <div className={bookingtype === "flights" ? "col-span-1" : "col-span-1 md:col-span-2 lg:col-span-2"}>
               <SearchSelect
                 options={activeCityOptions}
+                isLoading={loading}
                 placeholder={bookingtype === "flights" ? "To" : "City"}
                 value={to}
                 onChange={setto}

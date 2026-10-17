@@ -5,6 +5,7 @@ import {
   simulateFlightUpdate,
   triggerRandomFlightSimulation,
   sendFlightEmailNotification,
+  BACKEND_URL,
 } from "@/api";
 import {
   Plane,
@@ -135,7 +136,7 @@ const LiveFlightTracker: React.FC = () => {
     let eventSource: EventSource | null = null;
     if (typeof window !== "undefined") {
       try {
-        const apiBase = process.env.NEXT_PUBLIC_API_URL || "https://make-my-trip-7m1d.onrender.com";
+        const apiBase = BACKEND_URL;
         eventSource = new EventSource(`${apiBase}/api/flight-status/stream`);
 
         eventSource.addEventListener("flight-update", (event: MessageEvent) => {

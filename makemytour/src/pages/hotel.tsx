@@ -224,6 +224,7 @@ export default function HotelSearchPage() {
                 <SearchSelect
                   placeholder="Where are you going?"
                   options={locationOptions}
+                  isLoading={loading}
                   value={location}
                   onChange={setLocation}
                   icon={<MapPin className="w-4 h-4 text-blue-600" />}

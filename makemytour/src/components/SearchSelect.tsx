@@ -2,7 +2,15 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { X, Check } from "lucide-react";
 
-export function SearchSelect({ options = [], placeholder, value, onChange, icon, subtitle }: any) {
+export function SearchSelect({
+  options = [],
+  placeholder,
+  value,
+  onChange,
+  icon,
+  subtitle,
+  isLoading = false,
+}: any) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -111,9 +119,18 @@ export function SearchSelect({ options = [], placeholder, value, onChange, icon,
                     </button>
                   );
                 })
+              ) : isLoading && !searchTerm.trim() ? (
+                <div className="p-4 flex items-center justify-center space-x-2 text-xs text-slate-500">
+                  <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                  <span>Loading destinations...</span>
+                </div>
+              ) : searchTerm.trim() ? (
+                <div className="p-4 text-center text-xs text-slate-500">
+                  No cities found matching "{searchTerm.trim()}"
+                </div>
               ) : (
                 <div className="p-4 text-center text-xs text-slate-500">
-                  No cities found matching "{searchTerm}"
+                  No destinations available
                 </div>
               )}
             </div>
