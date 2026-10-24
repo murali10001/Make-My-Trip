@@ -318,10 +318,10 @@ const ProfileDashboardPage = () => {
               Manage your active bookings, price locks, and track live cancellation refund status.
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none snap-x whitespace-nowrap w-full md:w-auto -mx-1 px-1">
             <button
               onClick={() => setActiveTab("bookings")}
-              className={`px-4 py-2 rounded-xl font-bold text-xs transition-all ${
+              className={`px-4 py-2 rounded-xl font-bold text-xs transition-all flex-shrink-0 snap-start ${
                 activeTab === "bookings"
                   ? "bg-red-500 text-white shadow-md"
                   : "bg-slate-800/80 hover:bg-slate-800 text-slate-300"
@@ -331,9 +331,9 @@ const ProfileDashboardPage = () => {
             </button>
             <button
               onClick={() => setActiveTab("refunds")}
-              className={`px-4 py-2 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 ${
+              className={`px-4 py-2 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 flex-shrink-0 snap-start ${
                 activeTab === "refunds"
-                  ? "bg-amber-500 text-slate-950 shadow-md"
+                  ? "bg-amber-500 text-slate-950 shadow-md font-extrabold"
                   : "bg-slate-800/80 hover:bg-slate-800 text-slate-300"
               }`}
             >
@@ -342,9 +342,9 @@ const ProfileDashboardPage = () => {
             </button>
             <button
               onClick={() => setActiveTab("freezes")}
-              className={`px-4 py-2 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 ${
+              className={`px-4 py-2 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 flex-shrink-0 snap-start ${
                 activeTab === "freezes"
-                  ? "bg-cyan-400 text-slate-950 shadow-md"
+                  ? "bg-cyan-400 text-slate-950 shadow-md font-extrabold"
                   : "bg-slate-800/80 hover:bg-slate-800 text-slate-300"
               }`}
             >
@@ -353,9 +353,9 @@ const ProfileDashboardPage = () => {
             </button>
             <button
               onClick={() => setActiveTab("preferences")}
-              className={`px-4 py-2 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 ${
+              className={`px-4 py-2 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 flex-shrink-0 snap-start ${
                 activeTab === "preferences"
-                  ? "bg-indigo-600 text-white shadow-md"
+                  ? "bg-indigo-600 text-white shadow-md font-extrabold"
                   : "bg-slate-800/80 hover:bg-slate-800 text-slate-300"
               }`}
             >
@@ -364,7 +364,7 @@ const ProfileDashboardPage = () => {
             </button>
             <button
               onClick={() => setActiveTab("recommendations")}
-              className={`px-4 py-2 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 ${
+              className={`px-4 py-2 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 flex-shrink-0 snap-start ${
                 activeTab === "recommendations"
                   ? "bg-gradient-to-r from-amber-400 to-orange-400 text-slate-950 shadow-md font-black"
                   : "bg-slate-800/80 hover:bg-slate-800 text-slate-300"
@@ -677,40 +677,51 @@ const ProfileDashboardPage = () => {
 
                           <div className="pt-2">
                             <p className="text-xs font-bold text-slate-700 mb-3">Live Progress Tracker:</p>
-                            <div className="grid grid-cols-3 gap-2 text-center relative">
-
-                              <div className="flex flex-col items-center">
-                                <div className="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-xs shadow-sm">
-                                  <Check className="w-4 h-4" />
-                                </div>
-                                <span className="text-[11px] font-bold text-slate-800 mt-1">Request Received</span>
-                                <span className="text-[9px] text-slate-400">{rf.requestDate?.split(" ")[0] || "Done"}</span>
+                            <div className="relative">
+                              {/* Horizontal track line connecting the 3 steps */}
+                              <div className="absolute top-4 left-[16%] right-[16%] h-0.5 bg-slate-200 z-0">
+                                <div
+                                  className="h-full bg-emerald-500 transition-all duration-500"
+                                  style={{
+                                    width: currentStep >= 3 ? "100%" : currentStep >= 2 ? "50%" : "0%",
+                                  }}
+                                />
                               </div>
 
-                              <div className="flex flex-col items-center">
-                                <div
-                                  className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-sm ${
-                                    currentStep >= 2
-                                      ? "bg-emerald-500 text-white"
-                                      : "bg-amber-500 text-white animate-pulse"
-                                  }`}
-                                >
-                                  {currentStep >= 2 ? <Check className="w-4 h-4" /> : "2"}
+                              <div className="grid grid-cols-3 gap-2 text-center relative z-10">
+                                <div className="flex flex-col items-center">
+                                  <div className="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-xs shadow-sm ring-4 ring-slate-50">
+                                    <Check className="w-4 h-4" />
+                                  </div>
+                                  <span className="text-[11px] font-bold text-slate-800 mt-1.5">Request Received</span>
+                                  <span className="text-[9px] text-slate-400">{rf.requestDate?.split(" ")[0] || "Done"}</span>
                                 </div>
-                                <span className="text-[11px] font-bold text-slate-800 mt-1">Bank Processing</span>
-                                <span className="text-[9px] text-slate-500">{currentStep >= 2 ? "Verified" : "In Progress"}</span>
-                              </div>
 
-                              <div className="flex flex-col items-center">
-                                <div
-                                  className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-sm ${
-                                    currentStep >= 3 ? "bg-emerald-500 text-white" : "bg-slate-300 text-slate-600"
-                                  }`}
-                                >
-                                  {currentStep >= 3 ? <Check className="w-4 h-4" /> : "3"}
+                                <div className="flex flex-col items-center">
+                                  <div
+                                    className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-sm ring-4 ring-slate-50 ${
+                                      currentStep >= 2
+                                        ? "bg-emerald-500 text-white"
+                                        : "bg-amber-500 text-white animate-pulse"
+                                    }`}
+                                  >
+                                    {currentStep >= 2 ? <Check className="w-4 h-4" /> : "2"}
+                                  </div>
+                                  <span className="text-[11px] font-bold text-slate-800 mt-1.5">Bank Processing</span>
+                                  <span className="text-[9px] text-slate-500">{currentStep >= 2 ? "Verified" : "In Progress"}</span>
                                 </div>
-                                <span className="text-[11px] font-bold text-slate-800 mt-1">Refund Credited</span>
-                                <span className="text-[9px] text-slate-400">{currentStep >= 3 ? "Completed" : "Pending"}</span>
+
+                                <div className="flex flex-col items-center">
+                                  <div
+                                    className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-sm ring-4 ring-slate-50 ${
+                                      currentStep >= 3 ? "bg-emerald-500 text-white" : "bg-slate-300 text-slate-600"
+                                    }`}
+                                  >
+                                    {currentStep >= 3 ? <Check className="w-4 h-4" /> : "3"}
+                                  </div>
+                                  <span className="text-[11px] font-bold text-slate-800 mt-1.5">Refund Credited</span>
+                                  <span className="text-[9px] text-slate-400">{currentStep >= 3 ? "Completed" : "Pending"}</span>
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -883,8 +894,8 @@ const ProfileDashboardPage = () => {
       </div>
 
       <Dialog open={cancelModalOpen} onOpenChange={setCancelModalOpen}>
-        <DialogContent className="max-w-lg bg-white rounded-2xl p-6 shadow-2xl">
-          <DialogHeader>
+        <DialogContent className="max-w-lg max-h-[90vh] bg-white rounded-2xl p-6 shadow-2xl flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle className="text-xl font-bold text-slate-900 flex items-center gap-2">
               <RotateCcw className="w-5 h-5 text-red-500" />
               Cancel Booking & Calculate Refund
@@ -901,7 +912,7 @@ const ProfileDashboardPage = () => {
               <p className="text-xs text-emerald-700">Redirecting to Refund Status Tracker...</p>
             </div>
           ) : (
-            <div className="space-y-5 py-2">
+            <div className="space-y-4 py-2 overflow-y-auto max-h-[70vh] pr-1 scrollbar-thin flex-1">
 
               <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex justify-between items-center text-xs">
                 <div>

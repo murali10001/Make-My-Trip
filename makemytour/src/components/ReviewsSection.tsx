@@ -361,13 +361,13 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
 
       <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
 
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-xs font-bold text-slate-500 flex items-center gap-1 mr-1">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 scrollbar-none snap-x whitespace-nowrap w-full md:w-auto -mx-1 px-1">
+          <span className="text-xs font-bold text-slate-500 flex items-center gap-1 mr-1 flex-shrink-0">
             <Filter className="w-3.5 h-3.5" /> Filter:
           </span>
           <button
             onClick={() => setFilterRating(0)}
-            className={`text-xs px-3 py-1 rounded-full font-bold transition-all ${
+            className={`text-xs px-3 py-1 rounded-full font-bold transition-all flex-shrink-0 snap-start ${
               filterRating === 0
                 ? "bg-slate-900 text-white shadow-xs"
                 : "bg-slate-100 text-slate-700 hover:bg-slate-200"
@@ -379,7 +379,7 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
             <button
               key={s}
               onClick={() => setFilterRating(filterRating === s ? 0 : s)}
-              className={`text-xs px-2.5 py-1 rounded-full font-bold transition-all flex items-center gap-1 ${
+              className={`text-xs px-2.5 py-1 rounded-full font-bold transition-all flex items-center gap-1 flex-shrink-0 snap-start ${
                 filterRating === s
                   ? "bg-amber-500 text-white shadow-xs"
                   : "bg-slate-100 text-slate-700 hover:bg-slate-200"
@@ -391,7 +391,7 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
 
           <button
             onClick={() => setPhotosOnly(!photosOnly)}
-            className={`text-xs px-3 py-1 rounded-full font-bold transition-all flex items-center gap-1.5 ml-1 ${
+            className={`text-xs px-3 py-1 rounded-full font-bold transition-all flex items-center gap-1.5 ml-1 flex-shrink-0 snap-start ${
               photosOnly
                 ? "bg-indigo-600 text-white shadow-xs"
                 : "bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200"

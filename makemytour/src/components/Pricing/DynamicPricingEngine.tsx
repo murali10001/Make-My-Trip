@@ -485,36 +485,43 @@ const DynamicPricingEngine: React.FC = () => {
 
             {pricingData?.priceHistory && (
               <div className="bg-slate-900 rounded-xl p-5 text-white space-y-4">
-                <div className="h-48 w-full flex items-end justify-between gap-2 pt-6 px-2">
-                  {pricingData.priceHistory.map((point, index) => {
-                    const maxP = Math.max(...pricingData.priceHistory.map((p) => p.price));
-                    const minP = Math.min(...pricingData.priceHistory.map((p) => p.price));
-                    const heightPercent = Math.max(
-                      20,
-                      Math.min(100, ((point.price - minP * 0.8) / (maxP - minP * 0.8)) * 100)
-                    );
+                <div className="overflow-x-auto pb-2 scrollbar-none">
+                  <div className="min-w-[400px] h-48 w-full flex items-end justify-between gap-2 pt-6 px-2">
+                    {pricingData.priceHistory.map((point, index) => {
+                      const maxP = Math.max(...pricingData.priceHistory.map((p) => p.price));
+                      const minP = Math.min(...pricingData.priceHistory.map((p) => p.price));
+                      const heightPercent = Math.max(
+                        20,
+                        Math.min(100, ((point.price - minP * 0.8) / (maxP - minP * 0.8)) * 100)
+                      );
+                      const isRightmost = index >= pricingData.priceHistory.length - 2;
 
-                    return (
-                      <div key={index} className="flex-1 flex flex-col items-center gap-2 group">
-                        <div className="text-[10px] text-slate-300 font-mono opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700">
-                          ₹{point.price}
-                        </div>
-                        <div className="w-full bg-slate-800 rounded-t-lg h-36 flex items-end p-1">
+                      return (
+                        <div key={index} className="flex-1 flex flex-col items-center gap-2 group relative">
                           <div
-                            style={{ height: `${heightPercent}%` }}
-                            className={`w-full rounded-t transition-all duration-500 ${
-                              point.isCurrent
-                                ? "bg-emerald-400 shadow-md shadow-emerald-500/50"
-                                : "bg-indigo-500 hover:bg-indigo-400"
+                            className={`text-[10px] text-slate-200 font-mono opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 px-2 py-0.5 rounded border border-slate-700 whitespace-nowrap absolute -top-2 z-30 shadow-lg pointer-events-none ${
+                              isRightmost ? "right-0" : ""
                             }`}
-                          />
+                          >
+                            ₹{point.price.toLocaleString()}
+                          </div>
+                          <div className="w-full bg-slate-800 rounded-t-lg h-36 flex items-end p-1">
+                            <div
+                              style={{ height: `${heightPercent}%` }}
+                              className={`w-full rounded-t transition-all duration-500 ${
+                                point.isCurrent
+                                  ? "bg-emerald-400 shadow-md shadow-emerald-500/50"
+                                  : "bg-indigo-500 hover:bg-indigo-400"
+                              }`}
+                            />
+                          </div>
+                          <span className={`text-[10px] font-mono whitespace-nowrap ${point.isCurrent ? "text-emerald-400 font-bold" : "text-slate-400"}`}>
+                            {point.dayLabel}
+                          </span>
                         </div>
-                        <span className={`text-[10px] font-mono ${point.isCurrent ? "text-emerald-400 font-bold" : "text-slate-400"}`}>
-                          {point.dayLabel}
-                        </span>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-between text-xs pt-3 border-t border-slate-800 text-slate-400">
@@ -545,7 +552,7 @@ const DynamicPricingEngine: React.FC = () => {
                     LOCKED FARE
                   </span>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-slate-300 font-mono font-bold flex items-center gap-1">
+                    <span className="text-xs text-slate-300 font-mono font-bold flex items-center gap-1 tabular-nums">
                       <Clock className="w-3.5 h-3.5 text-cyan-400" />
                       {formatCountdown(countdownSeconds)}
                     </span>
@@ -620,10 +627,10 @@ const DynamicPricingEngine: React.FC = () => {
                   placeholder="Enter code (HDFC10, SBISAVE)"
                   value={couponCodeInput}
                   onChange={(e) => {
-                    setCouponCodeInput(e.target.value);
+                    setCouponCodeInput(e.target.value.toUpperCase());
                     setCouponError(null);
                   }}
-                  className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-xs font-mono uppercase text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-xs font-mono uppercase text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 tracking-wider"
                 />
                 <Button
                   onClick={() => handleApplyCoupon()}

@@ -278,7 +278,7 @@ export default function PersonalizedRecommendations() {
           )}
         </div>
 
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 mt-6 pt-2 scrollbar-none border-t border-white/15 overscroll-x-contain touch-pan-x">
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 mt-6 pt-2 scrollbar-none border-t border-white/15 overscroll-x-contain touch-pan-x snap-x px-1 -mx-1 pr-8">
           {CATEGORY_TABS.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeCategory === tab.id;
@@ -287,7 +287,7 @@ export default function PersonalizedRecommendations() {
                 type="button"
                 key={tab.id}
                 onClick={(e) => handleCategorySelect(e, tab.id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs md:text-sm font-semibold transition-all whitespace-nowrap shadow-sm cursor-pointer touch-manipulation select-none ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs md:text-sm font-semibold transition-all whitespace-nowrap shadow-sm cursor-pointer touch-manipulation select-none flex-shrink-0 snap-start ${
                   isActive
                     ? "bg-white text-blue-900 shadow-md scale-105"
                     : "bg-white/10 text-white hover:bg-white/20 backdrop-blur-sm"
@@ -498,7 +498,7 @@ export default function PersonalizedRecommendations() {
         open={Boolean(selectedExplanation)}
         onOpenChange={(open) => !open && setSelectedExplanation(null)}
       >
-        <DialogContent className="max-w-lg bg-white rounded-3xl p-6 shadow-2xl border border-slate-200">
+        <DialogContent className="w-[calc(100vw-32px)] sm:max-w-lg max-h-[88vh] overflow-y-auto mx-auto bg-white rounded-3xl p-5 sm:p-6 shadow-2xl border border-slate-200 scrollbar-thin">
           {selectedExplanation && (
             <div className="space-y-5">
               <DialogHeader>

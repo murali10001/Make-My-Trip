@@ -502,8 +502,8 @@ export default function FlightSearchPage() {
 
                         <div className="md:w-1/4">
                           <div className="flex items-center gap-3">
-                            <div className="w-11 h-11 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-700 font-black text-base shadow-sm">
-                              ✈
+                            <div className="w-11 h-11 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-700 shadow-sm">
+                              <Plane className="w-5 h-5 text-blue-700" />
                             </div>
                             <div>
                               <div className="flex items-center gap-1.5">
@@ -619,8 +619,8 @@ export default function FlightSearchPage() {
               ) : (
 
                 <div className="bg-white rounded-3xl p-12 border border-slate-200 text-center space-y-4 shadow-sm">
-                  <div className="w-16 h-16 rounded-full bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center mx-auto text-2xl font-bold">
-                    ✈
+                  <div className="w-16 h-16 rounded-full bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center mx-auto shadow-sm">
+                    <Plane className="w-8 h-8 text-blue-600" />
                   </div>
                   <h3 className="text-xl font-bold text-slate-900">
                     No Direct Flights Found {from && to ? `for ${from} → ${to}` : ""}

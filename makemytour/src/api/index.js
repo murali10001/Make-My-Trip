@@ -318,19 +318,6 @@ export const triggerRandomFlightSimulation = async () => {
   }
 };
 
-export const sendFlightEmailNotification = async (flightNumber, email) => {
-  try {
-    const res = await apiClient.post(`/api/flight-status/notify-email`, {
-      flightNumber,
-      email,
-    });
-    return res.data;
-  } catch (error) {
-    console.error("Failed to send flight email notification:", error);
-    throw error;
-  }
-};
-
 export const validateFlightStatusDb = async () => {
   try {
     const res = await apiClient.get(`/api/flight-status/validate-db`);

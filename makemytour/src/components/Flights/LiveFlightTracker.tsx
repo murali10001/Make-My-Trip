@@ -4,7 +4,6 @@ import {
   getTrackedFlights,
   simulateFlightUpdate,
   triggerRandomFlightSimulation,
-  sendFlightEmailNotification,
   validateFlightStatusDb,
   BACKEND_URL,
 } from "@/api";
@@ -59,7 +58,7 @@ export interface PushNotification {
   title: string;
   message: string;
   timestamp: string;
-  type: "delay" | "boarding" | "gate" | "info" | "email";
+  type: "delay" | "boarding" | "gate" | "info";
 }
 
 export interface RealTimeFlightState {
@@ -232,9 +231,6 @@ const LiveFlightTracker: React.FC = () => {
   const [selectedFlight, setSelectedFlight] = useState<FlightStatusItem | null>(null);
   const [simulationLoading, setSimulationLoading] = useState<boolean>(false);
   const [autoSimulate, setAutoSimulate] = useState<boolean>(false);
-  const [testEmailInput, setTestEmailInput] = useState<string>("");
-  const [emailSending, setEmailSending] = useState<boolean>(false);
-  const [emailFeedback, setEmailFeedback] = useState<{ success: boolean; message: string } | null>(null);
   const [webPushPermission, setWebPushPermission] = useState<string>("default");
 
   useEffect(() => {
@@ -487,79 +483,42 @@ const LiveFlightTracker: React.FC = () => {
     }
   };
 
-  const handleSendEmailNotification = async (flightNumber: string) => {
-    setEmailSending(true);
-    setEmailFeedback(null);
-    const targetEmail = testEmailInput.trim() || "traveler-test@makemytour.com";
-    try {
-      const res = await sendFlightEmailNotification(flightNumber, targetEmail);
-      if (res && res.success === true) {
-        setEmailFeedback({
-          success: true,
-          message: res.message || `Flight update successfully sent to ${targetEmail}`,
-        });
-        addNotification({
-          id: Date.now().toString(),
-          flightNumber,
-          title: `Flight Alert Email Sent`,
-          message: `Sent status update for ${flightNumber} to ${targetEmail}`,
-          timestamp: new Date().toLocaleTimeString(),
-          type: "email",
-        });
-      } else {
-        const failMsg = res?.message || "Email notifications are currently unavailable. Please try again later.";
-        setEmailFeedback({
-          success: false,
-          message: failMsg,
-        });
-      }
-    } catch (err) {
-      console.error("Email send failed:", err);
-      setEmailFeedback({
-        success: false,
-        message: "Email notifications are currently unavailable. Please try again later.",
-      });
-    } finally {
-      setEmailSending(false);
-    }
-  };
-
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "ON_TIME":
         return (
-          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
-            <CheckCircle className="w-3 h-3 mr-1 text-emerald-600" /> On Time
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-2xs">
+            <CheckCircle className="w-3.5 h-3.5 mr-1 text-emerald-600 inline-block align-middle flex-shrink-0" /> On Time
           </span>
         );
       case "DELAYED":
         return (
-          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-300 animate-pulse">
-            <AlertTriangle className="w-3 h-3 mr-1 text-amber-600" /> Delayed
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-900 border border-amber-300 animate-pulse shadow-2xs">
+            <AlertTriangle className="w-3.5 h-3.5 mr-1 text-amber-600 inline-block align-middle flex-shrink-0" /> Delayed
           </span>
         );
       case "BOARDING":
         return (
-          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-300">
-            <Radio className="w-3 h-3 mr-1 text-blue-600 animate-ping" /> Boarding
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-900 border border-blue-300 shadow-2xs">
+            <Radio className="w-3.5 h-3.5 mr-1 text-blue-600 animate-ping inline-block align-middle flex-shrink-0" /> Boarding
           </span>
         );
       case "IN_FLIGHT":
         return (
-          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800 border border-indigo-300">
-            <Plane className="w-3 h-3 mr-1 text-indigo-600 animate-bounce" /> In Flight
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-900 border border-indigo-300 shadow-2xs">
+            <Plane className="w-3.5 h-3.5 mr-1 text-indigo-600 animate-bounce inline-block align-middle flex-shrink-0" /> In Flight
           </span>
         );
       case "LANDED":
         return (
-          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-800 border border-slate-300">
-            <CheckCircle className="w-3 h-3 mr-1 text-emerald-600" /> Landed
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-800 border border-slate-300 shadow-2xs">
+            <CheckCircle className="w-3.5 h-3.5 mr-1 text-emerald-600 inline-block align-middle flex-shrink-0" /> Landed
           </span>
         );
       case "CANCELLED":
         return (
-          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-100 text-rose-800 border border-rose-300">
-            <X className="w-3 h-3 mr-1 text-rose-600" /> Cancelled
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-100 text-rose-800 border border-rose-300 shadow-2xs">
+            <X className="w-3.5 h-3.5 mr-1 text-rose-600 inline-block align-middle flex-shrink-0" /> Cancelled
           </span>
         );
       default:
@@ -648,39 +607,41 @@ const LiveFlightTracker: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="grid grid-cols-1 sm:flex sm:flex-wrap items-center gap-2 w-full md:w-auto">
             <Button
               onClick={requestWebPushPermission}
               variant="outline"
-              className={`text-xs md:text-sm font-semibold border border-white/20 ${webPushPermission === "granted"
+              className={`text-xs md:text-sm font-semibold border border-white/20 w-full sm:w-auto justify-center ${webPushPermission === "granted"
                   ? "bg-blue-600 text-white border-blue-400"
                   : "bg-white/10 text-white hover:bg-white/20"
                 }`}
             >
-              <Bell className="w-4 h-4 mr-1.5 text-amber-300" />
+              <Bell className="w-4 h-4 mr-1.5 text-amber-300 flex-shrink-0" />
               {webPushPermission === "granted" ? "Web Push Enabled" : "Enable Push Alerts"}
             </Button>
 
-            <Button
-              onClick={() => handleRandomSimulation(false)}
-              disabled={simulationLoading}
-              className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold shadow-md hover:shadow-lg transition-all text-xs md:text-sm"
-            >
-              <Sparkles className="w-4 h-4 mr-1.5" />
-              {simulationLoading ? "Simulating..." : "Simulate Change"}
-            </Button>
+            <div className="grid grid-cols-2 sm:flex sm:flex-row gap-2 w-full sm:w-auto">
+              <Button
+                onClick={() => handleRandomSimulation(false)}
+                disabled={simulationLoading}
+                className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold shadow-md hover:shadow-lg transition-all text-xs md:text-sm w-full sm:w-auto justify-center"
+              >
+                <Sparkles className="w-4 h-4 mr-1.5 flex-shrink-0" />
+                {simulationLoading ? "Simulating..." : "Simulate"}
+              </Button>
 
-            <Button
-              onClick={() => setAutoSimulate(!autoSimulate)}
-              variant="outline"
-              className={`text-xs md:text-sm font-semibold border border-white/20 ${autoSimulate
-                  ? "bg-emerald-600 text-white border-emerald-400"
-                  : "bg-white/10 text-white hover:bg-white/20"
-                }`}
-            >
-              <RefreshCw className={`w-4 h-4 mr-1.5 ${autoSimulate ? "animate-spin" : ""}`} />
-              {autoSimulate ? "Auto Radar ON" : "Turn Auto Radar ON"}
-            </Button>
+              <Button
+                onClick={() => setAutoSimulate(!autoSimulate)}
+                variant="outline"
+                className={`text-xs md:text-sm font-semibold border border-white/20 w-full sm:w-auto justify-center ${autoSimulate
+                    ? "bg-emerald-600 text-white border-emerald-400"
+                    : "bg-white/10 text-white hover:bg-white/20"
+                  }`}
+              >
+                <RefreshCw className={`w-4 h-4 mr-1.5 flex-shrink-0 ${autoSimulate ? "animate-spin" : ""}`} />
+                {autoSimulate ? "Radar ON" : "Auto Radar"}
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -744,13 +705,13 @@ const LiveFlightTracker: React.FC = () => {
             No flights in your active watchlist. Click the bookmark icon on any flight card to track it live!
           </p>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+          <div className="flex sm:grid sm:grid-cols-2 md:grid-cols-3 gap-3 overflow-x-auto pb-2 sm:pb-0 scrollbar-none snap-x">
             {trackedNumbers.map((num) => {
               const matched = flightsWithComputed.find((f) => f.flightNumber === num);
               return (
                 <div
                   key={num}
-                  className="bg-slate-50 rounded-lg p-3 border border-slate-200 flex items-center justify-between hover:border-blue-300 transition-all shadow-2xs"
+                  className="min-w-[260px] sm:min-w-0 flex-shrink-0 sm:flex-shrink bg-slate-50 rounded-lg p-3 border border-slate-200 flex items-center justify-between hover:border-blue-300 transition-all shadow-2xs snap-start"
                 >
                   <div>
                     <div className="flex items-center gap-2">
@@ -804,8 +765,8 @@ const LiveFlightTracker: React.FC = () => {
           />
         </div>
 
-        <div className="flex items-center gap-1 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
-          <SlidersHorizontal className="w-4 h-4 text-slate-400 mr-1 hidden md:block" />
+        <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 scrollbar-none snap-x px-1 -mx-1 pr-6">
+          <SlidersHorizontal className="w-4 h-4 text-slate-400 mr-1 hidden md:block flex-shrink-0" />
           {[
             { id: "ALL", label: "All Flights", count: totalCount },
             { id: "LANDED", label: "Landed", count: landedCount },
@@ -817,13 +778,13 @@ const LiveFlightTracker: React.FC = () => {
             <button
               key={item.id}
               onClick={() => setSelectedStatus(item.id)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1.5 ${selectedStatus === item.id
-                  ? "bg-blue-600 text-white shadow-xs"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1.5 flex-shrink-0 snap-start ${selectedStatus === item.id
+                  ? "bg-blue-600 text-white shadow-xs border border-blue-600"
+                  : "bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300 hover:border-slate-400"
                 }`}
             >
               <span>{item.label}</span>
-              <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${selectedStatus === item.id ? "bg-blue-800 text-white" : "bg-slate-200 text-slate-700"}`}>
+              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${selectedStatus === item.id ? "bg-blue-800 text-white" : "bg-slate-200 text-slate-800"}`}>
                 {item.count}
               </span>
             </button>
@@ -992,22 +953,7 @@ const LiveFlightTracker: React.FC = () => {
                   </span>
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => {
-                        setSelectedFlight(flight);
-                        setEmailFeedback(null);
-                        setTestEmailInput("");
-                      }}
-                      title="Send email alert notification"
-                      className="text-slate-700 hover:text-emerald-700 font-semibold flex items-center gap-1 bg-white px-2.5 py-1 rounded border border-slate-200 hover:border-emerald-300 transition-all shadow-2xs text-xs"
-                    >
-                      <Mail className="w-3.5 h-3.5 text-emerald-600" /> Mail Alerts
-                    </button>
-                    <button
-                      onClick={() => {
-                        setSelectedFlight(flight);
-                        setEmailFeedback(null);
-                        setTestEmailInput("");
-                      }}
+                      onClick={() => setSelectedFlight(flight)}
                       className="font-bold text-blue-600 hover:text-blue-800 underline flex items-center gap-1"
                     >
                       Details &rarr;
@@ -1025,11 +971,7 @@ const LiveFlightTracker: React.FC = () => {
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 relative animate-in fade-in zoom-in-95">
             <button
-              onClick={() => {
-                setSelectedFlight(null);
-                setEmailFeedback(null);
-                setTestEmailInput("");
-              }}
+              onClick={() => setSelectedFlight(null)}
               className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1"
             >
               <X className="w-5 h-5" />
@@ -1088,65 +1030,6 @@ const LiveFlightTracker: React.FC = () => {
                         {compModal.contextReason}
                       </p>
                     </div>
-                  </div>
-
-                  {/* Real-Time Email Notification Hub */}
-                  <div className="bg-slate-900 text-white p-4 rounded-xl text-xs space-y-3 shadow-md border border-slate-800">
-                    <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                      <div className="flex items-center gap-1.5 font-bold text-sm text-slate-100">
-                        <Mail className="w-4 h-4 text-emerald-400" />
-                        <span>Get Live Flight Alerts via Email</span>
-                      </div>
-                      <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full font-mono font-medium">
-                        Instant Alerts
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="email"
-                        placeholder="Enter your email address..."
-                        value={testEmailInput}
-                        onChange={(e) => {
-                          setTestEmailInput(e.target.value);
-                          setEmailFeedback(null);
-                        }}
-                        className="flex-1 px-3 py-2 border border-slate-700 rounded-lg text-xs bg-slate-800 text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      />
-                      <Button
-                        onClick={() => handleSendEmailNotification(selectedFlight.flightNumber)}
-                        disabled={emailSending}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2 h-auto flex items-center gap-1.5 shadow-sm"
-                      >
-                        <Send className="w-3.5 h-3.5" />
-                        {emailSending ? "Sending..." : "Send Email"}
-                      </Button>
-                    </div>
-
-                    {emailFeedback && (
-                      <div
-                        className={`p-3 rounded-lg border text-xs flex items-start gap-2 animate-in fade-in zoom-in-95 ${emailFeedback.success
-                            ? "bg-emerald-950/80 border-emerald-500 text-emerald-200"
-                            : "bg-amber-950/80 border-amber-500 text-amber-200"
-                          }`}
-                      >
-                        {emailFeedback.success ? (
-                          <Check className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
-                        ) : (
-                          <AlertCircle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
-                        )}
-                        <div className="space-y-0.5">
-                          <p className="font-bold">
-                            {emailFeedback.success ? "Success" : "Notice"}
-                          </p>
-                          <p className="opacity-95">{emailFeedback.message}</p>
-                        </div>
-                      </div>
-                    )}
-
-                    <p className="text-[10px] text-slate-400 leading-normal">
-                      Enter your email address to receive live flight updates, delay warnings, and gate change notifications.
-                    </p>
                   </div>
 
                   <div className="mt-4 flex justify-end gap-2">

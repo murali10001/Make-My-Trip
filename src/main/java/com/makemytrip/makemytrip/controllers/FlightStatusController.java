@@ -1,7 +1,6 @@
 package com.makemytrip.makemytrip.controllers;
 
 import com.makemytrip.makemytrip.models.FlightStatus;
-import com.makemytrip.makemytrip.services.EmailService;
 import com.makemytrip.makemytrip.services.FlightStatusService;
 import com.makemytrip.makemytrip.services.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,9 +23,6 @@ public class FlightStatusController {
 
     @Autowired
     private FlightStatusService flightStatusService;
-
-    @Autowired
-    private EmailService emailService;
 
     @Autowired
     private NotificationService notificationService;
@@ -56,7 +52,7 @@ public class FlightStatusController {
             if (notificationService != null && status.getStatus() != null) {
                 String st = status.getStatus().toUpperCase();
                 if ("DELAYED".equals(st) || "CANCELLED".equals(st)) {
-                    String title = "⚠️ Flight " + status.getFlightNumber() + " " + st;
+                    String title = "Flight " + status.getFlightNumber() + " " + st;
                     String reason = status.getDelayReason() != null && !status.getDelayReason().isEmpty()
                                     ? status.getDelayReason()
                                     : "Flight has been " + st.toLowerCase();
@@ -164,12 +160,6 @@ public class FlightStatusController {
         }
 
         broadcastUpdate(updated);
-
-        String email = (String) payload.get("email");
-        if (email != null && !email.isEmpty()) {
-            emailService.sendFlightStatusEmail(email, updated);
-        }
-
         return ResponseEntity.ok(updated);
     }
 
@@ -188,30 +178,5 @@ public class FlightStatusController {
         }
         return ResponseEntity.ok(updatedFlights);
     }
-
-    @PostMapping("/notify-email")
-
-    public ResponseEntity<Map<String, Object>> sendEmailNotification(@RequestBody Map<String, String> payload) {
-        String flightNumber = payload.get("flightNumber");
-        String email = payload.get("email");
-
-        if (flightNumber == null || flightNumber.trim().isEmpty() || email == null || email.trim().isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "flightNumber and email are required."));
-        }
-
-        Optional<FlightStatus> flightOpt = flightStatusService.getFlightByNumber(flightNumber);
-        if (!flightOpt.isPresent()) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Flight status not found for flight number: " + flightNumber));
-        }
-
-        FlightStatus flight = flightOpt.get();
-        Map<String, Object> result = emailService.sendFlightStatusEmailDetails(email, flight);
-        result.put("flightNumber", flight.getFlightNumber());
-        result.put("status", flight.getStatus());
-        result.put("recipient", email);
-
-        return ResponseEntity.ok(result);
-    }
-
 }
 

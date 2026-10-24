@@ -577,8 +577,8 @@ export default function HotelSearchPage() {
               ) : (
 
                 <div className="bg-white rounded-3xl p-12 border border-slate-200 text-center space-y-4 shadow-sm">
-                  <div className="w-16 h-16 rounded-full bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center mx-auto text-2xl font-bold">
-                    🏨
+                  <div className="w-16 h-16 rounded-full bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center mx-auto shadow-sm">
+                    <HotelIcon className="w-8 h-8 text-blue-600" />
                   </div>
                   <h3 className="text-xl font-bold text-slate-900">
                     No Hotels Found {location ? `in "${location}"` : ""}

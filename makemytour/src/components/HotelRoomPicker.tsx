@@ -287,7 +287,7 @@ export const HotelRoomPicker: React.FC<HotelRoomPickerProps> = ({
       )}
 
       <Dialog open={!!modalRoom3D} onOpenChange={() => setModalRoom3D(null)}>
-        <DialogContent className="max-w-3xl bg-white rounded-2xl p-6 shadow-2xl">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl p-4 sm:p-6 shadow-2xl scrollbar-thin">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-slate-900 flex items-center gap-2">
               <Eye className="w-5 h-5 text-indigo-600" />
@@ -301,7 +301,7 @@ export const HotelRoomPicker: React.FC<HotelRoomPickerProps> = ({
           {modalRoom3D && (
             <div className="space-y-4 py-2">
 
-              <div className="relative h-72 rounded-2xl overflow-hidden bg-slate-950 group">
+              <div className="relative h-52 sm:h-72 rounded-2xl overflow-hidden bg-slate-950 group">
                 {modalRoom3D.imageUrls && modalRoom3D.imageUrls.length > 0 ? (
                   <img
                     src={modalRoom3D.imageUrls[currentImageIndex]}

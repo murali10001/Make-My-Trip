@@ -377,8 +377,8 @@ const BookHotelPage = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-12">
-      <div className="max-w-7xl mx-auto px-4 py-8 space-y-6">
+    <div className="min-h-screen bg-gray-50 pb-28 sm:pb-12">
+      <div className="max-w-7xl mx-auto px-4 py-6 sm:py-8 space-y-6">
 
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>

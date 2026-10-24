@@ -27,46 +27,23 @@ spring.data.mongodb.database=makemytrip
 
 ---
 
-## 3. Email & Push Notification Passcode Configuration (SMTP)
+## 3. Frontend Environment Configuration (Next.js)
 
-The system supports **real SMTP email notifications** when configured, as well as an automatic **test simulation mode** (which logs formatted test email notifications to backend console/logs when SMTP credentials are commented out or not yet set).
-
-To enable real email sending via Gmail SMTP, uncomment and fill in your email credentials in `application.properties`:
-
-```properties
-# Spring Boot Mail / SMTP Configuration
-spring.mail.host=smtp.gmail.com
-spring.mail.port=587
-spring.mail.username=your-official-email@gmail.com
-spring.mail.password=your-16-digit-app-passcode
-
-# SMTP Security Properties
-spring.mail.properties.mail.smtp.auth=true
-spring.mail.properties.mail.smtp.starttls.enable=true
-spring.mail.properties.mail.smtp.starttls.required=true
-```
-
-> **Note on Test Mode:** When `spring.mail.host` is commented out, clicking **"Mail"** or **"Send Email"** on the Live Flight Status UI automatically triggers test mode, rendering simulated emails directly to the Spring Boot console output without throwing errors.
-
-> **Note on App Passcode:** For Gmail accounts, generate a 16-character **App Password** from Google Account Security settings (`Security` -> `2-Step Verification` -> `App passwords`).
-
-
----
-
-## 4. Frontend Environment Configuration (Next.js)
-
-Create a `.env.local` file inside the [`makemytour`](file:///c:/Users/manis/VS%20Code-work%20space/make-my-trip-clone-springboot/makemytour) directory:
+Create or configure the `.env.local` file inside the [`makemytour`](file:///c:/Users/manis/VS%20Code-work%20space/make-my-trip-clone-springboot/makemytour) directory:
 
 ```env
-# makemytour/.env.local
+# makemytour/.env.local (Local Development / Testing)
 NEXT_PUBLIC_BACKEND_URL=http://localhost:8081
+
+# Production Deployment (e.g., Render, Railway, AWS):
+# NEXT_PUBLIC_BACKEND_URL=https://your-production-backend.com
 ```
 
 If `.env.local` is not specified, the application defaults automatically to `http://localhost:8081`.
 
 ---
 
-## 5. Task 1: Live Flight Status & Multi-Flight Radar Feature
+## 4. Task 1: Live Flight Status & Multi-Flight Radar Feature
 
 ### REST API Endpoints (Backend - Port 8081)
 
@@ -87,7 +64,7 @@ If `.env.local` is not specified, the application defaults automatically to `htt
 
 ---
 
-## 6. How to Run Backend & Frontend
+## 5. How to Run Backend & Frontend
 
 ### Starting Backend (Spring Boot - Port 8081):
 ```bash

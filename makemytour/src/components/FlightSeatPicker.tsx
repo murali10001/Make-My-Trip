@@ -149,108 +149,110 @@ export const FlightSeatPicker: React.FC<FlightSeatPickerProps> = ({
           <span>FRONT OF AIRCRAFT / COCKPIT</span>
         </div>
 
-        <div className="space-y-2">
-          {Object.keys(rowsMap).map((rowStr) => {
-            const rowNum = parseInt(rowStr);
-            const rowSeats = rowsMap[rowNum];
-            const leftSeats = rowSeats.filter((s) => ["A", "B", "C"].includes(s.column));
-            const rightSeats = rowSeats.filter((s) => ["D", "E", "F"].includes(s.column));
+        <div className="w-full overflow-x-auto pb-4 pt-1 scrollbar-thin">
+          <div className="min-w-[330px] max-w-[380px] mx-auto space-y-2">
+            {Object.keys(rowsMap).map((rowStr) => {
+              const rowNum = parseInt(rowStr);
+              const rowSeats = rowsMap[rowNum];
+              const leftSeats = rowSeats.filter((s) => ["A", "B", "C"].includes(s.column));
+              const rightSeats = rowSeats.filter((s) => ["D", "E", "F"].includes(s.column));
 
-            return (
-              <div key={rowNum} className="flex items-center justify-between gap-2">
+              return (
+                <div key={rowNum} className="flex items-center justify-between gap-1.5 sm:gap-2">
 
-                <div className="flex items-center gap-1.5">
-                  {leftSeats.map((s) => {
-                    const isSelected = activeSeat?.seatNo === s.seatNo;
-                    const isOccupied = s.status === "OCCUPIED";
-                    const isWindowSeat = s.column === "A" || s.column === "F";
+                  <div className="flex items-center gap-1.5">
+                    {leftSeats.map((s) => {
+                      const isSelected = activeSeat?.seatNo === s.seatNo;
+                      const isOccupied = s.status === "OCCUPIED";
+                      const isWindowSeat = s.column === "A" || s.column === "F";
 
-                    let bgClass = "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700";
-                    if (s.tier?.includes("WINDOW")) {
-                      bgClass = "bg-cyan-950/90 border-cyan-400/80 text-cyan-200 font-extrabold hover:bg-cyan-900 shadow-xs ring-1 ring-cyan-500/30";
-                    } else if (s.tier?.includes("EXTRA_LEGROOM")) {
-                      bgClass = "bg-amber-600/90 border-amber-400 text-white hover:bg-amber-500";
-                    } else if (s.tier?.includes("EXIT_ROW")) {
-                      bgClass = "bg-purple-700/90 border-purple-400 text-white hover:bg-purple-600";
-                    } else if (s.tier?.includes("PREMIUM_FRONT")) {
-                      bgClass = "bg-blue-600/90 border-blue-400 text-white hover:bg-blue-500";
-                    }
+                      let bgClass = "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700";
+                      if (s.tier?.includes("WINDOW")) {
+                        bgClass = "bg-cyan-950/90 border-cyan-400/80 text-cyan-200 font-extrabold hover:bg-cyan-900 shadow-xs ring-1 ring-cyan-500/30";
+                      } else if (s.tier?.includes("EXTRA_LEGROOM")) {
+                        bgClass = "bg-amber-600/90 border-amber-400 text-white hover:bg-amber-500";
+                      } else if (s.tier?.includes("EXIT_ROW")) {
+                        bgClass = "bg-purple-700/90 border-purple-400 text-white hover:bg-purple-600";
+                      } else if (s.tier?.includes("PREMIUM_FRONT")) {
+                        bgClass = "bg-blue-600/90 border-blue-400 text-white hover:bg-blue-500";
+                      }
 
-                    if (isSelected) bgClass = "bg-emerald-500 border-emerald-300 text-white ring-2 ring-emerald-400 ring-offset-1 ring-offset-slate-950 font-black scale-105 shadow-md";
-                    if (isOccupied) bgClass = "bg-slate-950 border-slate-900 text-slate-700 cursor-not-allowed opacity-40";
+                      if (isSelected) bgClass = "bg-emerald-500 border-emerald-300 text-white ring-2 ring-emerald-400 ring-offset-1 ring-offset-slate-950 font-black scale-105 shadow-md";
+                      if (isOccupied) bgClass = "bg-slate-950 border-slate-900 text-slate-700 cursor-not-allowed opacity-40";
 
-                    return (
-                      <button
-                        key={s.seatNo}
-                        disabled={isOccupied}
-                        onClick={() => handleSelectSeat(s)}
-                        title={`${s.seatNo} - ${s.featureDescription} (${s.priceAddon > 0 ? `+₹${s.priceAddon}` : "Included"})`}
-                        className={`w-9 h-9 rounded-lg border font-bold text-xs flex flex-col items-center justify-center transition-all relative ${bgClass}`}
-                      >
-                        {isSelected ? (
-                          <Check className="w-4 h-4 text-white" />
-                        ) : (
-                          <>
-                            <span>{s.seatNo}</span>
-                            {isWindowSeat && !isOccupied && (
-                              <span className="text-[7px] text-cyan-300 font-mono leading-none">WIN</span>
-                            )}
-                          </>
-                        )}
-                      </button>
-                    );
-                  })}
+                      return (
+                        <button
+                          key={s.seatNo}
+                          disabled={isOccupied}
+                          onClick={() => handleSelectSeat(s)}
+                          title={`${s.seatNo} - ${s.featureDescription} (${s.priceAddon > 0 ? `+₹${s.priceAddon}` : "Included"})`}
+                          className={`w-9 h-9 sm:w-10 sm:h-10 min-w-[36px] min-h-[36px] rounded-lg border font-bold text-xs flex flex-col items-center justify-center transition-all relative ${bgClass}`}
+                        >
+                          {isSelected ? (
+                            <Check className="w-4 h-4 text-white" />
+                          ) : (
+                            <>
+                              <span>{s.seatNo}</span>
+                              {isWindowSeat && !isOccupied && (
+                                <span className="text-[7px] text-cyan-300 font-mono leading-none">WIN</span>
+                              )}
+                            </>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className={`w-8 sm:w-10 min-w-[32px] text-center text-[10px] font-mono font-bold px-1 rounded py-0.5 ${rowNum === 6 ? "bg-purple-950 text-purple-300 border border-purple-800" : "text-slate-500"}`}>
+                    {rowNum === 6 ? "EXIT" : `R${rowNum}`}
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    {rightSeats.map((s) => {
+                      const isSelected = activeSeat?.seatNo === s.seatNo;
+                      const isOccupied = s.status === "OCCUPIED";
+                      const isWindowSeat = s.column === "A" || s.column === "F";
+
+                      let bgClass = "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700";
+                      if (s.tier?.includes("WINDOW")) {
+                        bgClass = "bg-cyan-950/90 border-cyan-400/80 text-cyan-200 font-extrabold hover:bg-cyan-900 shadow-xs ring-1 ring-cyan-500/30";
+                      } else if (s.tier?.includes("EXTRA_LEGROOM")) {
+                        bgClass = "bg-amber-600/90 border-amber-400 text-white hover:bg-amber-500";
+                      } else if (s.tier?.includes("EXIT_ROW")) {
+                        bgClass = "bg-purple-700/90 border-purple-400 text-white hover:bg-purple-600";
+                      } else if (s.tier?.includes("PREMIUM_FRONT")) {
+                        bgClass = "bg-blue-600/90 border-blue-400 text-white hover:bg-blue-500";
+                      }
+
+                      if (isSelected) bgClass = "bg-emerald-500 border-emerald-300 text-white ring-2 ring-emerald-400 ring-offset-1 ring-offset-slate-950 font-black scale-105 shadow-md";
+                      if (isOccupied) bgClass = "bg-slate-950 border-slate-900 text-slate-700 cursor-not-allowed opacity-40";
+
+                      return (
+                        <button
+                          key={s.seatNo}
+                          disabled={isOccupied}
+                          onClick={() => handleSelectSeat(s)}
+                          title={`${s.seatNo} - ${s.featureDescription} (${s.priceAddon > 0 ? `+₹${s.priceAddon}` : "Included"})`}
+                          className={`w-9 h-9 sm:w-10 sm:h-10 min-w-[36px] min-h-[36px] rounded-lg border font-bold text-xs flex flex-col items-center justify-center transition-all relative ${bgClass}`}
+                        >
+                          {isSelected ? (
+                            <Check className="w-4 h-4 text-white" />
+                          ) : (
+                            <>
+                              <span>{s.seatNo}</span>
+                              {isWindowSeat && !isOccupied && (
+                                <span className="text-[7px] text-cyan-300 font-mono leading-none">WIN</span>
+                              )}
+                            </>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-
-                <div className={`text-[10px] font-mono font-bold px-1 rounded px-1.5 py-0.5 ${rowNum === 6 ? "bg-purple-950 text-purple-300 border border-purple-800" : "text-slate-500"}`}>
-                  {rowNum === 6 ? "EXIT" : `R${rowNum}`}
-                </div>
-
-                <div className="flex items-center gap-1.5">
-                  {rightSeats.map((s) => {
-                    const isSelected = activeSeat?.seatNo === s.seatNo;
-                    const isOccupied = s.status === "OCCUPIED";
-                    const isWindowSeat = s.column === "A" || s.column === "F";
-
-                    let bgClass = "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700";
-                    if (s.tier?.includes("WINDOW")) {
-                      bgClass = "bg-cyan-950/90 border-cyan-400/80 text-cyan-200 font-extrabold hover:bg-cyan-900 shadow-xs ring-1 ring-cyan-500/30";
-                    } else if (s.tier?.includes("EXTRA_LEGROOM")) {
-                      bgClass = "bg-amber-600/90 border-amber-400 text-white hover:bg-amber-500";
-                    } else if (s.tier?.includes("EXIT_ROW")) {
-                      bgClass = "bg-purple-700/90 border-purple-400 text-white hover:bg-purple-600";
-                    } else if (s.tier?.includes("PREMIUM_FRONT")) {
-                      bgClass = "bg-blue-600/90 border-blue-400 text-white hover:bg-blue-500";
-                    }
-
-                    if (isSelected) bgClass = "bg-emerald-500 border-emerald-300 text-white ring-2 ring-emerald-400 ring-offset-1 ring-offset-slate-950 font-black scale-105 shadow-md";
-                    if (isOccupied) bgClass = "bg-slate-950 border-slate-900 text-slate-700 cursor-not-allowed opacity-40";
-
-                    return (
-                      <button
-                        key={s.seatNo}
-                        disabled={isOccupied}
-                        onClick={() => handleSelectSeat(s)}
-                        title={`${s.seatNo} - ${s.featureDescription} (${s.priceAddon > 0 ? `+₹${s.priceAddon}` : "Included"})`}
-                        className={`w-9 h-9 rounded-lg border font-bold text-xs flex flex-col items-center justify-center transition-all relative ${bgClass}`}
-                      >
-                        {isSelected ? (
-                          <Check className="w-4 h-4 text-white" />
-                        ) : (
-                          <>
-                            <span>{s.seatNo}</span>
-                            {isWindowSeat && !isOccupied && (
-                              <span className="text-[7px] text-cyan-300 font-mono leading-none">WIN</span>
-                            )}
-                          </>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </div>
 
