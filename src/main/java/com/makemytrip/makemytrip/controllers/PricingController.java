@@ -5,6 +5,7 @@ import com.makemytrip.makemytrip.models.OfferCoupon;
 import com.makemytrip.makemytrip.models.PriceFreeze;
 import com.makemytrip.makemytrip.services.PricingService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/pricing")
+@RequestMapping({"/api/pricing", "/pricing"})
 @CrossOrigin(origins = "*")
 public class PricingController {
 
@@ -31,6 +32,16 @@ public class PricingController {
         return ResponseEntity.ok(price);
     }
 
+    @GetMapping({"/history/{itemId}", "/history"})
+    public ResponseEntity<List<Map<String, Object>>> getPriceHistory(
+            @PathVariable(required = false) String itemId,
+            @RequestParam(required = false, defaultValue = "FL-101") String defaultItemId,
+            @RequestParam(required = false, defaultValue = "5500.0") double basePrice) {
+        String targetItem = itemId != null ? itemId : defaultItemId;
+        List<Map<String, Object>> history = pricingService.getPriceHistory(targetItem, basePrice);
+        return ResponseEntity.ok(history);
+    }
+
     @RequestMapping(value = {"/freeze", "/freeze/lock"}, method = {RequestMethod.POST, RequestMethod.PUT})
     public ResponseEntity<PriceFreeze> freezePrice(@RequestBody(required = false) Map<String, Object> request) {
         if (request == null) {
@@ -44,7 +55,7 @@ public class PricingController {
         String userId = (String) request.get("userId");
 
         PriceFreeze freeze = pricingService.freezePrice(itemId, itemTitle, currentPrice, hours, userId);
-        return ResponseEntity.ok(freeze);
+        return ResponseEntity.status(HttpStatus.CREATED).body(freeze);
     }
 
     @GetMapping(value = {"/freeze/{freezeId}", "/freeze/status/{freezeId}"})

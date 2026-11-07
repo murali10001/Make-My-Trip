@@ -22,11 +22,14 @@ const SignupDialog = ({trigger}:any) => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [open, setopem] = useState(false);
   const [authError, setAuthError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const dispatch = useDispatch();
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     setAuthError("");
+    setIsSubmitting(true);
     if (isSignup) {
       try {
         const signin = await signup(
@@ -42,6 +45,8 @@ const SignupDialog = ({trigger}:any) => {
       } catch (error: any) {
         console.error("Signup error handled:", error);
         setAuthError(error?.message || "Signup failed. Please try again.");
+      } finally {
+        setIsSubmitting(false);
       }
     } else {
       try {
@@ -52,6 +57,8 @@ const SignupDialog = ({trigger}:any) => {
       } catch (error: any) {
         console.error("Login error handled:", error);
         setAuthError(error?.message || "Invalid email or password.");
+      } finally {
+        setIsSubmitting(false);
       }
     }
   };
@@ -143,8 +150,11 @@ const SignupDialog = ({trigger}:any) => {
             type="submit"
             className="w-full bg-blue-600 text-white"
             variant="outline"
+            disabled={isSubmitting}
           >
-            {isSignup ? "Sign Up" : "Login"}
+            {isSubmitting
+              ? (isSignup ? "Signing up..." : "Logging in...")
+              : (isSignup ? "Sign Up" : "Login")}
           </Button>
         </form>
         <div className="text-center text-sm">

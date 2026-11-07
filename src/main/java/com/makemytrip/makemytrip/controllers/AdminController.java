@@ -6,21 +6,19 @@ import com.makemytrip.makemytrip.models.Users;
 import com.makemytrip.makemytrip.repositories.UserRepository;
 import com.makemytrip.makemytrip.services.FlightService;
 import com.makemytrip.makemytrip.services.HotelService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/admin")
+@RequestMapping({"/admin", "/api/admin"})
 @CrossOrigin(origins = "*")
 public class AdminController {
 
     private final UserRepository userRepository;
-
     private final HotelService hotelService;
-
     private final FlightService flightService;
 
     AdminController(UserRepository userRepository, HotelService hotelService, FlightService flightService) {
@@ -38,22 +36,22 @@ public class AdminController {
     @PostMapping("/flight")
     public ResponseEntity<Flight> addflight(@RequestBody Flight flight) {
         Flight saved = flightService.addFlight(flight);
-        return ResponseEntity.ok(saved);
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
     @PostMapping("/hotel")
     public ResponseEntity<Hotel> addhotel(@RequestBody Hotel hotel) {
         Hotel saved = hotelService.addHotel(hotel);
-        return ResponseEntity.ok(saved);
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
-    @PutMapping("flight/{id}")
+    @PutMapping({"/flight/{id}", "flight/{id}"})
     public ResponseEntity<Flight> editflight(@PathVariable String id, @RequestBody Flight updatedFlight) {
         Flight flight = flightService.updateFlight(id, updatedFlight);
         return ResponseEntity.ok(flight);
     }
 
-    @PutMapping("hotel/{id}")
+    @PutMapping({"/hotel/{id}", "hotel/{id}"})
     public ResponseEntity<Hotel> editHotel(@PathVariable String id, @RequestBody Hotel updatedHotel) {
         Hotel hotel = hotelService.updateHotel(id, updatedHotel);
         return ResponseEntity.ok(hotel);

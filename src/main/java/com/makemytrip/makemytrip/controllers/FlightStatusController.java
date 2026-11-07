@@ -17,7 +17,7 @@ import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 @RestController
-@RequestMapping("/api/flight-status")
+@RequestMapping({"/api/flight-status", "/api/flights/status"})
 @CrossOrigin(origins = "*")
 public class FlightStatusController {
 

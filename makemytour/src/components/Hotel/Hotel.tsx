@@ -18,7 +18,7 @@ const HotelList = ({ onSelect }: any) => {
     const fetchhotel = async () => {
       try {
         const data = await gethotel();
-        sethotel(data);
+        sethotel(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error(error);
       } finally {

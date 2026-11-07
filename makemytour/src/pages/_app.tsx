@@ -11,8 +11,15 @@ import Footer from "@/components/Fotter";
 const Myapp = ({ Component, pageProps }: AppProps) => {
   useEffect(() => {
     const storeduser = localStorage.getItem("user");
-    if (storeduser) {
-      store.dispatch(setUser(JSON.parse(storeduser)));
+    if (storeduser && storeduser !== "undefined" && storeduser !== "null") {
+      try {
+        const parsed = JSON.parse(storeduser);
+        if (parsed) {
+          store.dispatch(setUser(parsed));
+        }
+      } catch (err) {
+        console.error("Failed to parse stored user from localStorage:", err);
+      }
     }
   }, []);
   return (

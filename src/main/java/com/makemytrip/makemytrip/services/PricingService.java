@@ -90,6 +90,14 @@ public class PricingService {
         );
     }
 
+    public List<Map<String, Object>> getPriceHistory(String itemId, double basePrice) {
+        if (basePrice <= 0) {
+            basePrice = 5500.0;
+        }
+        double finalPrice = basePrice * 1.25;
+        return generatePriceHistory(basePrice, finalPrice);
+    }
+
     private List<Map<String, Object>> generatePriceHistory(double basePrice, double currentPrice) {
         List<Map<String, Object>> history = new ArrayList<>();
         LocalDate today = LocalDate.now();

@@ -64,7 +64,11 @@ const CATEGORY_TABS = [
   { id: "NATURE", label: "Nature Retreats", icon: Compass },
 ];
 
-export default function PersonalizedRecommendations() {
+interface Props {
+  columns?: 2 | 3 | 4;
+}
+
+export default function PersonalizedRecommendations({ columns = 4 }: Props) {
   const router = useRouter();
   const user = useSelector((state: any) => state.user?.user);
   const userId = user?.id || user?._id || user?.email || "";
@@ -223,6 +227,13 @@ export default function PersonalizedRecommendations() {
     setSelectedExplanation(rec);
   };
 
+  const gridClass =
+    columns === 2
+      ? "grid grid-cols-1 sm:grid-cols-2 gap-4"
+      : columns === 3
+        ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+        : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4";
+
   return (
     <div className="w-full my-4 space-y-4">
 
@@ -247,10 +258,7 @@ export default function PersonalizedRecommendations() {
         <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider text-amber-200 border border-white/20">
-              <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
-              AI & Collaborative Travel Intelligence
-            </div>
+
             <h2 className="text-2xl md:text-3xl font-black tracking-tight">
               Personalized Recommendations Just For You
             </h2>
@@ -287,11 +295,10 @@ export default function PersonalizedRecommendations() {
                 type="button"
                 key={tab.id}
                 onClick={(e) => handleCategorySelect(e, tab.id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs md:text-sm font-semibold transition-all whitespace-nowrap shadow-sm cursor-pointer touch-manipulation select-none flex-shrink-0 snap-start ${
-                  isActive
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs md:text-sm font-semibold transition-all whitespace-nowrap shadow-sm cursor-pointer touch-manipulation select-none flex-shrink-0 snap-start ${isActive
                     ? "bg-white text-blue-900 shadow-md scale-105"
                     : "bg-white/10 text-white hover:bg-white/20 backdrop-blur-sm"
-                }`}
+                  }`}
               >
                 <Icon className={`w-3.5 h-3.5 ${isActive ? "text-blue-600" : "text-white"}`} />
                 {tab.label}
@@ -302,7 +309,7 @@ export default function PersonalizedRecommendations() {
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className={gridClass}>
           {[1, 2, 3, 4].map((n) => (
             <div
               key={n}
@@ -334,7 +341,7 @@ export default function PersonalizedRecommendations() {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className={gridClass}>
           {displayedRecommendations.map((rec) => {
             const isHelpful = feedbackState[rec.id] === "HELPFUL";
             const isIrrelevant = feedbackState[rec.id] === "IRRELEVANT";
@@ -393,10 +400,10 @@ export default function PersonalizedRecommendations() {
                     onClick={(e) => openWhyModal(e, rec)}
                     className="cursor-pointer bg-blue-50/80 hover:bg-blue-100/80 border border-blue-200/70 rounded-xl p-2.5 transition flex items-start justify-between gap-2 group/reason"
                   >
-                    <div className="space-y-0.5">
+                    <div className="space-y-0.5 min-w-0 flex-1">
                       <div className="text-[11px] font-bold text-blue-900 flex items-center gap-1">
                         <Sparkles className="w-3 h-3 text-blue-600 shrink-0" />
-                        <span className="line-clamp-1">{rec.reasonTitle}</span>
+                        <span className="truncate">{rec.reasonTitle}</span>
                       </div>
                       <p className="text-[11px] text-slate-600 line-clamp-2 leading-relaxed">
                         {rec.reasonExplanation}
@@ -412,30 +419,31 @@ export default function PersonalizedRecommendations() {
                     </button>
                   </div>
 
-                  <div className="flex items-center justify-between text-xs text-slate-600 pt-1">
-                    <div className="flex items-center gap-1 font-semibold text-slate-800">
+                  <div className="flex items-center justify-between gap-2 text-xs text-slate-600 pt-1">
+                    <div className="flex items-center gap-1 font-semibold text-slate-800 shrink-0">
                       <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                       <span>{rec.rating}</span>
                       <span className="text-slate-400 font-normal">({rec.reviewCount})</span>
                     </div>
                     {rec.collaborativeFactor && (
-                      <span className="text-[10px] font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">
-                        {rec.collaborativeFactor.length > 28
-                          ? rec.collaborativeFactor.substring(0, 28) + "..."
-                          : rec.collaborativeFactor}
+                      <span
+                        className="text-[10px] font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100 truncate max-w-[130px]"
+                        title={rec.collaborativeFactor}
+                      >
+                        {rec.collaborativeFactor}
                       </span>
                     )}
                   </div>
 
-                  <div className="pt-2 border-t border-slate-100 flex items-baseline justify-between">
-                    <div>
+                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+                    <div className="min-w-0 flex-1">
                       <div className="text-[10px] text-slate-400 uppercase font-medium">Estimated Fare</div>
-                      <div className="flex items-baseline gap-1.5">
-                        <span className="text-lg font-black text-slate-900">
+                      <div className="flex items-baseline gap-1.5 flex-wrap">
+                        <span className="text-base sm:text-lg font-black text-slate-900 whitespace-nowrap">
                           ₹{rec.priceEstimate?.toLocaleString()}
                         </span>
                         {rec.originalPrice > rec.priceEstimate && (
-                          <span className="text-xs text-slate-400 line-through">
+                          <span className="text-xs text-slate-400 line-through whitespace-nowrap">
                             ₹{rec.originalPrice?.toLocaleString()}
                           </span>
                         )}
@@ -448,10 +456,10 @@ export default function PersonalizedRecommendations() {
                         e.stopPropagation();
                         router.push(rec.actionUrl || "/");
                       }}
-                      className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition shadow-sm flex items-center gap-1 group-hover:gap-1.5 cursor-pointer touch-manipulation"
+                      className="shrink-0 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition shadow-sm flex items-center gap-1 group-hover:gap-1.5 cursor-pointer touch-manipulation whitespace-nowrap"
                     >
                       <span>Explore</span>
-                      <ChevronRight className="w-3.5 h-3.5" />
+                      <ChevronRight className="w-3.5 h-3.5 shrink-0" />
                     </button>
                   </div>
 
@@ -462,11 +470,10 @@ export default function PersonalizedRecommendations() {
                         type="button"
                         onClick={(e) => handleFeedback(e, rec, "HELPFUL")}
                         title="Mark as helpful recommendation"
-                        className={`flex items-center gap-1 px-2 py-1 rounded-md transition text-[11px] font-medium cursor-pointer touch-manipulation ${
-                          isHelpful
+                        className={`flex items-center gap-1 px-2 py-1 rounded-md transition text-[11px] font-medium cursor-pointer touch-manipulation ${isHelpful
                             ? "bg-emerald-100 text-emerald-800 font-bold"
                             : "hover:bg-slate-100 text-slate-600 hover:text-emerald-700"
-                        }`}
+                          }`}
                       >
                         <ThumbsUp className={`w-3 h-3 ${isHelpful ? "fill-emerald-700" : ""}`} />
                         <span>Helpful</span>
@@ -476,11 +483,10 @@ export default function PersonalizedRecommendations() {
                         type="button"
                         onClick={(e) => handleFeedback(e, rec, "IRRELEVANT")}
                         title="Remove: Not relevant to me"
-                        className={`flex items-center gap-1 px-2 py-1 rounded-md transition text-[11px] font-medium cursor-pointer touch-manipulation ${
-                          isIrrelevant
+                        className={`flex items-center gap-1 px-2 py-1 rounded-md transition text-[11px] font-medium cursor-pointer touch-manipulation ${isIrrelevant
                             ? "bg-red-100 text-red-800 font-bold"
                             : "hover:bg-slate-100 text-slate-600 hover:text-red-700"
-                        }`}
+                          }`}
                       >
                         <X className="w-3 h-3" />
                         <span>Dismiss</span>

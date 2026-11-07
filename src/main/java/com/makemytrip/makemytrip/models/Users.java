@@ -19,7 +19,7 @@ public class Users {
     private String password;
     private String role;
     private String phoneNumber;
-    private List<Booking> bookings = new ArrayList<>();;
+    private List<Booking> bookings = new ArrayList<>();
 
     public String getFirstName() {return firstName;}
     public String getId() {

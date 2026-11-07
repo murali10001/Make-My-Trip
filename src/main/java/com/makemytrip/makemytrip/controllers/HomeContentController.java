@@ -7,7 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/home-content")
+@RequestMapping({"/api/home-content", "/home-content"})
 @CrossOrigin(origins = "*")
 public class HomeContentController {
 

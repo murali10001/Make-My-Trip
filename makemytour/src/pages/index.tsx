@@ -111,8 +111,9 @@ const POPULAR_HOTEL_CITIES = [
 
 export default function Home() {
   const [bookingtype, setbookingtype] = useState("flights");
-  const [from, setfrom] = useState("");
-  const [to, setto] = useState("");
+  const [flightFrom, setFlightFrom] = useState("");
+  const [flightTo, setFlightTo] = useState("");
+  const [hotelLocation, setHotelLocation] = useState("");
   const [date, setdate] = useState("");
   const [travelers, settravelers] = useState(1);
   const [searchresults, setsearchresult] = useState<any[]>([]);
@@ -125,26 +126,37 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
+    let isMounted = true;
     const fetchdata = async () => {
       try {
         const data = await gethotel();
+        if (!isMounted) return;
         sethotel(Array.isArray(data) ? data : []);
         const flightdata = await getflight();
+        if (!isMounted) return;
         setflight(Array.isArray(flightdata) ? flightdata : []);
         const content = await getHomeContent();
+        if (!isMounted) return;
         if (content) {
           sethomeContent(content);
         }
       } catch (error) {
         console.error("Fetch data error:", error);
-        sethotel([]);
-        setflight([]);
+        if (isMounted) {
+          sethotel([]);
+          setflight([]);
+        }
       } finally {
-        setloading(false);
+        if (isMounted) {
+          setloading(false);
+        }
       }
     };
 
     fetchdata();
+    return () => {
+      isMounted = false;
+    };
   }, [user]);
 
   useEffect(() => {
@@ -156,11 +168,11 @@ export default function Home() {
 
     if (qLoc) {
       setbookingtype("hotels");
-      setto(qLoc);
+      setHotelLocation(qLoc);
     } else if (qFrom || qTo || qType === "flights") {
       setbookingtype("flights");
-      if (qFrom) setfrom(qFrom);
-      if (qTo) setto(qTo);
+      if (qFrom) setFlightFrom(qFrom);
+      if (qTo) setFlightTo(qTo);
     }
   }, [router.isReady, router.query]);
 
@@ -198,23 +210,21 @@ export default function Home() {
     return parsed.length > 0 ? parsed : POPULAR_HOTEL_CITIES;
   }, [hotel]);
 
-  const activeCityOptions = bookingtype === "flights" ? flightCityOptions : hotelCityOptions;
-
   const handlesearch = () => {
     setHasSearched(true);
     if (bookingtype === "flights") {
       let results = flight;
-      if (from.trim()) {
-        results = results.filter((f) => matchCity(f.from, from));
+      if (flightFrom.trim()) {
+        results = results.filter((f) => matchCity(f.from, flightFrom));
       }
-      if (to.trim()) {
-        results = results.filter((f) => matchCity(f.to, to));
+      if (flightTo.trim()) {
+        results = results.filter((f) => matchCity(f.to, flightTo));
       }
       setsearchresult(results);
     } else if (bookingtype === "hotels") {
       let results = hotel;
-      if (to.trim()) {
-        results = results.filter((h) => matchCity(h.location, to));
+      if (hotelLocation.trim()) {
+        results = results.filter((h) => matchCity(h.location, hotelLocation));
       }
       setsearchresult(results);
     }
@@ -286,7 +296,6 @@ export default function Home() {
                 setbookingtype("hotels");
                 setHasSearched(false);
                 setsearchresult([]);
-                setto(getBaseCity(to));
               }}
             />
             <NavItem
@@ -312,35 +321,45 @@ export default function Home() {
 
         <div className="bg-white rounded-xl shadow-lg mx-auto max-w-5xl p-4 sm:p-6 w-full">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
-            {bookingtype === "flights" && (
-              <div className="col-span-1">
+            {bookingtype === "flights" ? (
+              <>
+                <div className="col-span-1">
+                  <SearchSelect
+                    options={flightCityOptions}
+                    isLoading={loading}
+                    placeholder="From"
+                    value={flightFrom}
+                    onChange={setFlightFrom}
+                    icon={<MapPin className="text-gray-400" />}
+                    subtitle="Enter city or airport"
+                  />
+                </div>
+
+                <div className="col-span-1">
+                  <SearchSelect
+                    options={flightCityOptions}
+                    isLoading={loading}
+                    placeholder="To"
+                    value={flightTo}
+                    onChange={setFlightTo}
+                    icon={<MapPin className="text-gray-400" />}
+                    subtitle="Enter city or airport"
+                  />
+                </div>
+              </>
+            ) : (
+              <div className="col-span-1 md:col-span-2 lg:col-span-2">
                 <SearchSelect
-                  options={flightCityOptions}
+                  options={hotelCityOptions}
                   isLoading={loading}
-                  placeholder="From"
-                  value={from}
-                  onChange={setfrom}
+                  placeholder="City"
+                  value={hotelLocation}
+                  onChange={setHotelLocation}
                   icon={<MapPin className="text-gray-400" />}
-                  subtitle="Enter city or airport"
+                  subtitle="Enter destination city"
                 />
               </div>
             )}
-
-            <div className={bookingtype === "flights" ? "col-span-1" : "col-span-1 md:col-span-2 lg:col-span-2"}>
-              <SearchSelect
-                options={activeCityOptions}
-                isLoading={loading}
-                placeholder={bookingtype === "flights" ? "To" : "City"}
-                value={to}
-                onChange={setto}
-                icon={<MapPin className="text-gray-400" />}
-                subtitle={
-                  bookingtype === "flights"
-                    ? "Enter city or airport"
-                    : "Enter destination city"
-                }
-              />
-            </div>
 
             <div className="col-span-1">
               <SearchInput
@@ -440,7 +459,7 @@ export default function Home() {
 
           <PersonalizedRecommendations />
 
-          {homeContent?.offers && homeContent.offers.length > 0 && (
+          {Array.isArray(homeContent?.offers) && homeContent.offers.length > 0 && (
             <section className="my-16">
               <h2 className="text-2xl font-bold mb-8 text-white">Best Offers</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -451,7 +470,7 @@ export default function Home() {
             </section>
           )}
 
-          {homeContent?.collections && homeContent.collections.length > 0 && (
+          {Array.isArray(homeContent?.collections) && homeContent.collections.length > 0 && (
             <section className="my-16">
               <div className="flex justify-between items-center mb-8">
                 <h2 className="text-2xl font-bold text-white">
@@ -466,7 +485,7 @@ export default function Home() {
             </section>
           )}
 
-          {homeContent?.wonders && homeContent.wonders.length > 0 && (
+          {Array.isArray(homeContent?.wonders) && homeContent.wonders.length > 0 && (
             <section className="my-16">
               <div className="flex justify-between items-center mb-8">
                 <h2 className="text-2xl font-bold text-white">

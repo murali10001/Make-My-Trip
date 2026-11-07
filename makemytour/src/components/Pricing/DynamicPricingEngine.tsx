@@ -145,9 +145,12 @@ const DynamicPricingEngine: React.FC = () => {
       } else {
         setSelectedItemId("");
         setSelectedItem(null);
+        setPricingData(null);
+        setLoading(false);
       }
     } catch (err) {
       console.error("Failed to load DB items", err);
+      setLoading(false);
     }
   };
 
@@ -294,8 +297,9 @@ const DynamicPricingEngine: React.FC = () => {
           }
         }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      alert(err?.message || "Price lock failed: Backend service is currently unavailable.");
     } finally {
       setFreezeLoading(false);
     }
@@ -347,13 +351,18 @@ const DynamicPricingEngine: React.FC = () => {
             <select
               value={selectedItemId}
               onChange={(e) => setSelectedItemId(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-300 text-slate-900 text-xs rounded-xl p-3 font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              disabled={dbItems.length === 0}
+              className="w-full bg-slate-50 border border-slate-300 text-slate-900 text-xs rounded-xl p-3 font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-60"
             >
-              {dbItems.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.type === "FLIGHT" ? "Flight: " : "Hotel: "} {item.title} (Base: ₹{item.basePrice.toLocaleString()})
-                </option>
-              ))}
+              {dbItems.length === 0 ? (
+                <option value="">No flights or hotels available</option>
+              ) : (
+                dbItems.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.type === "FLIGHT" ? "Flight: " : "Hotel: "} {item.title} (Base: ₹{item.basePrice.toLocaleString()})
+                  </option>
+                ))
+              )}
             </select>
           </div>
         </div>
@@ -469,7 +478,11 @@ const DynamicPricingEngine: React.FC = () => {
                   </div>
                 </div>
               </div>
-            ) : null}
+            ) : (
+              <div className="py-8 text-center text-slate-400 text-sm">
+                No pricing data available. Please select a flight or hotel from the list.
+              </div>
+            )}
           </div>
 
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-4">
@@ -483,16 +496,18 @@ const DynamicPricingEngine: React.FC = () => {
               </span>
             </div>
 
-            {pricingData?.priceHistory && (
+            {pricingData?.priceHistory && pricingData.priceHistory.length > 0 ? (
               <div className="bg-slate-900 rounded-xl p-5 text-white space-y-4">
                 <div className="overflow-x-auto pb-2 scrollbar-none">
                   <div className="min-w-[400px] h-48 w-full flex items-end justify-between gap-2 pt-6 px-2">
                     {pricingData.priceHistory.map((point, index) => {
-                      const maxP = Math.max(...pricingData.priceHistory.map((p) => p.price));
-                      const minP = Math.min(...pricingData.priceHistory.map((p) => p.price));
+                      const prices = pricingData.priceHistory.map((p) => p.price);
+                      const maxP = prices.length > 0 ? Math.max(...prices) : 1;
+                      const minP = prices.length > 0 ? Math.min(...prices) : 1;
+                      const divisor = (maxP - minP * 0.8) || 1;
                       const heightPercent = Math.max(
                         20,
-                        Math.min(100, ((point.price - minP * 0.8) / (maxP - minP * 0.8)) * 100)
+                        Math.min(100, ((point.price - minP * 0.8) / divisor) * 100)
                       );
                       const isRightmost = index >= pricingData.priceHistory.length - 2;
 
@@ -532,6 +547,10 @@ const DynamicPricingEngine: React.FC = () => {
                     <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" /> Live Current Rate (Today)
                   </span>
                 </div>
+              </div>
+            ) : (
+              <div className="py-8 text-center text-slate-400 text-xs bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                No historical trend data available for this selection.
               </div>
             )}
           </div>

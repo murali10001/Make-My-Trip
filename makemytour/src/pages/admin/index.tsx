@@ -43,12 +43,23 @@ interface User {
 function UserSearch() {
   const [email, setEmail] = useState("");
   const [user, setUser] = useState<User | null>(null);
+  const [searched, setSearched] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    const data = await getuserbyemail(email);
-    const userData: User = data;
-    setUser(userData);
+    if (!email.trim()) return;
+    setSearchLoading(true);
+    setSearched(true);
+    try {
+      const data = await getuserbyemail(email.trim());
+      setUser(data);
+    } catch (err) {
+      console.error("User search failed:", err);
+      setUser(null);
+    } finally {
+      setSearchLoading(false);
+    }
   };
 
   return (
@@ -67,22 +78,29 @@ function UserSearch() {
             required
           />
         </div>
-        <Button type="submit">Search</Button>
+        <Button type="submit" disabled={searchLoading}>
+          {searchLoading ? "Searching..." : "Search"}
+        </Button>
       </form>
+      {searched && !searchLoading && !user && (
+        <div className="border border-dashed p-4 rounded-md text-sm text-slate-500 text-center">
+          No user found with email: <span className="font-semibold">{email}</span>
+        </div>
+      )}
       {user && (
-        <div className="border p-4 rounded-md">
-          <h3 className="font-bold mb-2">User Details</h3>
-          <p>
+        <div className="border p-4 rounded-md bg-slate-50">
+          <h3 className="font-bold mb-2 text-slate-900">User Details</h3>
+          <p className="text-sm">
             <strong>Name:</strong> {user.firstName} {user.lastName}
           </p>
-          <p>
+          <p className="text-sm">
             <strong>Email:</strong> {user.email}
           </p>
-          <p>
-            <strong>Role:</strong> {user.role}
+          <p className="text-sm">
+            <strong>Role:</strong> {user.role || "USER"}
           </p>
-          <p>
-            <strong>Phone:</strong> {user.phoneNumber}
+          <p className="text-sm">
+            <strong>Phone:</strong> {user.phoneNumber || "N/A"}
           </p>
         </div>
       )}
@@ -108,6 +126,7 @@ interface Hotel {
 }
 
 function AddEditHotel({ hotel }: { hotel: Hotel | null }) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<Hotel>({
     hotelName: "",
     location: "",
@@ -163,28 +182,37 @@ function AddEditHotel({ hotel }: { hotel: Hotel | null }) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     const targetId = hotel?.id || hotel?._id;
-    if (targetId) {
-      await edithotel(targetId, formData);
-      alert("Hotel updated successfully!");
-      return;
+    setIsSubmitting(true);
+    try {
+      if (targetId) {
+        await edithotel(targetId, formData);
+        alert("Hotel updated successfully!");
+        return;
+      }
+      await addhotel(formData);
+      alert("Hotel added successfully!");
+      setFormData({
+        hotelName: "",
+        location: "",
+        pricePerNight: 0,
+        availableRooms: 0,
+        amenities: "",
+        imageUrl: "",
+        description: "",
+        rating: 4,
+        taxes: 0,
+        discountedPrice: 0,
+        roomType: "Standard Room",
+        roomFeatures: "",
+      });
+    } catch (err: any) {
+      console.error("Failed to save hotel:", err);
+      alert(err?.message || "Failed to save hotel. Backend service may be unavailable.");
+    } finally {
+      setIsSubmitting(false);
     }
-    await addhotel(formData);
-    alert("Hotel added successfully!");
-    setFormData({
-      hotelName: "",
-      location: "",
-      pricePerNight: 0,
-      availableRooms: 0,
-      amenities: "",
-      imageUrl: "",
-      description: "",
-      rating: 4,
-      taxes: 0,
-      discountedPrice: 0,
-      roomType: "Standard Room",
-      roomFeatures: "",
-    });
   };
 
   return (
@@ -286,7 +314,9 @@ function AddEditHotel({ hotel }: { hotel: Hotel | null }) {
           />
         </div>
       </div>
-      <Button type="submit">{hotel ? "Update Hotel" : "Add Hotel"}</Button>
+      <Button type="submit" disabled={isSubmitting}>
+        {isSubmitting ? "Saving..." : (hotel ? "Update Hotel" : "Add Hotel")}
+      </Button>
     </form>
   );
 }
@@ -315,6 +345,7 @@ interface Flight {
 }
 
 function AddEditFlight({ flight }: { flight: Flight | null }) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<Flight>({
     flightName: "",
     from: "",
@@ -384,34 +415,43 @@ function AddEditFlight({ flight }: { flight: Flight | null }) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     const targetId = flight?.id || flight?._id;
-    if (targetId) {
-      await editflight(targetId, formData);
-      alert("Flight updated successfully!");
-      return;
+    setIsSubmitting(true);
+    try {
+      if (targetId) {
+        await editflight(targetId, formData);
+        alert("Flight updated successfully!");
+        return;
+      }
+      await addflight(formData);
+      alert("Flight added successfully!");
+      setFormData({
+        flightName: "",
+        from: "",
+        to: "",
+        departureTime: "",
+        arrivalTime: "",
+        price: 0,
+        availableSeats: 0,
+        flightNo: "",
+        aircraft: "Airbus A320",
+        airline: "",
+        duration: "2h 30m",
+        departureTerminal: "",
+        arrivalTerminal: "",
+        cabinBaggage: "7 Kgs / Adult",
+        checkInBaggage: "15 Kgs (1 piece only) / Adult",
+        taxes: 0,
+        otherServices: 0,
+        discounts: 0,
+      });
+    } catch (err: any) {
+      console.error("Failed to save flight:", err);
+      alert(err?.message || "Failed to save flight. Backend service may be unavailable.");
+    } finally {
+      setIsSubmitting(false);
     }
-    await addflight(formData);
-    alert("Flight added successfully!");
-    setFormData({
-      flightName: "",
-      from: "",
-      to: "",
-      departureTime: "",
-      arrivalTime: "",
-      price: 0,
-      availableSeats: 0,
-      flightNo: "",
-      aircraft: "Airbus A320",
-      airline: "",
-      duration: "2h 30m",
-      departureTerminal: "",
-      arrivalTerminal: "",
-      cabinBaggage: "7 Kgs / Adult",
-      checkInBaggage: "15 Kgs (1 piece only) / Adult",
-      taxes: 0,
-      otherServices: 0,
-      discounts: 0,
-    });
   };
 
   return (
@@ -519,7 +559,9 @@ function AddEditFlight({ flight }: { flight: Flight | null }) {
           />
         </div>
       </div>
-      <Button type="submit">{flight ? "Update Flight" : "Add Flight"}</Button>
+      <Button type="submit" disabled={isSubmitting}>
+        {isSubmitting ? "Saving..." : (flight ? "Update Flight" : "Add Flight")}
+      </Button>
     </form>
   );
 }

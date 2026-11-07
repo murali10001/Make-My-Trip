@@ -321,6 +321,10 @@ const LiveFlightTracker: React.FC = () => {
         const apiBase = BACKEND_URL;
         eventSource = new EventSource(`${apiBase}/api/flight-status/stream`);
 
+        eventSource.onerror = () => {
+          // Gracefully handle disconnect when backend is unavailable
+        };
+
         eventSource.addEventListener("flight-update", (event: MessageEvent) => {
           try {
             const updatedFlight: FlightStatusItem = JSON.parse(event.data);
@@ -548,10 +552,10 @@ const LiveFlightTracker: React.FC = () => {
     }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
-      const matchNum = flight.flightNumber.toLowerCase().includes(q);
-      const matchAirline = flight.airline.toLowerCase().includes(q);
-      const matchOrigin = flight.origin.toLowerCase().includes(q);
-      const matchDest = flight.destination.toLowerCase().includes(q);
+      const matchNum = (flight.flightNumber || "").toLowerCase().includes(q);
+      const matchAirline = (flight.airline || "").toLowerCase().includes(q);
+      const matchOrigin = (flight.origin || "").toLowerCase().includes(q);
+      const matchDest = (flight.destination || "").toLowerCase().includes(q);
       return matchNum || matchAirline || matchOrigin || matchDest;
     }
     return true;
@@ -722,7 +726,7 @@ const LiveFlightTracker: React.FC = () => {
                     </div>
                     {matched ? (
                       <p className="text-xs text-slate-600 mt-1 truncate">
-                        {matched.origin.split(" ")[0]} ➔ {matched.destination.split(" ")[0]}
+                        {(matched.origin || "").split(" ")[0]} ➔ {(matched.destination || "").split(" ")[0]}
                         {matched.computed.status === "IN_FLIGHT" && (
                           <span className="text-blue-600 font-mono font-semibold ml-1.5">
                             • {matched.computed.estimatedMinutesLeft}m left
@@ -857,8 +861,8 @@ const LiveFlightTracker: React.FC = () => {
                     <div className="flex items-center justify-between text-center mb-2">
                       {/* Origin */}
                       <div className="text-left">
-                        <p className="text-xs font-bold text-slate-800">{flight.origin.split("(")[0]}</p>
-                        <p className="text-xs text-slate-400 font-mono">{flight.origin.match(/\(([^)]+)\)/)?.[0] || ""}</p>
+                        <p className="text-xs font-bold text-slate-800">{(flight.origin || "").split("(")[0]}</p>
+                        <p className="text-xs text-slate-400 font-mono">{(flight.origin || "").match(/\(([^)]+)\)/)?.[0] || ""}</p>
                         <p className="text-sm font-semibold text-slate-900 mt-0.5">{flight.revisedDeparture || flight.scheduledDeparture}</p>
                         {flight.revisedDeparture && flight.revisedDeparture !== flight.scheduledDeparture && (
                           <p className="text-[10px] text-slate-400 line-through">Sched: {flight.scheduledDeparture}</p>
@@ -924,8 +928,8 @@ const LiveFlightTracker: React.FC = () => {
 
                       {/* Destination */}
                       <div className="text-right">
-                        <p className="text-xs font-bold text-slate-800">{flight.destination.split("(")[0]}</p>
-                        <p className="text-xs text-slate-400 font-mono">{flight.destination.match(/\(([^)]+)\)/)?.[0] || ""}</p>
+                        <p className="text-xs font-bold text-slate-800">{(flight.destination || "").split("(")[0]}</p>
+                        <p className="text-xs text-slate-400 font-mono">{(flight.destination || "").match(/\(([^)]+)\)/)?.[0] || ""}</p>
                         <p className="text-sm font-semibold text-slate-900 mt-0.5">{flight.revisedArrival || flight.scheduledArrival}</p>
                         {flight.revisedArrival && flight.revisedArrival !== flight.scheduledArrival && (
                           <p className="text-[10px] text-slate-400 line-through">Sched: {flight.scheduledArrival}</p>

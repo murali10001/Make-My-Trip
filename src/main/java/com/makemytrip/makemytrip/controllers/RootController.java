@@ -6,12 +6,7 @@ import com.makemytrip.makemytrip.services.FlightService;
 import com.makemytrip.makemytrip.services.HotelService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RestController;
-
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -30,7 +25,7 @@ public class RootController {
         return "MakeMyTrip Backend Server is running on port 8081!";
     }
 
-    @GetMapping("/hotel")
+    @GetMapping({"/hotel", "/hotels", "/api/hotel", "/api/hotels"})
     public ResponseEntity<List<Hotel>> getallhotel(
             @RequestParam(required = false) String location,
             @RequestParam(required = false) String query) {
@@ -38,13 +33,13 @@ public class RootController {
         return ResponseEntity.ok(hotels);
     }
 
-    @GetMapping("/hotel/{id}")
+    @GetMapping({"/hotel/{id}", "/hotels/{id}", "/api/hotel/{id}", "/api/hotels/{id}"})
     public ResponseEntity<Hotel> getHotelById(@PathVariable String id) {
         Hotel hotel = hotelService.getHotelById(id);
         return ResponseEntity.ok(hotel);
     }
 
-    @GetMapping("/flight")
+    @GetMapping({"/flight", "/flights", "/api/flight", "/api/flights"})
     public ResponseEntity<List<Flight>> getallflights(
             @RequestParam(required = false) String from,
             @RequestParam(required = false) String to) {
@@ -52,7 +47,7 @@ public class RootController {
         return ResponseEntity.ok(flights);
     }
 
-    @GetMapping("/flight/{id}")
+    @GetMapping({"/flight/{id}", "/flights/{id}", "/api/flight/{id}", "/api/flights/{id}"})
     public ResponseEntity<Flight> getFlightById(@PathVariable String id) {
         Flight flight = flightService.getFlightById(id);
         return ResponseEntity.ok(flight);

@@ -168,4 +168,10 @@ public class BookingService {
 
         return booking;
     }
+
+    public java.util.List<Booking> getUserBookings(String userId) {
+        Users user = userRepository.findById(userId)
+            .orElseThrow(() -> new UserNotFoundException("User with ID '" + userId + "' not found"));
+        return user.getBookings() != null ? user.getBookings() : java.util.Collections.emptyList();
+    }
 }

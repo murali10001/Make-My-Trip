@@ -4,6 +4,7 @@ import com.makemytrip.makemytrip.models.Review;
 import com.makemytrip.makemytrip.models.ReviewSummaryDTO;
 import com.makemytrip.makemytrip.services.ReviewService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/reviews")
+@RequestMapping({"/api/reviews", "/api/review"})
 @CrossOrigin(origins = "*")
 public class ReviewController {
 
@@ -32,15 +33,15 @@ public class ReviewController {
     @PostMapping
     public ResponseEntity<Review> createReview(@RequestBody Review review) {
         Review saved = reviewService.addReview(review);
-        return ResponseEntity.ok(saved);
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
-    @PostMapping("/{id}/reply")
+    @PostMapping({"/{id}/reply", "/{id}/replies"})
     public ResponseEntity<Review> addReply(
             @PathVariable String id,
             @RequestBody Review.ReviewReply reply) {
         Review updated = reviewService.addReply(id, reply);
-        return ResponseEntity.ok(updated);
+        return ResponseEntity.status(HttpStatus.CREATED).body(updated);
     }
 
     @PostMapping("/{id}/helpful")

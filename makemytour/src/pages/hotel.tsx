@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import { gethotel } from "@/api";
@@ -79,6 +79,16 @@ export default function HotelSearchPage() {
   const [allHotels, setAllHotels] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
+  const latestRequestIdRef = useRef<number>(0);
+  const isMountedRef = useRef<boolean>(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [minRating, setMinRating] = useState<number>(0);
   const [maxPrice, setMaxPrice] = useState<number>(50000);
@@ -99,12 +109,15 @@ export default function HotelSearchPage() {
   }, [router.isReady, router.query.location, router.query.query]);
 
   const fetchHotels = async (queryLocation = location) => {
+    const requestId = ++latestRequestIdRef.current;
     setLoading(true);
     try {
       let data = await gethotel(queryLocation);
+      if (!isMountedRef.current || requestId !== latestRequestIdRef.current) return;
       let list = Array.isArray(data) ? data : [];
       if (list.length === 0 && queryLocation) {
         const allData = await gethotel("");
+        if (!isMountedRef.current || requestId !== latestRequestIdRef.current) return;
         if (Array.isArray(allData) && allData.length > 0) {
           list = allData;
         }
@@ -116,10 +129,13 @@ export default function HotelSearchPage() {
         if (highest > 0) setMaxPrice(Math.ceil(highest * 1.1));
       }
     } catch (err) {
+      if (!isMountedRef.current || requestId !== latestRequestIdRef.current) return;
       console.error("Failed to load hotels:", err);
       setAllHotels([]);
     } finally {
-      setLoading(false);
+      if (isMountedRef.current && requestId === latestRequestIdRef.current) {
+        setLoading(false);
+      }
     }
   };
 
@@ -145,6 +161,11 @@ export default function HotelSearchPage() {
       const base = getBaseCity(h.location);
       if (base) citySet.add(base);
     });
+    if (citySet.size === 0) {
+      ["Goa", "Delhi", "Mumbai", "Bengaluru", "Jaipur", "Kerala", "Manali", "Udaipur", "Kolkata", "Chennai", "Hyderabad"].forEach((city) => {
+        citySet.add(city);
+      });
+    }
     return Array.from(citySet)
       .sort((a, b) => a.localeCompare(b))
       .map((city) => ({ value: city, label: city }));

@@ -83,6 +83,7 @@ const BookHotelPage = () => {
   const { id } = router.query;
   const [hotels, sethotels] = useState<Hotel[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isBooking, setIsBooking] = useState(false);
   const user = useSelector((state: any) => state.user.user);
   const [open, setopem] = useState(false);
   const dispatch = useDispatch();
@@ -107,6 +108,7 @@ const BookHotelPage = () => {
   const [selectedRoom, setSelectedRoom] = useState<{ roomTypeName: string; priceUpgradeAddon: number } | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
     const fetchhotels = async () => {
       try {
         let targetHotel = id ? await gethotelbyid(id as string) : null;
@@ -115,9 +117,11 @@ const BookHotelPage = () => {
           const data = await gethotel();
           filteredData = data.filter((hotel: any) => (hotel.id === id || hotel._id === id));
         }
+        if (!isMounted) return;
         sethotels(filteredData);
 
         const offersData = await getPromotionalOffers();
+        if (!isMounted) return;
         setOffers(offersData || []);
 
         if (filteredData.length > 0) {
@@ -132,6 +136,7 @@ const BookHotelPage = () => {
             demandParam,
             seasonParam
           );
+          if (!isMounted) return;
           setDynamicPricingInfo(priceInfo);
 
           let found: any = null;
@@ -165,17 +170,22 @@ const BookHotelPage = () => {
             } catch (e) {}
           }
 
-          if (found) {
+          if (found && isMounted) {
             setPriceFrozen(found);
           }
         }
       } catch (error) {
         console.error("Error fetching hotels:", error);
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
     if (id) fetchhotels();
+    return () => {
+      isMounted = false;
+    };
   }, [id, router.query.demand, router.query.season, router.query.freezeId]);
 
   if (loading) {
@@ -278,8 +288,9 @@ const BookHotelPage = () => {
           } catch (e) {}
         }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to lock hotel rate:", err);
+      alert(err?.message || "Fare lock failed: Backend service is currently unavailable.");
     } finally {
       setFreezeLoading(false);
     }
@@ -287,30 +298,43 @@ const BookHotelPage = () => {
 
   const handlebooking = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isBooking) return;
     const userId = user?.id || user?._id;
     if (!userId) {
       alert("Please log in to complete your hotel booking.");
-      router.push("/login");
+      setopem(true);
       return;
     }
+    const hotelId = hotel?.id || hotel?._id;
+    if (!hotelId) {
+      alert("Invalid hotel selected for booking.");
+      return;
+    }
+    setIsBooking(true);
     try {
       const data = await handlehotelbooking(
         userId,
-        hotel?.id || hotel?._id,
+        hotelId,
         quantity,
         grandTotal,
         priceFrozen?.freezeId || ""
       );
+      if (!data) {
+        throw new Error("Booking response was empty. Please check your bookings in profile.");
+      }
       const updateuser = {
         ...user,
-        bookings: [...(user?.bookings || []), data],
+        bookings: [...(user?.bookings || []).filter(Boolean), data],
       };
       dispatch(setUser(updateuser));
       setopem(false);
       setQuantity(1);
       router.push("/profile");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Booking error:", error);
+      alert(error?.message || "Booking failed: Backend service is currently unavailable. Please try again later.");
+    } finally {
+      setIsBooking(false);
     }
   };
 
@@ -370,8 +394,12 @@ const BookHotelPage = () => {
           </div>
         </div>
       </div>
-      <Button className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white" onClick={handlebooking}>
-        Confirm & Pay Now
+      <Button
+        className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white"
+        onClick={handlebooking}
+        disabled={isBooking}
+      >
+        {isBooking ? "Confirming Booking..." : "Confirm & Pay Now"}
       </Button>
     </DialogContent>
   );
@@ -668,20 +696,24 @@ const BookHotelPage = () => {
             </p>
 
             <div className="bg-slate-900 rounded-xl p-4 text-white space-y-3">
-              <div className="h-36 w-full flex items-end justify-between gap-2 pt-4">
-                {dynamicPricingInfo.priceHistory.map((point: any, idx: number) => (
-                  <div key={idx} className="flex-1 flex flex-col items-center gap-1">
-                    <span className="text-[9px] text-slate-300 font-mono">₹{point.price}</span>
-                    <div className="w-full bg-slate-800 rounded-t h-24 flex items-end p-0.5">
-                      <div
-                        style={{ height: `${Math.max(20, Math.min(100, (point.price / 8000) * 100))}%` }}
-                        className={`w-full rounded-t ${point.isCurrent ? "bg-emerald-400" : "bg-indigo-500"}`}
-                      />
+              {Array.isArray(dynamicPricingInfo?.priceHistory) && dynamicPricingInfo.priceHistory.length > 0 ? (
+                <div className="h-36 w-full flex items-end justify-between gap-2 pt-4">
+                  {dynamicPricingInfo.priceHistory.map((point: any, idx: number) => (
+                    <div key={idx} className="flex-1 flex flex-col items-center gap-1">
+                      <span className="text-[9px] text-slate-300 font-mono">₹{point.price}</span>
+                      <div className="w-full bg-slate-800 rounded-t h-24 flex items-end p-0.5">
+                        <div
+                          style={{ height: `${Math.max(20, Math.min(100, (point.price / 8000) * 100))}%` }}
+                          className={`w-full rounded-t ${point.isCurrent ? "bg-emerald-400" : "bg-indigo-500"}`}
+                        />
+                      </div>
+                      <span className="text-[9px] text-slate-400">{point.dayLabel}</span>
                     </div>
-                    <span className="text-[9px] text-slate-400">{point.dayLabel}</span>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-slate-400 py-6 text-center">No trend history available.</p>
+              )}
             </div>
 
             <div className="flex justify-end pt-2">

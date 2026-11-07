@@ -5,25 +5,27 @@ import com.makemytrip.makemytrip.models.SeatMap;
 import com.makemytrip.makemytrip.models.UserPreferences;
 import com.makemytrip.makemytrip.services.SelectionService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/selection")
+@RequestMapping({"/api/selection", "/api/selections"})
+@CrossOrigin(origins = "*")
 public class SelectionController {
 
     @Autowired
     private SelectionService selectionService;
 
-    @GetMapping("/seatmap/{flightId}")
+    @GetMapping({"/seatmap/{flightId}", "/seat-map/{flightId}"})
     public ResponseEntity<SeatMap> getSeatMap(@PathVariable String flightId) {
         SeatMap map = selectionService.getSeatMapForFlight(flightId);
         return ResponseEntity.ok(map);
     }
 
-    @PostMapping("/reserve-seat")
+    @PostMapping({"/reserve-seat", "/reserve"})
     public ResponseEntity<SeatMap> reserveSeat(
             @RequestParam String flightId,
             @RequestParam String seatNo,
@@ -32,7 +34,7 @@ public class SelectionController {
         return ResponseEntity.ok(updatedMap);
     }
 
-    @GetMapping("/hotel-rooms/{hotelId}")
+    @GetMapping({"/hotel-rooms/{hotelId}", "/rooms/{hotelId}"})
     public ResponseEntity<List<RoomTypeOption>> getHotelRoomOptions(@PathVariable String hotelId) {
         List<RoomTypeOption> options = selectionService.getRoomOptionsForHotel(hotelId);
         return ResponseEntity.ok(options);
@@ -41,7 +43,7 @@ public class SelectionController {
     @PostMapping("/preferences")
     public ResponseEntity<UserPreferences> saveUserPreferences(@RequestBody UserPreferences preferences) {
         UserPreferences saved = selectionService.saveUserPreferences(preferences);
-        return ResponseEntity.ok(saved);
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
     @GetMapping("/preferences/{userId}")

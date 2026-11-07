@@ -1,7 +1,7 @@
 import axios from "axios";
 
 
-export const BACKEND_URL = (process.env.NEXT_PUBLIC_BACKEND_URL || "")
+export const BACKEND_URL = (process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8081")
   .trim()
   .replace(/^["']|["']$/g, "")
   .replace(/;+$/, "")
@@ -9,15 +9,50 @@ export const BACKEND_URL = (process.env.NEXT_PUBLIC_BACKEND_URL || "")
 
 export const apiClient = axios.create({
   baseURL: BACKEND_URL,
-  validateStatus: (status) => status >= 200 && status < 300,
+  timeout: 12000,
+  validateStatus: () => true, // Accept all HTTP statuses to prevent unhandled AxiosError rejections
 });
 
+// Resilient response interceptor: catches offline/network errors and returns a safe payload
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Intercept network/connectivity failure (e.g. server offline, ECONNREFUSED, timeout)
+    const isTimeout = Boolean(error?.code === "ECONNABORTED" || error?.message?.toLowerCase().includes("timeout"));
+    console.warn("[API Network Notice]: Backend connection unavailable:", error?.message || "Network Error");
+    return Promise.resolve({
+      status: isTimeout ? 504 : 503,
+      statusText: isTimeout ? "Gateway Timeout" : "Service Unavailable",
+      data: null,
+      headers: {},
+      isNetworkError: true,
+      isTimeout,
+      error: error?.message || (isTimeout ? "Request timed out" : "Network Error"),
+    });
+  }
+);
+
+export const isSuccess = (res) => Boolean(res && !res.isNetworkError && (res.status === 200 || res.status === 201));
+
+export const extractErrorMessage = (res, defaultMsg = "Request failed") => {
+  if (!res) return defaultMsg;
+  if (res.isTimeout) return "Server response timed out. Please try again later.";
+  if (res.isNetworkError) return "Unable to connect to server. Please ensure the backend is running.";
+  if (typeof res.data === "string" && res.data.trim()) return res.data.trim();
+  if (res.data?.message) return res.data.message;
+  if (res.data?.error) return res.data.error;
+  if (res.statusText && res.statusText !== "OK" && res.statusText !== "Service Unavailable" && res.statusText !== "Gateway Timeout") return res.statusText;
+  return defaultMsg;
+};
 
 export const login = async (email, password) => {
   try {
     const url = `/user/login?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`;
     const res = await apiClient.post(url);
-    if (res.status === 200) return res.data;
+    if (res?.isNetworkError) {
+      throw new Error(extractErrorMessage(res, "Unable to connect to server. Please ensure the backend is running."));
+    }
+    if (isSuccess(res)) return res.data;
     const errorMsg = typeof res.data === "string" ? res.data : (res.data?.message || res.data?.error || "Invalid email or password");
     throw new Error(errorMsg);
   } catch (error) {
@@ -45,7 +80,10 @@ export const signup = async (
       phoneNumber,
       password,
     });
-    if (res.status === 200) return res.data;
+    if (res?.isNetworkError) {
+      throw new Error(extractErrorMessage(res, "Unable to connect to server. Please ensure the backend is running."));
+    }
+    if (isSuccess(res)) return res.data;
     const errorMsg = typeof res.data === "string" ? res.data : (res.data?.message || res.data?.error || "Signup failed");
     throw new Error(errorMsg);
   } catch (error) {
@@ -61,7 +99,7 @@ export const signup = async (
 export const getuserbyemail = async (email) => {
   try {
     const res = await apiClient.get(`/user/email?email=${encodeURIComponent(email)}`);
-    if (res.status === 200) return res.data;
+    if (isSuccess(res)) return res.data;
     return null;
   } catch (error) {
     console.error("Get user by email failed:", error);
@@ -83,7 +121,7 @@ export const editprofile = async (
       email,
       phoneNumber,
     });
-    if (res.status === 200) return res.data;
+    if (isSuccess(res)) return res.data;
     return null;
   } catch (error) {
     console.error("Edit profile failed:", error);
@@ -98,7 +136,7 @@ export const getflight = async (from = "", to = "") => {
     if (to && typeof to === "string" && to.trim()) params.append("to", to.trim());
     const queryStr = params.toString() ? `?${params.toString()}` : "";
     const res = await apiClient.get(`/flight${queryStr}`);
-    if (res.status === 200 && Array.isArray(res.data)) {
+    if (isSuccess(res) && Array.isArray(res.data)) {
       return res.data;
     }
     return [];
@@ -111,7 +149,7 @@ export const getflight = async (from = "", to = "") => {
 export const getflightbyid = async (id) => {
   try {
     const res = await apiClient.get(`/flight/${encodeURIComponent(id)}`);
-    if (res.status === 200) return res.data;
+    if (isSuccess(res)) return res.data;
     return null;
   } catch (error) {
     console.error(`Get flight by id failed for ${id}:`, error);
@@ -132,7 +170,12 @@ export const addflight = async (...args) => {
       availableSeats: args[6],
     };
     const res = await apiClient.post(`/admin/flight`, payload);
-    return res.data;
+    if (res?.isNetworkError) {
+      throw new Error(extractErrorMessage(res, "Unable to connect to server. Please ensure the backend is running."));
+    }
+    if (isSuccess(res)) return res.data;
+    const errorMsg = extractErrorMessage(res, "Failed to add flight");
+    throw new Error(errorMsg);
   } catch (error) {
     console.error("Add flight failed:", error);
     throw error;
@@ -153,7 +196,12 @@ export const editflight = async (...args) => {
       availableSeats: args[7],
     };
     const res = await apiClient.put(`/admin/flight/${id}`, payload);
-    return res.data;
+    if (res?.isNetworkError) {
+      throw new Error(extractErrorMessage(res, "Unable to connect to server. Please ensure the backend is running."));
+    }
+    if (isSuccess(res)) return res.data;
+    const errorMsg = extractErrorMessage(res, "Failed to edit flight");
+    throw new Error(errorMsg);
   } catch (error) {
     console.error("Edit flight failed:", error);
     throw error;
@@ -167,7 +215,7 @@ export const gethotel = async (location = "", query = "") => {
     if (query && typeof query === "string" && query.trim()) params.append("query", query.trim());
     const queryStr = params.toString() ? `?${params.toString()}` : "";
     const res = await apiClient.get(`/hotel${queryStr}`);
-    if (res.status === 200 && Array.isArray(res.data)) {
+    if (isSuccess(res) && Array.isArray(res.data)) {
       return res.data;
     }
     return [];
@@ -180,7 +228,7 @@ export const gethotel = async (location = "", query = "") => {
 export const gethotelbyid = async (id) => {
   try {
     const res = await apiClient.get(`/hotel/${encodeURIComponent(id)}`);
-    if (res.status === 200) return res.data;
+    if (isSuccess(res)) return res.data;
     return null;
   } catch (error) {
     console.error(`Get hotel by id failed for ${id}:`, error);
@@ -191,7 +239,7 @@ export const gethotelbyid = async (id) => {
 export const getHomeContent = async () => {
   try {
     const res = await apiClient.get(`/api/home-content`);
-    if (res.status === 200) {
+    if (isSuccess(res)) {
       return res.data;
     }
     return null;
@@ -212,7 +260,12 @@ export const addhotel = async (...args) => {
       amenities: args[4],
     };
     const res = await apiClient.post(`/admin/hotel`, payload);
-    return res.data;
+    if (res?.isNetworkError) {
+      throw new Error(extractErrorMessage(res, "Unable to connect to server. Please ensure the backend is running."));
+    }
+    if (isSuccess(res)) return res.data;
+    const errorMsg = extractErrorMessage(res, "Failed to add hotel");
+    throw new Error(errorMsg);
   } catch (error) {
     console.error("Add hotel failed:", error);
     throw error;
@@ -231,7 +284,12 @@ export const edithotel = async (...args) => {
       amenities: args[5],
     };
     const res = await apiClient.put(`/admin/hotel/${id}`, payload);
-    return res.data;
+    if (res?.isNetworkError) {
+      throw new Error(extractErrorMessage(res, "Unable to connect to server. Please ensure the backend is running."));
+    }
+    if (isSuccess(res)) return res.data;
+    const errorMsg = extractErrorMessage(res, "Failed to edit hotel");
+    throw new Error(errorMsg);
   } catch (error) {
     console.error("Edit hotel failed:", error);
     throw error;
@@ -239,11 +297,22 @@ export const edithotel = async (...args) => {
 };
 
 export const handleflightbooking = async (userId, flightId, seats, price, freezeId = "") => {
+  if (!userId || String(userId).trim() === "" || userId === "undefined") {
+    throw new Error("User must be logged in to book a flight.");
+  }
+  if (!flightId || String(flightId).trim() === "" || flightId === "undefined") {
+    throw new Error("Invalid flight selected for booking.");
+  }
   try {
     const freezeParam = freezeId ? `&freezeId=${encodeURIComponent(freezeId)}` : "";
     const url = `/booking/flight?userId=${encodeURIComponent(userId)}&flightId=${encodeURIComponent(flightId)}&seats=${seats}&price=${price}${freezeParam}`;
     const res = await apiClient.post(url);
-    return res.data;
+    if (res?.isNetworkError) {
+      throw new Error(extractErrorMessage(res, "Unable to connect to server. Please ensure the backend is running."));
+    }
+    if (isSuccess(res)) return res.data;
+    const errorMsg = extractErrorMessage(res, "Flight booking failed");
+    throw new Error(errorMsg);
   } catch (error) {
     console.error("Flight booking failed:", error);
     throw error;
@@ -251,14 +320,36 @@ export const handleflightbooking = async (userId, flightId, seats, price, freeze
 };
 
 export const handlehotelbooking = async (userId, hotelId, rooms, price, freezeId = "") => {
+  if (!userId || String(userId).trim() === "" || userId === "undefined") {
+    throw new Error("User must be logged in to book a hotel.");
+  }
+  if (!hotelId || String(hotelId).trim() === "" || hotelId === "undefined") {
+    throw new Error("Invalid hotel selected for booking.");
+  }
   try {
     const freezeParam = freezeId ? `&freezeId=${encodeURIComponent(freezeId)}` : "";
     const url = `/booking/hotel?userId=${encodeURIComponent(userId)}&hotelId=${encodeURIComponent(hotelId)}&rooms=${rooms}&price=${price}${freezeParam}`;
     const res = await apiClient.post(url);
-    return res.data;
+    if (res?.isNetworkError) {
+      throw new Error(extractErrorMessage(res, "Unable to connect to server. Please ensure the backend is running."));
+    }
+    if (isSuccess(res)) return res.data;
+    const errorMsg = extractErrorMessage(res, "Hotel booking failed");
+    throw new Error(errorMsg);
   } catch (error) {
     console.error("Hotel booking failed:", error);
     throw error;
+  }
+};
+
+export const getUserBookings = async (userId) => {
+  try {
+    const res = await apiClient.get(`/booking/user/${encodeURIComponent(userId)}`);
+    if (isSuccess(res) && Array.isArray(res.data)) return res.data;
+    return [];
+  } catch (error) {
+    console.error(`Failed to fetch bookings for user ${userId}:`, error);
+    return [];
   }
 };
 
@@ -269,7 +360,7 @@ export const getFlightStatuses = async (query = "", status = "ALL") => {
     if (status && status !== "ALL") params.append("status", status);
 
     const res = await apiClient.get(`/api/flight-status?${params.toString()}`);
-    if (res && res.status === 200 && Array.isArray(res.data)) {
+    if (isSuccess(res) && Array.isArray(res.data)) {
       return res.data;
     }
     return [];
@@ -281,7 +372,7 @@ export const getFlightStatuses = async (query = "", status = "ALL") => {
 export const getFlightStatusByNumber = async (flightNumber) => {
   try {
     const res = await apiClient.get(`/api/flight-status/${encodeURIComponent(flightNumber)}`);
-    if (res && res.status === 200) return res.data;
+    if (isSuccess(res)) return res.data;
     return null;
   } catch (error) {
     return null;
@@ -291,7 +382,7 @@ export const getFlightStatusByNumber = async (flightNumber) => {
 export const getTrackedFlights = async (flightNumbers = []) => {
   try {
     const res = await apiClient.post(`/api/flight-status/tracked`, flightNumbers);
-    if (res && res.status === 200 && Array.isArray(res.data)) return res.data;
+    if (isSuccess(res) && Array.isArray(res.data)) return res.data;
     return [];
   } catch (error) {
     return [];
@@ -301,7 +392,12 @@ export const getTrackedFlights = async (flightNumbers = []) => {
 export const simulateFlightUpdate = async (payload = {}) => {
   try {
     const res = await apiClient.post(`/api/flight-status/simulate`, payload);
-    return res.data;
+    if (res?.isNetworkError) {
+      throw new Error("Unable to connect to server. Please ensure the backend is running.");
+    }
+    if (isSuccess(res)) return res.data;
+    const errorMsg = extractErrorMessage(res, "Failed to simulate flight update");
+    throw new Error(errorMsg);
   } catch (error) {
     console.error("Failed to simulate flight update:", error);
     throw error;
@@ -311,7 +407,11 @@ export const simulateFlightUpdate = async (payload = {}) => {
 export const triggerRandomFlightSimulation = async () => {
   try {
     const res = await apiClient.get(`/api/flight-status/simulate-random`);
-    return res.data;
+    if (res?.isNetworkError) {
+      throw new Error("Unable to connect to server. Please ensure the backend is running.");
+    }
+    if (isSuccess(res)) return res.data;
+    return null;
   } catch (error) {
     console.error("Failed to trigger random flight simulation:", error);
     throw error;
@@ -321,7 +421,7 @@ export const triggerRandomFlightSimulation = async () => {
 export const validateFlightStatusDb = async () => {
   try {
     const res = await apiClient.get(`/api/flight-status/validate-db`);
-    if (res && res.status === 200) {
+    if (isSuccess(res)) {
       return res.data;
     }
     return null;
@@ -349,11 +449,22 @@ export const getDynamicPricing = async (
       season,
     });
     const res = await apiClient.get(`/api/pricing/calculate?${params.toString()}`);
-    if (res.status === 200) return res.data;
+    if (isSuccess(res)) return res.data;
     return null;
   } catch (error) {
     console.error("Failed to fetch dynamic price:", error);
     return null;
+  }
+};
+
+export const getPriceHistory = async (itemId = "FL-101", basePrice = 5500) => {
+  try {
+    const res = await apiClient.get(`/api/pricing/history/${encodeURIComponent(itemId)}?basePrice=${basePrice}`);
+    if (isSuccess(res) && Array.isArray(res.data)) return res.data;
+    return [];
+  } catch (error) {
+    console.error("Failed to fetch price history:", error);
+    return [];
   }
 };
 
@@ -366,8 +477,12 @@ export const freezePrice = async (itemId, itemTitle, currentPrice, hours = 24, u
       hours,
       userId,
     });
-    if (res.status === 200) return res.data;
-    return null;
+    if (res?.isNetworkError) {
+      throw new Error(extractErrorMessage(res, "Unable to connect to server. Please ensure the backend is running."));
+    }
+    if (isSuccess(res)) return res.data;
+    const errorMsg = extractErrorMessage(res, "Failed to freeze price");
+    throw new Error(errorMsg);
   } catch (error) {
     console.error("Failed to freeze price:", error);
     throw error;
@@ -377,7 +492,7 @@ export const freezePrice = async (itemId, itemTitle, currentPrice, hours = 24, u
 export const getFreezeStatus = async (freezeId) => {
   try {
     const res = await apiClient.get(`/api/pricing/freeze/${encodeURIComponent(freezeId)}`);
-    if (res.status === 200) return res.data;
+    if (isSuccess(res)) return res.data;
     return null;
   } catch (error) {
     console.error(`Failed to fetch freeze status for ${freezeId}:`, error);
@@ -388,7 +503,7 @@ export const getFreezeStatus = async (freezeId) => {
 export const getUserPriceFreezes = async (userId = "") => {
   try {
     const res = await apiClient.get(`/api/pricing/user-freezes?userId=${encodeURIComponent(userId)}`);
-    if (res.status === 200 && Array.isArray(res.data)) return res.data;
+    if (isSuccess(res) && Array.isArray(res.data)) return res.data;
     return [];
   } catch (error) {
     console.error("Failed to fetch user price freezes:", error);
@@ -399,7 +514,7 @@ export const getUserPriceFreezes = async (userId = "") => {
 export const removePriceFreeze = async (freezeId) => {
   try {
     const res = await apiClient.delete(`/api/pricing/freeze/${encodeURIComponent(freezeId)}`);
-    if (res.status === 200) return res.data;
+    if (isSuccess(res)) return res.data;
     return null;
   } catch (error) {
     console.error(`Failed to delete price freeze ${freezeId}:`, error);
@@ -410,7 +525,7 @@ export const removePriceFreeze = async (freezeId) => {
 export const getPromotionalOffers = async () => {
   try {
     const res = await apiClient.get(`/api/pricing/offers`);
-    if (res.status === 200 && Array.isArray(res.data)) return res.data;
+    if (isSuccess(res) && Array.isArray(res.data)) return res.data;
     return [];
   } catch (error) {
     console.error("Failed to fetch promotional offers:", error);
@@ -455,7 +570,7 @@ export const getAppNotifications = async (userId = "") => {
     const params = new URLSearchParams();
     if (userId) params.append("userId", userId);
     const res = await apiClient.get(`/api/notifications?${params.toString()}`);
-    if (res && res.status === 200 && Array.isArray(res.data)) return res.data;
+    if (isSuccess(res) && Array.isArray(res.data)) return res.data;
     return [];
   } catch (error) {
     return [];
@@ -468,7 +583,7 @@ export const deleteAppNotification = async (id, userId = "") => {
     if (userId) params.append("userId", userId);
     const query = params.toString() ? `?${params.toString()}` : "";
     const res = await apiClient.delete(`/api/notifications/${encodeURIComponent(id)}${query}`);
-    if (res.status === 200) return res.data;
+    if (isSuccess(res)) return res.data;
     return null;
   } catch (error) {
     console.error(`Failed to delete notification ${id}:`, error);
@@ -481,7 +596,7 @@ export const clearAllAppNotifications = async (userId) => {
     const params = new URLSearchParams();
     if (userId) params.append("userId", userId);
     const res = await apiClient.delete(`/api/notifications/clear-all?${params.toString()}`);
-    if (res.status === 200) return res.data;
+    if (isSuccess(res)) return res.data;
     return null;
   } catch (error) {
     console.error("Failed to clear notifications:", error);
@@ -494,7 +609,7 @@ export const markAllAppNotificationsRead = async (userId) => {
     const params = new URLSearchParams();
     if (userId) params.append("userId", userId);
     const res = await apiClient.post(`/api/notifications/mark-read?${params.toString()}`);
-    if (res.status === 200) return res.data;
+    if (isSuccess(res)) return res.data;
     return null;
   } catch (error) {
     console.error("Failed to mark notifications read:", error);
@@ -506,11 +621,11 @@ export const markAllAppNotificationsRead = async (userId) => {
 export const calculateRefundPreview = async (userId, bookingId) => {
   try {
     const res = await apiClient.get(`/refund/calculate?userId=${encodeURIComponent(userId)}&bookingId=${encodeURIComponent(bookingId)}`);
-    if (res.status === 200) return res.data;
+    if (isSuccess(res)) return res.data;
     return null;
   } catch (error) {
     console.error("Failed to calculate refund preview:", error);
-    throw error;
+    return null;
   }
 };
 
@@ -523,7 +638,10 @@ export const submitCancellationAndRefund = async (userId, bookingId, reason, com
     if (comment) params.append("comment", comment);
 
     const res = await apiClient.post(`/refund/cancel-and-request?${params.toString()}`);
-    if (res.status === 200) return res.data;
+    if (res?.isNetworkError) {
+      throw new Error(extractErrorMessage(res, "Unable to connect to server. Please ensure the backend is running."));
+    }
+    if (isSuccess(res)) return res.data;
     const errorMsg = typeof res.data === "string" ? res.data : (res.data?.message || res.data?.error || "Cancellation failed");
     throw new Error(errorMsg);
   } catch (error) {
@@ -539,7 +657,7 @@ export const submitCancellationAndRefund = async (userId, bookingId, reason, com
 export const getUserRefunds = async (userId) => {
   try {
     const res = await apiClient.get(`/refund/user/${encodeURIComponent(userId)}`);
-    if (res.status === 200 && Array.isArray(res.data)) return res.data;
+    if (isSuccess(res) && Array.isArray(res.data)) return res.data;
     return [];
   } catch (error) {
     console.error("Failed to fetch user refunds:", error);
@@ -550,7 +668,7 @@ export const getUserRefunds = async (userId) => {
 export const getRefundStatus = async (refundId) => {
   try {
     const res = await apiClient.get(`/refund/status/${encodeURIComponent(refundId)}`);
-    if (res.status === 200) return res.data;
+    if (isSuccess(res)) return res.data;
     return null;
   } catch (error) {
     console.error(`Failed to fetch refund status for ${refundId}:`, error);
@@ -561,7 +679,7 @@ export const getRefundStatus = async (refundId) => {
 export const getSeatMap = async (flightId) => {
   try {
     const res = await apiClient.get(`/api/selection/seatmap/${encodeURIComponent(flightId)}`);
-    if (res.status === 200) return res.data;
+    if (isSuccess(res)) return res.data;
     return null;
   } catch (error) {
     console.error(`Failed to fetch seat map for flight ${flightId}:`, error);
@@ -577,8 +695,12 @@ export const reserveSeat = async (flightId, seatNo, userId = "") => {
     if (userId) params.append("userId", userId);
 
     const res = await apiClient.post(`/api/selection/reserve-seat?${params.toString()}`);
-    if (res.status === 200) return res.data;
-    return null;
+    if (res?.isNetworkError) {
+      throw new Error(extractErrorMessage(res, "Unable to connect to server. Please ensure the backend is running."));
+    }
+    if (isSuccess(res)) return res.data;
+    const errorMsg = typeof res.data === "string" ? res.data : (res.data?.message || res.data?.error || `Seat ${seatNo} is unavailable`);
+    throw new Error(errorMsg);
   } catch (error) {
     console.error(`Failed to reserve seat ${seatNo}:`, error);
     throw error;
@@ -588,7 +710,7 @@ export const reserveSeat = async (flightId, seatNo, userId = "") => {
 export const getHotelRoomOptions = async (hotelId) => {
   try {
     const res = await apiClient.get(`/api/selection/hotel-rooms/${encodeURIComponent(hotelId)}`);
-    if (res.status === 200 && Array.isArray(res.data)) return res.data;
+    if (isSuccess(res) && Array.isArray(res.data)) return res.data;
     return [];
   } catch (error) {
     console.error(`Failed to fetch hotel rooms for ${hotelId}:`, error);
@@ -599,8 +721,12 @@ export const getHotelRoomOptions = async (hotelId) => {
 export const saveUserPreferences = async (preferences) => {
   try {
     const res = await apiClient.post(`/api/selection/preferences`, preferences);
-    if (res.status === 200) return res.data;
-    return null;
+    if (res?.isNetworkError) {
+      throw new Error("Unable to connect to server. Please ensure the backend is running.");
+    }
+    if (isSuccess(res)) return res.data;
+    const errorMsg = typeof res.data === "string" ? res.data : (res.data?.message || res.data?.error || "Failed to save preferences");
+    throw new Error(errorMsg);
   } catch (error) {
     console.error("Failed to save user preferences:", error);
     throw error;
@@ -610,7 +736,7 @@ export const saveUserPreferences = async (preferences) => {
 export const getUserPreferences = async (userId) => {
   try {
     const res = await apiClient.get(`/api/selection/preferences/${encodeURIComponent(userId)}`);
-    if (res.status === 200) return res.data;
+    if (isSuccess(res)) return res.data;
     return null;
   } catch (error) {
     console.error(`Failed to fetch user preferences for ${userId}:`, error);
@@ -628,7 +754,7 @@ export const getReviews = async (targetId, targetType = "HOTEL", sort = "helpful
     if (withPhotosOnly) params.append("withPhotosOnly", "true");
 
     const res = await apiClient.get(`/api/reviews?${params.toString()}`);
-    if (res.status === 200) return res.data;
+    if (isSuccess(res)) return res.data;
     return null;
   } catch (error) {
     console.error("Failed to fetch reviews:", error);
@@ -639,8 +765,12 @@ export const getReviews = async (targetId, targetType = "HOTEL", sort = "helpful
 export const createReview = async (reviewData) => {
   try {
     const res = await apiClient.post("/api/reviews", reviewData);
-    if (res.status === 200) return res.data;
-    throw new Error(res.data?.message || "Failed to create review");
+    if (res?.isNetworkError) {
+      throw new Error(extractErrorMessage(res, "Unable to connect to server. Please ensure the backend is running."));
+    }
+    if (isSuccess(res)) return res.data;
+    const errorMsg = extractErrorMessage(res, "Failed to create review");
+    throw new Error(errorMsg);
   } catch (error) {
     console.error("Failed to post review:", error);
     throw error;
@@ -650,8 +780,12 @@ export const createReview = async (reviewData) => {
 export const addReviewReply = async (reviewId, replyData) => {
   try {
     const res = await apiClient.post(`/api/reviews/${encodeURIComponent(reviewId)}/reply`, replyData);
-    if (res.status === 200) return res.data;
-    throw new Error(res.data?.message || "Failed to add reply");
+    if (res?.isNetworkError) {
+      throw new Error(extractErrorMessage(res, "Unable to connect to server. Please ensure the backend is running."));
+    }
+    if (isSuccess(res)) return res.data;
+    const errorMsg = extractErrorMessage(res, "Failed to add reply");
+    throw new Error(errorMsg);
   } catch (error) {
     console.error("Failed to add reply:", error);
     throw error;
@@ -663,8 +797,12 @@ export const toggleReviewHelpful = async (reviewId, userId = "") => {
     const params = new URLSearchParams();
     if (userId) params.append("userId", userId);
     const res = await apiClient.post(`/api/reviews/${encodeURIComponent(reviewId)}/helpful?${params.toString()}`);
-    if (res.status === 200) return res.data;
-    throw new Error(res.data?.message || "Failed to toggle helpful vote");
+    if (res?.isNetworkError) {
+      throw new Error(extractErrorMessage(res, "Unable to connect to server. Please ensure the backend is running."));
+    }
+    if (isSuccess(res)) return res.data;
+    const errorMsg = extractErrorMessage(res, "Failed to toggle helpful vote");
+    throw new Error(errorMsg);
   } catch (error) {
     console.error("Failed to toggle helpful vote:", error);
     throw error;
@@ -677,8 +815,12 @@ export const flagReview = async (reviewId, userId = "", reason = "Inappropriate 
     if (userId) params.append("userId", userId);
     params.append("reason", reason);
     const res = await apiClient.post(`/api/reviews/${encodeURIComponent(reviewId)}/flag?${params.toString()}`);
-    if (res.status === 200) return res.data;
-    throw new Error(res.data?.message || "Failed to flag review");
+    if (res?.isNetworkError) {
+      throw new Error(extractErrorMessage(res, "Unable to connect to server. Please ensure the backend is running."));
+    }
+    if (isSuccess(res)) return res.data;
+    const errorMsg = extractErrorMessage(res, "Failed to flag review");
+    throw new Error(errorMsg);
   } catch (error) {
     console.error("Failed to flag review:", error);
     throw error;
@@ -688,7 +830,7 @@ export const flagReview = async (reviewId, userId = "", reason = "Inappropriate 
 export const getFlaggedReviews = async () => {
   try {
     const res = await apiClient.get("/api/reviews/moderation/flagged");
-    if (res.status === 200 && Array.isArray(res.data)) return res.data;
+    if (isSuccess(res) && Array.isArray(res.data)) return res.data;
     return [];
   } catch (error) {
     console.error("Failed to fetch flagged reviews for moderation:", error);
@@ -701,8 +843,12 @@ export const moderateReview = async (reviewId, action) => {
     const params = new URLSearchParams();
     params.append("action", action);
     const res = await apiClient.post(`/api/reviews/moderation/${encodeURIComponent(reviewId)}/action?${params.toString()}`);
-    if (res.status === 200) return res.data;
-    throw new Error(res.data?.message || "Failed to execute moderation action");
+    if (res?.isNetworkError) {
+      throw new Error(extractErrorMessage(res, "Unable to connect to server. Please ensure the backend is running."));
+    }
+    if (isSuccess(res)) return res.data;
+    const errorMsg = extractErrorMessage(res, "Failed to execute moderation action");
+    throw new Error(errorMsg);
   } catch (error) {
     console.error("Failed to moderate review:", error);
     throw error;
@@ -715,11 +861,22 @@ export const getRecommendations = async (userId = "", category = "ALL") => {
     if (userId) params.append("userId", userId);
     if (category) params.append("category", category);
     const res = await apiClient.get(`/api/recommendations?${params.toString()}`);
-    if (res.status === 200 && Array.isArray(res.data)) return res.data;
+    if (isSuccess(res) && Array.isArray(res.data)) return res.data;
     return [];
   } catch (error) {
     console.error("Failed to fetch personalized recommendations:", error);
     return [];
+  }
+};
+
+export const getRecommendationById = async (id) => {
+  try {
+    const res = await apiClient.get(`/api/recommendations/${encodeURIComponent(id)}`);
+    if (isSuccess(res)) return res.data;
+    return null;
+  } catch (error) {
+    console.error(`Failed to fetch recommendation ${id}:`, error);
+    return null;
   }
 };
 
@@ -730,8 +887,12 @@ export const submitRecommendationFeedback = async (recommendationId, userId = ""
       feedbackType,
       notes,
     });
-    if (res.status === 200) return res.data;
-    throw new Error(res.data?.message || "Failed to submit recommendation feedback");
+    if (res?.isNetworkError) {
+      throw new Error(extractErrorMessage(res, "Unable to connect to server. Please ensure the backend is running."));
+    }
+    if (isSuccess(res)) return res.data;
+    const errorMsg = extractErrorMessage(res, "Failed to submit recommendation feedback");
+    throw new Error(errorMsg);
   } catch (error) {
     console.error("Failed to submit recommendation feedback:", error);
     throw error;
@@ -741,7 +902,7 @@ export const submitRecommendationFeedback = async (recommendationId, userId = ""
 export const seedRecommendations = async () => {
   try {
     const res = await apiClient.post("/api/recommendations/seed");
-    if (res.status === 200) return res.data;
+    if (isSuccess(res)) return res.data;
     return null;
   } catch (error) {
     console.error("Failed to seed recommendations:", error);

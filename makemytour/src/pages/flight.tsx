@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import { getflight } from "@/api";
@@ -86,6 +86,16 @@ export default function FlightSearchPage() {
   const [allFlights, setAllFlights] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
+  const latestRequestIdRef = useRef<number>(0);
+  const isMountedRef = useRef<boolean>(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   const [selectedAirlines, setSelectedAirlines] = useState<string[]>([]);
   const [maxPrice, setMaxPrice] = useState<number>(50000);
   const [sortBy, setSortBy] = useState<string>("price_asc");
@@ -104,12 +114,15 @@ export default function FlightSearchPage() {
   }, [router.isReady, router.query.from, router.query.to]);
 
   const fetchFlights = async (queryFrom = from, queryTo = to) => {
+    const requestId = ++latestRequestIdRef.current;
     setLoading(true);
     try {
       let data = await getflight(queryFrom, queryTo);
+      if (!isMountedRef.current || requestId !== latestRequestIdRef.current) return;
       let flightsList = Array.isArray(data) ? data : [];
       if (flightsList.length === 0 && (queryFrom || queryTo)) {
         const allData = await getflight("", "");
+        if (!isMountedRef.current || requestId !== latestRequestIdRef.current) return;
         if (Array.isArray(allData) && allData.length > 0) {
           flightsList = allData;
         }
@@ -121,10 +134,13 @@ export default function FlightSearchPage() {
         if (highest > 0) setMaxPrice(Math.ceil(highest * 1.1));
       }
     } catch (err) {
+      if (!isMountedRef.current || requestId !== latestRequestIdRef.current) return;
       console.error("Failed to load flights:", err);
       setAllFlights([]);
     } finally {
-      setLoading(false);
+      if (isMountedRef.current && requestId === latestRequestIdRef.current) {
+        setLoading(false);
+      }
     }
   };
 
@@ -168,6 +184,12 @@ export default function FlightSearchPage() {
         }
       });
     });
+    if (cityMap.size === 0) {
+      Object.entries(AIRPORT_CODES).forEach(([city, code]) => {
+        const capitalized = city.split(" ").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+        cityMap.set(city.toLowerCase(), `${capitalized} (${code})`);
+      });
+    }
     return Array.from(cityMap.values()).map((city) => ({ value: city, label: city }));
   }, [allFlights]);
 

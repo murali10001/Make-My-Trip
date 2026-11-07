@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/recommendations")
+@RequestMapping({"/api/recommendations", "/api/recommendation"})
 @CrossOrigin(origins = "*")
 public class RecommendationController {
 
@@ -23,6 +23,13 @@ public class RecommendationController {
             @RequestParam(required = false, defaultValue = "ALL") String category) {
         List<Recommendation> recommendations = recommendationService.getRecommendations(userId, category);
         return ResponseEntity.ok(recommendations);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Recommendation> getRecommendationById(@PathVariable String id) {
+        return recommendationService.getRecommendationById(id)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping("/{id}/feedback")

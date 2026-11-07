@@ -17,7 +17,7 @@ const FlightList = ({ onSelect }: any) => {
     const fetchflight = async () => {
       try {
         const data = await getflight();
-        setflight(data);
+        setflight(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error(error);
       } finally {

@@ -150,8 +150,13 @@ export const HotelRoomPicker: React.FC<HotelRoomPickerProps> = ({
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {roomOptions.map((room) => {
+      {roomOptions.length === 0 ? (
+        <div className="py-8 text-center text-slate-400 text-xs bg-slate-50 rounded-xl border border-dashed border-slate-200">
+          Room options and upgrades are not available for this hotel at this time.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {roomOptions.map((room) => {
           const isSelected = activeRoom?.roomTypeName === room.roomTypeName;
 
           return (
@@ -262,7 +267,8 @@ export const HotelRoomPicker: React.FC<HotelRoomPickerProps> = ({
             </div>
           );
         })}
-      </div>
+        </div>
+      )}
 
       {userId && (
         <div className="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs">

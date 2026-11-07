@@ -43,6 +43,11 @@ public class RecommendationService {
 
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
+    public Optional<Recommendation> getRecommendationById(String id) {
+        if (id == null || id.trim().isEmpty()) return Optional.empty();
+        return recommendationRepository.findById(id.trim());
+    }
+
     public void seedInitialRecommendations() {
         recommendationRepository.deleteAll();
         List<Recommendation> dynamicCatalog = generateDynamicRecommendationsFromDatabase();

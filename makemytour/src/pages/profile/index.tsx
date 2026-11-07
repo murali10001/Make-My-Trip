@@ -50,6 +50,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import SignupDialog from "@/components/SignupDialog";
 
 const PREDEFINED_CANCELLATION_REASONS = [
   "Change of travel plans",
@@ -81,12 +82,24 @@ const ProfileDashboardPage = () => {
   const [cancelSuccessMsg, setCancelSuccessMsg] = useState<string | null>(null);
 
   const [isEditing, setIsEditing] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [userData, setUserData] = useState({
     firstName: user?.firstName ? user?.firstName : "",
     lastName: user?.lastName ? user?.lastName : "",
     email: user?.email ? user?.email : "",
     phoneNumber: user?.phoneNumber ? user?.phoneNumber : "",
   });
+
+  useEffect(() => {
+    if (user) {
+      setUserData({
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        email: user.email || "",
+        phoneNumber: user.phoneNumber || "",
+      });
+    }
+  }, [user]);
 
   const logout = () => {
     dispatch(clearUser());
@@ -165,7 +178,7 @@ const ProfileDashboardPage = () => {
   useEffect(() => {
     if (activeTab === "refunds") {
       fetchUserDataAndRefunds();
-      const interval = setInterval(fetchUserDataAndRefunds, 2000);
+      const interval = setInterval(fetchUserDataAndRefunds, 10000);
       return () => clearInterval(interval);
     }
   }, [activeTab, user?.id, user?._id]);
@@ -191,6 +204,8 @@ const ProfileDashboardPage = () => {
   };
 
   const handleSaveProfile = async () => {
+    if (isSavingProfile) return;
+    setIsSavingProfile(true);
     try {
       const userId = user?.id || user?._id;
       const data = await editprofile(
@@ -211,6 +226,8 @@ const ProfileDashboardPage = () => {
       setIsEditing(false);
     } catch (error) {
       setIsEditing(false);
+    } finally {
+      setIsSavingProfile(false);
     }
   };
 
@@ -314,8 +331,12 @@ const ProfileDashboardPage = () => {
                 Welcome back, {user?.firstName || "Traveler"}!
               </h1>
             </div>
-            <p className="text-xs text-slate-300">
-              Manage your active bookings, price locks, and track live cancellation refund status.
+            <p className="text-xs text-slate-300 transition-opacity duration-200">
+              {activeTab === "bookings" && "Manage your active flight and hotel bookings, tickets, and check cancellation policies."}
+              {activeTab === "refunds" && "Track live status for flight and hotel cancellation refunds with real-time stage progression."}
+              {activeTab === "freezes" && "Manage your 24-hour locked fares, prevent holiday price surges, and book at guaranteed rates."}
+              {activeTab === "preferences" && "Saved seat preferences and hotel room tiers auto-apply during your checkout process."}
+              {activeTab === "recommendations" && "Tailored AI travel suggestions powered by collaborative travel patterns and past history."}
             </p>
           </div>
           <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none snap-x whitespace-nowrap w-full md:w-auto -mx-1 px-1">
@@ -376,7 +397,12 @@ const ProfileDashboardPage = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {activeTab === "recommendations" ? (
+          <div className="w-full space-y-6">
+            <PersonalizedRecommendations columns={4} />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
 
           <div className="md:col-span-1">
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
@@ -434,10 +460,11 @@ const ProfileDashboardPage = () => {
                   <div className="flex space-x-3 pt-2">
                     <button
                       onClick={handleSaveProfile}
-                      className="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition-colors font-bold flex items-center justify-center space-x-1"
+                      disabled={isSavingProfile}
+                      className="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors font-bold flex items-center justify-center space-x-1"
                     >
                       <Check className="w-4 h-4" />
-                      <span>Save</span>
+                      <span>{isSavingProfile ? "Saving..." : "Save"}</span>
                     </button>
                     <button
                       onClick={() => setIsEditing(false)}
@@ -447,6 +474,23 @@ const ProfileDashboardPage = () => {
                       <span>Cancel</span>
                     </button>
                   </div>
+                </div>
+              ) : !user ? (
+                <div className="space-y-4 text-xs text-center py-4">
+                  <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-slate-500">
+                    <User className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-900 text-sm">Guest Session</p>
+                    <p className="text-slate-500 text-[11px] mt-1">Sign in to sync your bookings, price locks, and refund history.</p>
+                  </div>
+                  <SignupDialog
+                    trigger={
+                      <Button className="w-full bg-red-600 hover:bg-red-700 text-white font-bold text-xs">
+                        Sign In / Register
+                      </Button>
+                    }
+                  />
                 </div>
               ) : (
                 <div className="space-y-4 text-xs">
@@ -491,13 +535,13 @@ const ProfileDashboardPage = () => {
                     </p>
                   </div>
                   <span className="bg-slate-100 text-slate-700 font-bold text-xs px-3 py-1 rounded-full">
-                    {user?.bookings?.length || 0} Total Bookings
+                    {(user?.bookings?.filter((b: any) => b && typeof b === "object") || []).length} Total Bookings
                   </span>
                 </div>
 
                 <div className="space-y-4">
-                  {user?.bookings && user.bookings.length > 0 ? (
-                    user.bookings.map((booking: any, index: number) => {
+                  {(user?.bookings?.filter((b: any) => b && typeof b === "object") || []).length > 0 ? (
+                    user.bookings.filter((b: any) => b && typeof b === "object").map((booking: any, index: number) => {
                       const isCancelled = booking?.status === "CANCELLED";
                       const bookingId = booking?.bookingId || booking?.id || `BK-${index + 1}`;
 
@@ -884,13 +928,9 @@ const ProfileDashboardPage = () => {
               </div>
             )}
 
-            {activeTab === "recommendations" && (
-              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
-                <PersonalizedRecommendations />
-              </div>
-            )}
           </div>
         </div>
+      )}
       </div>
 
       <Dialog open={cancelModalOpen} onOpenChange={setCancelModalOpen}>

@@ -327,7 +327,7 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
 
           <div className="md:col-span-2 space-y-1.5 flex flex-col justify-center">
             {[5, 4, 3, 2, 1].map((star) => {
-              const count = data.ratingDistribution[star] || 0;
+              const count = data.ratingDistribution ? (data.ratingDistribution[star] || 0) : 0;
               const percentage = data.totalCount > 0 ? Math.round((count / data.totalCount) * 100) : 0;
               const isSelected = filterRating === star;
               return (
