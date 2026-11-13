@@ -9,6 +9,7 @@ import {
   removePriceFreeze,
   getPromotionalOffers,
   applyCouponCode,
+  createPricingStream,
 } from "@/api";
 import {
   TrendingUp,
@@ -81,13 +82,14 @@ export interface OfferCouponData {
 }
 
 const DynamicPricingEngine: React.FC = () => {
+  const router = useRouter();
   const user = useSelector((state: any) => state.user.user);
   const [dbItems, setDbItems] = useState<ItemChoice[]>([]);
   const [selectedItemId, setSelectedItemId] = useState<string>("");
   const [selectedItem, setSelectedItem] = useState<ItemChoice | null>(null);
 
-  const [demandLevel, setDemandLevel] = useState<string>("HIGH");
-  const [seasonType, setSeasonType] = useState<string>("HOLIDAY_PEAK");
+  const [demandLevel, setDemandLevel] = useState<string>("AUTO");
+  const [seasonType, setSeasonType] = useState<string>("AUTO");
 
   const [pricingData, setPricingData] = useState<DynamicPriceData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -95,6 +97,9 @@ const DynamicPricingEngine: React.FC = () => {
   const [frozenPrice, setFrozenPrice] = useState<FrozenPriceData | null>(null);
   const [freezeLoading, setFreezeLoading] = useState<boolean>(false);
   const [countdownSeconds, setCountdownSeconds] = useState<number>(86400);
+
+  const [sseConnected, setSseConnected] = useState<boolean>(false);
+  const [liveAlert, setLiveAlert] = useState<string | null>(null);
 
   const [offers, setOffers] = useState<OfferCouponData[]>([]);
   const [couponCodeInput, setCouponCodeInput] = useState<string>("");
@@ -140,8 +145,11 @@ const DynamicPricingEngine: React.FC = () => {
 
       setDbItems(combined);
       if (combined.length > 0) {
-        setSelectedItemId(combined[0].id);
-        setSelectedItem(combined[0]);
+        const queryTarget = (router.query.flightId || router.query.itemId || router.query.id) as string;
+        const matched = queryTarget ? combined.find((c) => c.id === queryTarget) : null;
+        const initial = matched || combined[0];
+        setSelectedItemId(initial.id);
+        setSelectedItem(initial);
       } else {
         setSelectedItemId("");
         setSelectedItem(null);
@@ -200,7 +208,48 @@ const DynamicPricingEngine: React.FC = () => {
     }
   }, [selectedItemId, dbItems]);
 
-  const router = useRouter();
+  // Real-Time SSE Subscription for live dynamic pricing updates
+  useEffect(() => {
+    let stream: EventSource | null = null;
+    try {
+      stream = createPricingStream(
+        (update: any) => {
+          if (!update) return;
+          setSseConnected(true);
+          if (selectedItem && (update.itemId === selectedItem.id || update.itemId === selectedItemId)) {
+            setPricingData((prev) => {
+              if (!prev) return prev;
+              return {
+                ...prev,
+                finalPrice: update.finalPrice || prev.finalPrice,
+                basePrice: update.basePrice || prev.basePrice,
+                demandLevel: update.demandLevel || prev.demandLevel,
+                seasonType: update.seasonType || prev.seasonType,
+                demandSurgePercentage: update.surgePercentage || prev.demandSurgePercentage,
+                surgeReason: update.surgeReason || prev.surgeReason,
+              };
+            });
+            setLiveAlert(`Live update received for ${update.title || selectedItem.title}: ₹${Number(update.finalPrice).toLocaleString()}`);
+            setTimeout(() => setLiveAlert(null), 7000);
+          }
+        },
+        (connected: any) => {
+          setSseConnected(true);
+        },
+        (err: any) => {
+          setSseConnected(false);
+        }
+      );
+    } catch (e) {
+      console.error("SSE stream error:", e);
+    }
+
+    return () => {
+      if (stream) {
+        stream.close();
+      }
+    };
+  }, [selectedItem, selectedItemId]);
 
   useEffect(() => {
     if (selectedItem) {
@@ -340,9 +389,17 @@ const DynamicPricingEngine: React.FC = () => {
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4">
           <div>
-            <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider bg-emerald-50 px-2.5 py-0.5 rounded border border-emerald-200">
-              Live MongoDB Database Integration
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider bg-emerald-50 px-2.5 py-0.5 rounded border border-emerald-200">
+                Live MongoDB Database Integration
+              </span>
+              <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+                sseConnected ? "bg-emerald-100 text-emerald-800 border border-emerald-300" : "bg-slate-100 text-slate-600 border border-slate-200"
+              }`}>
+                <span className={`w-2 h-2 rounded-full ${sseConnected ? "bg-emerald-500 animate-pulse" : "bg-slate-400"}`} />
+                {sseConnected ? "Real-Time SSE Live" : "Connecting Live..."}
+              </span>
+            </div>
             <h2 className="text-xl font-extrabold text-slate-900 mt-1">Select Flight or Hotel Room</h2>
             <p className="text-xs text-slate-500">Pick any real item from your database to calculate dynamic rates, view price trends, or lock fares.</p>
           </div>
@@ -367,6 +424,21 @@ const DynamicPricingEngine: React.FC = () => {
           </div>
         </div>
 
+        {liveAlert && (
+          <div className="bg-emerald-50 border border-emerald-300 text-emerald-950 px-4 py-3 rounded-xl text-xs font-semibold flex items-center justify-between animate-in fade-in">
+            <div className="flex items-center gap-2">
+              <Zap className="w-4 h-4 text-emerald-600 animate-bounce" />
+              <span>{liveAlert}</span>
+            </div>
+            <button
+              onClick={() => setLiveAlert(null)}
+              className="text-emerald-700 hover:text-emerald-900 font-bold text-xs p-1"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
         {selectedItem && (
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-200 gap-3 text-xs">
             <div className="flex items-center gap-3">
@@ -385,9 +457,10 @@ const DynamicPricingEngine: React.FC = () => {
                 onChange={(e) => setDemandLevel(e.target.value)}
                 className="bg-white border border-slate-300 text-slate-800 text-xs rounded-lg px-2.5 py-1.5 font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500"
               >
-                <option value="HIGH">High Demand</option>
-                <option value="MEDIUM">Medium Demand</option>
-                <option value="NORMAL">Normal Demand</option>
+                <option value="AUTO">Auto (Real Seat Capacity)</option>
+                <option value="HIGH">High Demand (+15%)</option>
+                <option value="MEDIUM">Medium Demand (+5%)</option>
+                <option value="NORMAL">Normal Demand (0%)</option>
               </select>
 
               <select
@@ -395,6 +468,7 @@ const DynamicPricingEngine: React.FC = () => {
                 onChange={(e) => setSeasonType(e.target.value)}
                 className="bg-white border border-slate-300 text-slate-800 text-xs rounded-lg px-2.5 py-1.5 font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500"
               >
+                <option value="AUTO">Auto (Calendar & Holiday Trends)</option>
                 <option value="HOLIDAY_PEAK">Peak Holiday (+20%)</option>
                 <option value="WEEKEND">Weekend (+10%)</option>
                 <option value="OFF_PEAK">Standard Off-Peak</option>

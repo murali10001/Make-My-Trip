@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Plane, Check, Sparkles, Shield, BookmarkCheck, AlertCircle } from "lucide-react";
-import { getSeatMap, reserveSeat, saveUserPreferences, getUserPreferences } from "@/api";
+import { Plane, Check, Sparkles, Shield, BookmarkCheck, AlertCircle, Radio } from "lucide-react";
+import { getSeatMap, reserveSeat, saveUserPreferences, getUserPreferences, createSelectionStream } from "@/api";
 import { Button } from "./ui/button";
 
 interface FlightSeatPickerProps {
@@ -23,6 +23,8 @@ export const FlightSeatPicker: React.FC<FlightSeatPickerProps> = ({
   const [activeSeat, setActiveSeat] = useState<any | null>(null);
   const [savePreferenceChecked, setSavePreferenceChecked] = useState<boolean>(true);
   const [prefSavedMsg, setPrefSavedMsg] = useState<string | null>(null);
+  const [streamConnected, setStreamConnected] = useState<boolean>(false);
+  const [realtimeAlert, setRealtimeAlert] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchSeatData = async () => {
@@ -49,6 +51,43 @@ export const FlightSeatPicker: React.FC<FlightSeatPickerProps> = ({
     };
     if (flightId) fetchSeatData();
   }, [flightId, userId]);
+
+  useEffect(() => {
+    let stream: EventSource | null = null;
+    try {
+      stream = createSelectionStream(
+        (update: any) => {
+          if (!update || update.type !== "SEAT_MAP_UPDATE") return;
+          if (update.flightId === flightId) {
+            setSeatMap((prev: any) => {
+              if (!prev || !prev.seats) return prev;
+              const updatedSeats = prev.seats.map((s: any) =>
+                s.seatNo === update.seatNo ? { ...s, status: update.status } : s
+              );
+              return { ...prev, seats: updatedSeats };
+            });
+
+            if (activeSeat?.seatNo === update.seatNo && update.status === "OCCUPIED") {
+              setActiveSeat(null);
+              onSeatSelect({ seatNo: "", tier: "STANDARD", priceAddon: 0 });
+              setRealtimeAlert(`Seat ${update.seatNo} was just reserved by another passenger. Please select another seat.`);
+              setTimeout(() => setRealtimeAlert(null), 6000);
+            }
+          }
+        },
+        () => setStreamConnected(true),
+        () => setStreamConnected(false)
+      );
+    } catch (e) {
+      console.warn("Failed to subscribe to seat selection stream:", e);
+    }
+
+    return () => {
+      if (stream && typeof stream.close === "function") {
+        stream.close();
+      }
+    };
+  }, [flightId, activeSeat, onSeatSelect]);
 
   const handleSelectSeat = async (seat: any) => {
     if (seat.status === "OCCUPIED") return;
@@ -103,6 +142,12 @@ export const FlightSeatPicker: React.FC<FlightSeatPickerProps> = ({
             <span className="text-[10px] bg-cyan-500/20 text-cyan-300 font-mono px-2 py-0.5 rounded border border-cyan-500/30">
               {seatMap?.aircraftType || "Airbus A320"}
             </span>
+            <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold border transition-colors ${
+              streamConnected ? "bg-emerald-950/80 text-emerald-300 border-emerald-500/40" : "bg-slate-800 text-slate-400 border-slate-700"
+            }`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${streamConnected ? "bg-emerald-400 animate-pulse" : "bg-slate-500"}`} />
+              {streamConnected ? "Live Real-Time Cabin" : "Connecting..."}
+            </span>
           </div>
           <p className="text-xs text-slate-400 mt-0.5">
             Select your preferred seat. Premium & Extra Legroom seats include upsell perks.
@@ -122,6 +167,13 @@ export const FlightSeatPicker: React.FC<FlightSeatPickerProps> = ({
           </div>
         )}
       </div>
+
+      {realtimeAlert && (
+        <div className="bg-amber-950/90 border border-amber-500/40 text-amber-200 px-4 py-2.5 rounded-xl text-xs flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0" />
+          <span>{realtimeAlert}</span>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] bg-slate-900/90 p-3.5 rounded-xl border border-slate-800">
         <div className="flex items-center gap-2">

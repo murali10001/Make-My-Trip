@@ -18,32 +18,29 @@ public class BookingController {
     private BookingService bookingService;
 
     @PostMapping("/flight")
-    public ResponseEntity<Users.Booking> bookFlight(@RequestParam String userId,
-                                                    @RequestParam String flightId,
-                                                    @RequestParam int seats,
-                                                    @RequestParam double price,
-                                                    @RequestParam(required = false) String freezeId) {
-        Users.Booking booking;
-        if (freezeId != null && !freezeId.trim().isEmpty()) {
-            booking = bookingService.bookFlight(userId, flightId, seats, price, freezeId);
-        } else {
-            booking = bookingService.bookFlight(userId, flightId, seats, price);
-        }
+    public ResponseEntity<Users.Booking> bookFlight(
+            @RequestParam String userId,
+            @RequestParam String flightId,
+            @RequestParam int seats,
+            @RequestParam double price,
+            @RequestParam(required = false) String freezeId,
+            @RequestParam(required = false) String seatNo,
+            @RequestParam(required = false) String seatTier,
+            @RequestParam(required = false, defaultValue = "0") double seatAddon) {
+        Users.Booking booking = bookingService.bookFlight(userId, flightId, seats, price, freezeId, seatNo, seatTier, seatAddon);
         return ResponseEntity.status(HttpStatus.CREATED).body(booking);
     }
 
     @PostMapping("/hotel")
-    public ResponseEntity<Users.Booking> bookhotel(@RequestParam String userId,
-                                                   @RequestParam String hotelId,
-                                                   @RequestParam int rooms,
-                                                   @RequestParam double price,
-                                                   @RequestParam(required = false) String freezeId) {
-        Users.Booking booking;
-        if (freezeId != null && !freezeId.trim().isEmpty()) {
-            booking = bookingService.bookhotel(userId, hotelId, rooms, price, freezeId);
-        } else {
-            booking = bookingService.bookhotel(userId, hotelId, rooms, price);
-        }
+    public ResponseEntity<Users.Booking> bookhotel(
+            @RequestParam String userId,
+            @RequestParam String hotelId,
+            @RequestParam int rooms,
+            @RequestParam double price,
+            @RequestParam(required = false) String freezeId,
+            @RequestParam(required = false) String roomTypeName,
+            @RequestParam(required = false, defaultValue = "0") double roomUpgradeAddon) {
+        Users.Booking booking = bookingService.bookhotel(userId, hotelId, rooms, price, freezeId, roomTypeName, roomUpgradeAddon);
         return ResponseEntity.status(HttpStatus.CREATED).body(booking);
     }
 

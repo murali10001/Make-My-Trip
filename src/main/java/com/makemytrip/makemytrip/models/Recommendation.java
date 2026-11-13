@@ -3,12 +3,19 @@ package com.makemytrip.makemytrip.models;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Document(collection = "recommendations")
+@CompoundIndexes({
+    @CompoundIndex(name = "rec_cat_active_idx", def = "{'category': 1, 'active': 1}"),
+    @CompoundIndex(name = "rec_target_active_idx", def = "{'targetType': 1, 'active': 1}")
+})
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Recommendation {
 
@@ -16,11 +23,14 @@ public class Recommendation {
     @JsonProperty("id")
     private String _id;
 
+    @Indexed
     private String targetType;
+    @Indexed
     private String targetId;
     private String title;
     private String subtitle;
     private String destination;
+    @Indexed
     private String category;
     private String imageUrl;
     private double priceEstimate;

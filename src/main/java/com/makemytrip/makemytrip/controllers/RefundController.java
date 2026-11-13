@@ -4,8 +4,10 @@ import com.makemytrip.makemytrip.models.RefundRequest;
 import com.makemytrip.makemytrip.services.RefundService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.List;
 import java.util.Map;
@@ -63,5 +65,12 @@ public class RefundController {
         RefundRequest updated = refundService.updateRefundStatus(refundId, status);
         return ResponseEntity.ok(updated);
     }
-}
 
+    /**
+     * Real-time Server-Sent Events (SSE) stream endpoint for live refund status updates.
+     */
+    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter subscribeToRefundStream() {
+        return refundService.registerSseClient();
+    }
+}

@@ -41,7 +41,7 @@ class BookingControllerIntegrationTest {
                         .param("flightId", "FL-101")
                         .param("seats", "2")
                         .param("price", "11000.0"))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.type").value("Flight"))
                 .andExpect(jsonPath("$.quantity").value(2))
                 .andExpect(jsonPath("$.totalPrice").value(11000.0));

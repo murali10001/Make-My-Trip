@@ -20,6 +20,18 @@ public class Users {
     private String role;
     private String phoneNumber;
     private List<Booking> bookings = new ArrayList<>();
+    private List<String> trackedFlights = new ArrayList<>();
+
+    public List<String> getTrackedFlights() {
+        if (trackedFlights == null) {
+            trackedFlights = new ArrayList<>();
+        }
+        return trackedFlights;
+    }
+
+    public void setTrackedFlights(List<String> trackedFlights) {
+        this.trackedFlights = trackedFlights;
+    }
 
     public String getFirstName() {return firstName;}
     public String getId() {
@@ -68,6 +80,51 @@ public class Users {
         private String targetId;
         private String cancellationReason;
         private String refundId;
+        private String seatNo;
+        private String seatTier;
+        private double seatAddon;
+        private String roomTypeName;
+        private double roomUpgradeAddon;
+
+        public String getSeatNo() {
+            return seatNo;
+        }
+
+        public void setSeatNo(String seatNo) {
+            this.seatNo = seatNo;
+        }
+
+        public String getSeatTier() {
+            return seatTier;
+        }
+
+        public void setSeatTier(String seatTier) {
+            this.seatTier = seatTier;
+        }
+
+        public double getSeatAddon() {
+            return seatAddon;
+        }
+
+        public void setSeatAddon(double seatAddon) {
+            this.seatAddon = seatAddon;
+        }
+
+        public String getRoomTypeName() {
+            return roomTypeName;
+        }
+
+        public void setRoomTypeName(String roomTypeName) {
+            this.roomTypeName = roomTypeName;
+        }
+
+        public double getRoomUpgradeAddon() {
+            return roomUpgradeAddon;
+        }
+
+        public void setRoomUpgradeAddon(double roomUpgradeAddon) {
+            this.roomUpgradeAddon = roomUpgradeAddon;
+        }
 
         public String getBookingTimestamp() {
             return bookingTimestamp;

@@ -6,8 +6,10 @@ import com.makemytrip.makemytrip.models.PriceFreeze;
 import com.makemytrip.makemytrip.services.PricingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.HashMap;
 import java.util.List;
@@ -26,8 +28,8 @@ public class PricingController {
             @RequestParam(required = false, defaultValue = "FL-101") String itemId,
             @RequestParam(required = false, defaultValue = "FLIGHT") String itemType,
             @RequestParam(required = false, defaultValue = "5500.0") double basePrice,
-            @RequestParam(required = false, defaultValue = "HIGH") String demand,
-            @RequestParam(required = false, defaultValue = "HOLIDAY_PEAK") String season) {
+            @RequestParam(required = false) String demand,
+            @RequestParam(required = false) String season) {
         DynamicPrice price = pricingService.calculateDynamicPrice(itemId, itemType, basePrice, demand, season);
         return ResponseEntity.ok(price);
     }
@@ -37,7 +39,7 @@ public class PricingController {
             @PathVariable(required = false) String itemId,
             @RequestParam(required = false, defaultValue = "FL-101") String defaultItemId,
             @RequestParam(required = false, defaultValue = "5500.0") double basePrice) {
-        String targetItem = itemId != null ? itemId : defaultItemId;
+        String targetItem = (itemId != null && !itemId.trim().isEmpty()) ? itemId : defaultItemId;
         List<Map<String, Object>> history = pricingService.getPriceHistory(targetItem, basePrice);
         return ResponseEntity.ok(history);
     }
@@ -48,7 +50,6 @@ public class PricingController {
             request = new HashMap<>();
         }
         String itemId = (String) request.getOrDefault("itemId", "FL-101");
-
         String itemTitle = (String) request.getOrDefault("itemTitle", "Air India Flight AI-101");
         double currentPrice = Double.parseDouble(request.getOrDefault("currentPrice", 5500.0).toString());
         long hours = Long.parseLong(request.getOrDefault("hours", 24).toString());
@@ -90,6 +91,26 @@ public class PricingController {
         double amount = Double.parseDouble(request.getOrDefault("amount", 5500.0).toString());
 
         Map<String, Object> response = pricingService.applyCoupon(code, amount);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Real-time Server-Sent Events (SSE) stream endpoint for live dynamic pricing updates across all clients.
+     */
+    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter subscribeToPriceStream() {
+        return pricingService.registerSseClient();
+    }
+
+    /**
+     * Administrative / Event-driven endpoint to broadcast real-time dynamic price updates to all connected platforms.
+     */
+    @PostMapping("/broadcast-update")
+    public ResponseEntity<Map<String, Object>> broadcastLivePriceUpdate(@RequestBody Map<String, Object> payload) {
+        pricingService.broadcastPriceUpdate(payload);
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "SUCCESS");
+        response.put("message", "Live price update broadcasted successfully");
         return ResponseEntity.ok(response);
     }
 }

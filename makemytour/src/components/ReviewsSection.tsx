@@ -16,6 +16,8 @@ import {
   Image as ImageIcon,
   ChevronDown,
   ChevronUp,
+  Upload,
+  Radio,
 } from "lucide-react";
 import {
   getReviews,
@@ -23,6 +25,9 @@ import {
   addReviewReply,
   toggleReviewHelpful,
   flagReview,
+  uploadReviewPhoto,
+  createReviewEventSource,
+  BACKEND_URL,
 } from "@/api";
 import { Button } from "@/components/ui/button";
 import {
@@ -115,6 +120,8 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
   const [formComment, setFormComment] = useState<string>("");
   const [formPhotoUrls, setFormPhotoUrls] = useState<string[]>([]);
   const [photoInputUrl, setPhotoInputUrl] = useState<string>("");
+  const [uploadingPhoto, setUploadingPhoto] = useState<boolean>(false);
+  const [isRealTimeActive, setIsRealTimeActive] = useState<boolean>(false);
   const [submittingReview, setSubmittingReview] = useState<boolean>(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
@@ -129,6 +136,14 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
   const [openReplyBox, setOpenReplyBox] = useState<Record<string, boolean>>({});
   const [replyInputs, setReplyInputs] = useState<Record<string, string>>({});
   const [replySubmitting, setReplySubmitting] = useState<Record<string, boolean>>({});
+
+  const resolveImageUrl = (url: string) => {
+    if (!url) return "";
+    if (url.startsWith("/api/")) {
+      return `${BACKEND_URL}${url}`;
+    }
+    return url;
+  };
 
   const fetchReviewsData = async () => {
     if (!targetId) return;
@@ -148,6 +163,61 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
   useEffect(() => {
     fetchReviewsData();
   }, [targetId, targetType, sortOption, filterRating, photosOnly]);
+
+  // Real-Time Server-Sent Events (SSE) Live Connection
+  useEffect(() => {
+    if (!targetId) return;
+    const es = createReviewEventSource(
+      targetId,
+      targetType,
+      (eventType: string, eventData: any) => {
+        setIsRealTimeActive(true);
+        fetchReviewsData();
+      },
+      (err: any) => {
+        setIsRealTimeActive(false);
+      }
+    );
+
+    if (es) {
+      setIsRealTimeActive(true);
+    }
+
+    return () => {
+      if (es) {
+        es.close();
+      }
+      setIsRealTimeActive(false);
+    };
+  }, [targetId, targetType]);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setFormError("Please select a valid image file (JPEG, PNG, WEBP, GIF).");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setFormError("Photo exceeds maximum permitted size of 10MB.");
+      return;
+    }
+
+    setUploadingPhoto(true);
+    setFormError(null);
+    try {
+      const photoUrl = await uploadReviewPhoto(file);
+      if (photoUrl && !formPhotoUrls.includes(photoUrl)) {
+        setFormPhotoUrls((prev) => [...prev, photoUrl]);
+      }
+    } catch (err: any) {
+      setFormError(err.message || "Failed to upload photo from your device.");
+    } finally {
+      setUploadingPhoto(false);
+      if (e.target) e.target.value = "";
+    }
+  };
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -275,6 +345,12 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
             <span className="bg-blue-50 text-blue-700 text-xs font-bold px-2.5 py-0.5 rounded-full border border-blue-200">
               Verified Feedback
             </span>
+            {isRealTimeActive && (
+              <span className="bg-emerald-50 text-emerald-700 text-[11px] font-bold px-2.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1.5 animate-pulse">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
+                Live Sync
+              </span>
+            )}
           </div>
           <p className="text-xs text-slate-500 mt-1">
             Real experiences from travelers who booked this {targetType.toLowerCase()}
@@ -517,22 +593,25 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                       <ImageIcon className="w-3 h-3 text-indigo-600" /> Traveler Photos ({rev.photoUrls.length}):
                     </p>
                     <div className="flex flex-wrap gap-2">
-                      {rev.photoUrls.map((photo, pIdx) => (
-                        <div
-                          key={pIdx}
-                          onClick={() => setLightboxPhoto(photo)}
-                          className="w-16 h-16 rounded-lg overflow-hidden border border-slate-200 hover:border-blue-500 cursor-pointer transition-all hover:scale-105 shadow-xs relative group"
-                        >
-                          <img
-                            src={photo}
-                            alt="Traveler upload"
-                            className="w-full h-full object-cover"
-                          />
-                          <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                            <Camera className="w-4 h-4 text-white drop-shadow" />
+                      {rev.photoUrls.map((photo, pIdx) => {
+                        const resolved = resolveImageUrl(photo);
+                        return (
+                          <div
+                            key={pIdx}
+                            onClick={() => setLightboxPhoto(resolved)}
+                            className="w-16 h-16 rounded-lg overflow-hidden border border-slate-200 hover:border-blue-500 cursor-pointer transition-all hover:scale-105 shadow-xs relative group"
+                          >
+                            <img
+                              src={resolved}
+                              alt="Traveler upload"
+                              className="w-full h-full object-cover"
+                            />
+                            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <Camera className="w-4 h-4 text-white drop-shadow" />
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -723,13 +802,35 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                   <Camera className="w-3.5 h-3.5 text-indigo-600" />
                   Attach Photos (Optional)
                 </label>
-                <span className="text-[11px] text-slate-400">{formPhotoUrls.length} photos added</span>
+                <span className="text-[11px] text-slate-400">{formPhotoUrls.length} photos attached</span>
               </div>
 
+              {/* Physical File Upload */}
+              <div className="border border-dashed border-slate-300 rounded-xl p-3 bg-slate-50/50 flex flex-col items-center justify-center gap-2 hover:bg-slate-50 transition-colors">
+                <div className="flex items-center gap-2">
+                  <label className="cursor-pointer bg-white hover:bg-slate-100 text-slate-800 border border-slate-200 text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-2xs transition-colors">
+                    <Upload className="w-3.5 h-3.5 text-blue-600" />
+                    <span>{uploadingPhoto ? "Uploading..." : "Upload Photo from Device"}</span>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      onChange={handleFileUpload}
+                      disabled={uploadingPhoto}
+                      className="hidden"
+                    />
+                  </label>
+                  <span className="text-[11px] text-slate-400">or paste URL below</span>
+                </div>
+                {uploadingPhoto && (
+                  <p className="text-[11px] text-blue-600 font-semibold animate-pulse">Uploading and optimizing image...</p>
+                )}
+              </div>
+
+              {/* Alternative Photo URL input */}
               <div className="flex gap-2">
                 <input
                   type="url"
-                  placeholder="Paste an image URL (e.g. https://...)"
+                  placeholder="Paste image URL (e.g. https://...)"
                   value={photoInputUrl}
                   onChange={(e) => setPhotoInputUrl(e.target.value)}
                   className="flex-1 px-3 py-1.5 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -739,7 +840,7 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                   onClick={handleAddPhotoUrl}
                   className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-3 py-1.5 h-auto"
                 >
-                  Add
+                  Add URL
                 </Button>
               </div>
 
@@ -750,7 +851,7 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                       key={idx}
                       className="relative w-16 h-16 rounded-lg overflow-hidden border border-slate-300 shadow-xs"
                     >
-                      <img src={photo} alt="Preview" className="w-full h-full object-cover" />
+                      <img src={resolveImageUrl(photo)} alt="Preview" className="w-full h-full object-cover" />
                       <button
                         type="button"
                         onClick={() => handleRemovePhoto(idx)}
@@ -875,7 +976,7 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
               <X className="w-5 h-5" />
             </button>
             <img
-              src={lightboxPhoto}
+              src={resolveImageUrl(lightboxPhoto)}
               alt="High resolution traveler photo"
               className="w-full h-full object-contain max-h-[85vh] rounded-2xl"
             />

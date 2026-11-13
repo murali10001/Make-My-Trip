@@ -6,9 +6,9 @@ import com.makemytrip.makemytrip.exceptions.InsufficientCapacityException;
 import com.makemytrip.makemytrip.exceptions.UserNotFoundException;
 import com.makemytrip.makemytrip.models.Flight;
 import com.makemytrip.makemytrip.models.Hotel;
+import com.makemytrip.makemytrip.models.PriceFreeze;
 import com.makemytrip.makemytrip.models.Users;
 import com.makemytrip.makemytrip.models.Users.Booking;
-import com.makemytrip.makemytrip.models.PriceFreeze;
 import com.makemytrip.makemytrip.repositories.FlightRepository;
 import com.makemytrip.makemytrip.repositories.HotelRepository;
 import com.makemytrip.makemytrip.repositories.PriceFreezeRepository;
@@ -38,11 +38,19 @@ public class BookingService {
     @Autowired
     private NotificationService notificationService;
 
+    @Autowired(required = false)
+    private SelectionService selectionService;
+
     public Booking bookFlight(String userId, String flightId, int seats, double price) {
-        return bookFlight(userId, flightId, seats, price, null);
+        return bookFlight(userId, flightId, seats, price, null, null, null, 0.0);
     }
 
     public Booking bookFlight(String userId, String flightId, int seats, double price, String freezeId) {
+        return bookFlight(userId, flightId, seats, price, freezeId, null, null, 0.0);
+    }
+
+    public Booking bookFlight(String userId, String flightId, int seats, double price, String freezeId,
+                              String seatNo, String seatTier, double seatAddon) {
         if (seats <= 0) {
             throw new IllegalArgumentException("Invalid ticket quantity requested: " + seats + ". Must be at least 1.");
         }
@@ -55,6 +63,11 @@ public class BookingService {
 
         if (flight.getAvailableSeats() < seats) {
             throw new InsufficientCapacityException("Not enough seats available. Requested: " + seats + ", Available: " + flight.getAvailableSeats());
+        }
+
+        // If seat requested, reserve it through selectionService
+        if (seatNo != null && !seatNo.trim().isEmpty() && selectionService != null) {
+            selectionService.reserveSeat(flightId, seatNo.trim(), userId);
         }
 
         double unitPrice = flight.getPrice();
@@ -70,7 +83,7 @@ public class BookingService {
             }
         }
 
-        double authoritativeTotal = unitPrice * seats;
+        double authoritativeTotal = (unitPrice * seats) + (seatAddon * seats);
 
         if (price <= 0 || price < (authoritativeTotal * 0.5)) {
             price = authoritativeTotal;
@@ -91,13 +104,20 @@ public class BookingService {
         booking.setTargetId(flightId);
         booking.setStatus("CONFIRMED");
 
+        if (seatNo != null && !seatNo.trim().isEmpty()) {
+            booking.setSeatNo(seatNo.trim());
+            booking.setSeatTier(seatTier != null && !seatTier.trim().isEmpty() ? seatTier.trim() : "STANDARD");
+            booking.setSeatAddon(seatAddon);
+        }
+
         user.getBookings().add(booking);
         userRepository.save(user);
 
+        String seatMsg = booking.getSeatNo() != null ? " (Seat: " + booking.getSeatNo() + ")" : "";
         notificationService.createNotification(
             userId,
             "Flight Booking Confirmed!",
-            "Confirmed " + seats + " seat(s) on " + flight.getFlightName() + " (" + flight.getFrom() + " to " + flight.getTo() + "). Total: ₹" + price,
+            "Confirmed " + seats + " seat(s)" + seatMsg + " on " + flight.getFlightName() + " (" + flight.getFrom() + " to " + flight.getTo() + "). Total: ₹" + price,
             "flight"
         );
 
@@ -105,10 +125,15 @@ public class BookingService {
     }
 
     public Booking bookhotel(String userId, String hotelId, int rooms, double price) {
-        return bookhotel(userId, hotelId, rooms, price, null);
+        return bookhotel(userId, hotelId, rooms, price, null, null, 0.0);
     }
 
     public Booking bookhotel(String userId, String hotelId, int rooms, double price, String freezeId) {
+        return bookhotel(userId, hotelId, rooms, price, freezeId, null, 0.0);
+    }
+
+    public Booking bookhotel(String userId, String hotelId, int rooms, double price, String freezeId,
+                             String roomTypeName, double roomUpgradeAddon) {
         if (rooms <= 0) {
             throw new IllegalArgumentException("Invalid room quantity requested: " + rooms + ". Must be at least 1.");
         }
@@ -121,6 +146,11 @@ public class BookingService {
 
         if (hotel.getAvailableRooms() < rooms) {
             throw new InsufficientCapacityException("Not enough rooms available. Requested: " + rooms + ", Available: " + hotel.getAvailableRooms());
+        }
+
+        // If specific room type requested, reserve it in selectionService
+        if (roomTypeName != null && !roomTypeName.trim().isEmpty() && selectionService != null) {
+            selectionService.reserveRoomOption(hotelId, roomTypeName.trim(), rooms);
         }
 
         double unitPrice = hotel.getPricePerNight();
@@ -136,7 +166,7 @@ public class BookingService {
             }
         }
 
-        double authoritativeTotal = unitPrice * rooms;
+        double authoritativeTotal = (unitPrice * rooms) + (roomUpgradeAddon * rooms);
         if (price <= 0 || price < (authoritativeTotal * 0.5)) {
             price = authoritativeTotal;
         }
@@ -156,13 +186,19 @@ public class BookingService {
         booking.setTargetId(hotelId);
         booking.setStatus("CONFIRMED");
 
+        if (roomTypeName != null && !roomTypeName.trim().isEmpty()) {
+            booking.setRoomTypeName(roomTypeName.trim());
+            booking.setRoomUpgradeAddon(roomUpgradeAddon);
+        }
+
         user.getBookings().add(booking);
         userRepository.save(user);
 
+        String roomMsg = booking.getRoomTypeName() != null ? " (" + booking.getRoomTypeName() + ")" : "";
         notificationService.createNotification(
             userId,
             "Hotel Booking Confirmed!",
-            "Confirmed " + rooms + " room(s) at " + hotel.getHotelName() + " (" + hotel.getLocation() + "). Total: ₹" + price,
+            "Confirmed " + rooms + " room(s)" + roomMsg + " at " + hotel.getHotelName() + " (" + hotel.getLocation() + "). Total: ₹" + price,
             "hotel"
         );
 

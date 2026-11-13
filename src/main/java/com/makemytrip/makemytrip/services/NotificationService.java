@@ -2,6 +2,7 @@ package com.makemytrip.makemytrip.services;
 
 import com.makemytrip.makemytrip.models.Notification;
 import com.makemytrip.makemytrip.repositories.NotificationRepository;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -23,6 +24,34 @@ public class NotificationService {
     private NotificationRepository notificationRepository;
 
     private final Map<String, List<SseEmitter>> userEmitters = new ConcurrentHashMap<>();
+
+    @PostConstruct
+    public void cleanupLegacyBroadcastSpam() {
+        try {
+            if (notificationRepository == null) return;
+            List<Notification> allNotifs = notificationRepository.findAll();
+            List<Notification> toDelete = new ArrayList<>();
+            for (Notification n : allNotifs) {
+                if (n == null) continue;
+                String uid = n.getUserId();
+                String title = n.getTitle() != null ? n.getTitle() : "";
+                String desc = n.getDesc() != null ? n.getDesc() : "";
+                String type = n.getType() != null ? n.getType() : "";
+                if ("ALL".equalsIgnoreCase(uid) || "all".equalsIgnoreCase(uid) || uid == null) {
+                    if (title.contains("On Time") || title.contains("Boarding underway") || desc.contains("Check-in open")
+                            || desc.contains("Taxiing to gate") || desc.contains("cruising altitude") || desc.contains("Boarding underway")) {
+                        toDelete.add(n);
+                    }
+                }
+            }
+            if (!toDelete.isEmpty()) {
+                notificationRepository.deleteAll(toDelete);
+                System.out.println("[NOTIFICATIONS] Cleaned up " + toDelete.size() + " legacy broadcast flight notifications from database.");
+            }
+        } catch (Exception e) {
+            System.err.println("[NOTIFICATIONS] Error during broadcast cleanup: " + e.getMessage());
+        }
+    }
 
     public void addEmitter(String userId, SseEmitter emitter) {
         String key = (userId != null && !userId.trim().isEmpty()) ? userId.trim() : "ALL";
@@ -105,6 +134,17 @@ public class NotificationService {
                     return true;
                 })
                 .filter(n -> !"freeze".equalsIgnoreCase(n.getType()) && (n.getTitle() == null || !n.getTitle().contains("Fare Locked")))
+                .filter(n -> {
+                    if ("ALL".equalsIgnoreCase(n.getUserId()) || "all".equalsIgnoreCase(n.getUserId()) || n.getUserId() == null) {
+                        String t = n.getTitle() != null ? n.getTitle() : "";
+                        String d = n.getDesc() != null ? n.getDesc() : "";
+                        if (t.contains("On Time") || t.contains("Boarding underway") || d.contains("Check-in open")
+                                || d.contains("Taxiing to gate") || d.contains("cruising altitude") || d.contains("Boarding underway")) {
+                            return false;
+                        }
+                    }
+                    return true;
+                })
                 .sorted((a, b) -> {
                     long t1 = a.getCreatedAt() != null ? a.getCreatedAt() : 0L;
                     long t2 = b.getCreatedAt() != null ? b.getCreatedAt() : 0L;
@@ -125,12 +165,16 @@ public class NotificationService {
 
         List<Notification> allNotifs = notificationRepository.findByUserIdIn(List.of("ALL", "all"));
         for (Notification n : allNotifs) {
-            if (n.getDismissedUserIds() == null) {
-                n.setDismissedUserIds(new ArrayList<>());
-            }
-            if (!n.getDismissedUserIds().contains(clean)) {
-                n.getDismissedUserIds().add(clean);
-                notificationRepository.save(n);
+            if ("ALL".equalsIgnoreCase(clean)) {
+                notificationRepository.deleteById(n.getId());
+            } else {
+                if (n.getDismissedUserIds() == null) {
+                    n.setDismissedUserIds(new ArrayList<>());
+                }
+                if (!n.getDismissedUserIds().contains(clean)) {
+                    n.getDismissedUserIds().add(clean);
+                    notificationRepository.save(n);
+                }
             }
         }
     }
@@ -143,6 +187,14 @@ public class NotificationService {
         for (Notification n : userSpecific) {
             n.setRead(true);
             notificationRepository.save(n);
+        }
+
+        if ("ALL".equalsIgnoreCase(clean)) {
+            List<Notification> allNotifs = notificationRepository.findByUserIdIn(List.of("ALL", "all"));
+            for (Notification n : allNotifs) {
+                n.setRead(true);
+                notificationRepository.save(n);
+            }
         }
     }
 

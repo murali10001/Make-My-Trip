@@ -22,6 +22,7 @@ import {
   SlidersHorizontal,
   ArrowUpDown,
   Tag,
+  Snowflake,
 } from "lucide-react";
 
 const CITY_FALLBACK_IMAGES: Record<string, string> = {
@@ -582,13 +583,22 @@ export default function HotelSearchPage() {
                                 Only {availableRooms} left!
                               </span>
                             )}
-                            <Button
-                              onClick={() => router.push(`/book-hotel/${hotelId}`)}
-                              className="w-full sm:w-auto px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-md hover:shadow-lg transition flex items-center justify-center gap-1.5"
-                            >
-                              <span>Explore & Book</span>
-                              <ChevronRight className="w-4 h-4" />
-                            </Button>
+                            <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
+                              <button
+                                onClick={() => router.push(`/dynamic-pricing?itemId=${hotelId}&type=HOTEL`)}
+                                className="w-full sm:w-auto text-center text-[11px] font-semibold text-slate-500 hover:text-blue-600 border border-slate-200 hover:border-blue-300 rounded-xl px-3 py-2 transition flex items-center justify-center gap-1"
+                              >
+                                <Snowflake className="w-3.5 h-3.5 text-cyan-600" />
+                                <span>Lock Rate</span>
+                              </button>
+                              <Button
+                                onClick={() => router.push(`/book-hotel/${hotelId}`)}
+                                className="w-full sm:w-auto px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-md hover:shadow-lg transition flex items-center justify-center gap-1.5"
+                              >
+                                <span>Explore & Book</span>
+                                <ChevronRight className="w-4 h-4" />
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       </div>

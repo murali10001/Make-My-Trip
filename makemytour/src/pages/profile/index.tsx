@@ -26,6 +26,8 @@ import {
   RefreshCw,
   BookmarkCheck,
   Sparkles,
+  Activity,
+  Radio,
 } from "lucide-react";
 import PersonalizedRecommendations from "@/components/PersonalizedRecommendations";
 import { useDispatch, useSelector } from "react-redux";
@@ -41,6 +43,8 @@ import {
   getuserbyemail,
   getUserPreferences,
   saveUserPreferences,
+  getFlightStatuses,
+  createRefundStream,
 } from "@/api";
 import {
   Dialog,
@@ -69,7 +73,16 @@ const ProfileDashboardPage = () => {
   const [frozenPrices, setFrozenPrices] = useState<any[]>([]);
   const [userRefunds, setUserRefunds] = useState<any[]>([]);
   const [loadingRefunds, setLoadingRefunds] = useState<boolean>(false);
+  const [refundSseConnected, setRefundSseConnected] = useState<boolean>(false);
+  const [liveRefundAlert, setLiveRefundAlert] = useState<string | null>(null);
   const [userPrefs, setUserPrefs] = useState<any | null>(null);
+  const [flightStatuses, setFlightStatuses] = useState<any[]>([]);
+
+  useEffect(() => {
+    getFlightStatuses().then((data) => {
+      if (data && Array.isArray(data)) setFlightStatuses(data);
+    });
+  }, []);
 
   const [cancelModalOpen, setCancelModalOpen] = useState<boolean>(false);
   const [selectedBookingForCancel, setSelectedBookingForCancel] = useState<any | null>(null);
@@ -174,6 +187,72 @@ const ProfileDashboardPage = () => {
     fetchUserDataAndRefunds();
     fetchUserPreferencesData();
   }, [user?.email, user?.id]);
+
+  useEffect(() => {
+    let eventSource: EventSource | null = null;
+    try {
+      eventSource = createRefundStream(
+        (data: any) => {
+          if (!data) return;
+          const update = data.refund || data;
+          if (!update || !update.refundId) return;
+
+          setUserRefunds((prev: any[]) => {
+            const currentUserId = user?.id || user?._id;
+            if (update.userId && currentUserId && update.userId !== currentUserId) {
+              return prev;
+            }
+            const idx = prev.findIndex((r: any) => r.refundId === update.refundId);
+            if (idx >= 0) {
+              const copy = [...prev];
+              copy[idx] = { ...copy[idx], ...update };
+              return copy;
+            } else if (update.userId === currentUserId || !update.userId) {
+              return [update, ...prev];
+            }
+            return prev;
+          });
+
+          // Sync booking status in Redux user if cancelled
+          if (update.bookingId && user?.bookings) {
+            const hasTarget = user.bookings.some(
+              (b: any) => (b.bookingId || b.id) === update.bookingId && b.status !== "CANCELLED"
+            );
+            if (hasTarget) {
+              const updatedBookings = user.bookings.map((b: any) =>
+                (b.bookingId || b.id) === update.bookingId ? { ...b, status: "CANCELLED" } : b
+              );
+              dispatch(setUser({ ...user, bookings: updatedBookings }));
+            }
+          }
+
+          const currentUserId = user?.id || user?._id;
+          if (!update.userId || update.userId === currentUserId) {
+            setLiveRefundAlert(
+              `Live Refund Update: ${update.refundId} is now ${update.status || "PROCESSED"} (₹${(update.refundAmount || 0).toLocaleString("en-IN")})`
+            );
+            setTimeout(() => {
+              setLiveRefundAlert(null);
+            }, 7000);
+          }
+        },
+        () => {
+          setRefundSseConnected(true);
+        },
+        () => {
+          setRefundSseConnected(false);
+        }
+      );
+    } catch (e) {
+      console.warn("Failed to initialize refund SSE stream:", e);
+    }
+
+    return () => {
+      if (eventSource && typeof eventSource.close === "function") {
+        eventSource.close();
+      }
+    };
+  }, [user?.id, user?._id, user?.bookings, dispatch]);
 
   useEffect(() => {
     if (activeTab === "refunds") {
@@ -566,13 +645,23 @@ const ProfileDashboardPage = () => {
                                 </div>
                               )}
                               <div>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 flex-wrap">
                                   <h3 className="font-bold text-slate-900 text-base">
                                     {booking?.type || "Booking"}
                                   </h3>
                                   <span className="text-[10px] bg-slate-100 text-slate-600 font-mono px-2 py-0.5 rounded font-bold">
                                     ID: {bookingId}
                                   </span>
+                                  {booking?.seatNo && (
+                                    <span className="text-[10px] bg-blue-50 text-blue-700 font-bold px-2 py-0.5 rounded border border-blue-200">
+                                      Seat {booking.seatNo} ({booking.seatTier || "Standard"})
+                                    </span>
+                                  )}
+                                  {booking?.roomTypeName && (
+                                    <span className="text-[10px] bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded border border-indigo-200">
+                                      {booking.roomTypeName}
+                                    </span>
+                                  )}
                                 </div>
                                 <p className="text-xs text-slate-500 mt-0.5">
                                   {booking?.type === "Flight" ? `${booking?.quantity || 1} Ticket(s)` : `${booking?.quantity || 1} Room(s)`} • Reservation Date: {formatDate(booking?.date)}
@@ -595,6 +684,86 @@ const ProfileDashboardPage = () => {
                               )}
                             </div>
                           </div>
+
+                          {booking?.type === "Flight" && (
+                            <div className="mb-4 p-3.5 rounded-xl bg-slate-50 border border-slate-200/90 shadow-2xs">
+                              {(() => {
+                                const rawTarget = String(booking?.targetId || booking?.bookingId || "").toUpperCase();
+                                const matched = flightStatuses.find(
+                                  (f) =>
+                                    f.flightNumber?.toUpperCase() === rawTarget ||
+                                    f.id?.toUpperCase() === rawTarget ||
+                                    rawTarget.includes(f.flightNumber?.toUpperCase())
+                                ) || flightStatuses[0];
+
+                                const st = matched?.status ? matched.status.toUpperCase() : "ON_TIME";
+                                const dep = matched?.revisedDeparture || matched?.scheduledDeparture || "10:00 AM";
+                                const arr = matched?.revisedArrival || matched?.scheduledArrival || "12:30 PM";
+                                const est = matched?.estimatedArrivalMinutes != null ? matched.estimatedArrivalMinutes : 45;
+
+                                return (
+                                  <div className="space-y-2">
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-mono font-bold text-xs text-slate-900">
+                                          {matched?.flightNumber || "AI-101"} ({matched?.airline || "Air India"})
+                                        </span>
+                                        {st === "ON_TIME" && (
+                                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                            ● On Time
+                                          </span>
+                                        )}
+                                        {st === "DELAYED" && (
+                                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300 animate-pulse">
+                                            ▲ Delayed
+                                          </span>
+                                        )}
+                                        {st === "BOARDING" && (
+                                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-900 border border-blue-300">
+                                            ● Boarding
+                                          </span>
+                                        )}
+                                        {st === "IN_FLIGHT" && (
+                                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-900 border border-indigo-300">
+                                            ✈ In Flight
+                                          </span>
+                                        )}
+                                        {st === "LANDED" && (
+                                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-800 border border-slate-300">
+                                            ✓ Landed
+                                          </span>
+                                        )}
+                                      </div>
+                                      <span className="text-[10px] font-mono font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                                        {st === "LANDED" ? "Arrived" : `ETA: ~${est}m`}
+                                      </span>
+                                    </div>
+
+                                    <p className="text-xs text-slate-600">
+                                      {matched?.origin || "DEL"} ➔ {matched?.destination || "BOM"} • Departs: <strong className="text-slate-800">{dep}</strong> • Arrives: <strong className="text-slate-800">{arr}</strong>
+                                    </p>
+
+                                    {matched?.delayReason && (
+                                      <p className="text-[11px] text-amber-900 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
+                                        <strong className="text-amber-800">Status Context:</strong> {matched.delayReason}
+                                      </p>
+                                    )}
+
+                                    <div className="flex justify-end pt-1">
+                                      <button
+                                        type="button"
+                                        onClick={() => router.push(`/flight-status?flightNumber=${matched?.flightNumber || "AI-101"}`)}
+                                        className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 transition-colors"
+                                      >
+                                        <Activity className="w-3.5 h-3.5 text-blue-600" />
+                                        <span>Track Live on Radar &rarr;</span>
+                                      </button>
+                                    </div>
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                          )}
 
                           <div className="flex items-center justify-between pt-4 border-t border-slate-100 text-xs">
                             <div className="flex items-center space-x-2 text-slate-600">
@@ -642,24 +811,52 @@ const ProfileDashboardPage = () => {
 
             {activeTab === "refunds" && (
               <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
                   <div>
                     <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
                       <RotateCcw className="w-5 h-5 text-amber-500" />
                       Live Refund Status Tracker
                     </h2>
                     <p className="text-xs text-slate-500">
-                      Track cancellation requests, refund progress, and estimated payout timelines.
+                      Track cancellation requests, refund progress, and estimated payout timelines in real-time.
                     </p>
                   </div>
-                  <button
-                    onClick={fetchUserDataAndRefunds}
-                    className="p-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 transition-all"
-                    title="Refresh Refund Status"
-                  >
-                    <RefreshCw className={`w-4 h-4 ${loadingRefunds ? "animate-spin" : ""}`} />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border transition-colors ${
+                        refundSseConnected
+                          ? "bg-emerald-50 text-emerald-800 border-emerald-300"
+                          : "bg-slate-100 text-slate-600 border-slate-300"
+                      }`}
+                    >
+                      <span
+                        className={`w-2 h-2 rounded-full ${
+                          refundSseConnected ? "bg-emerald-500 animate-pulse" : "bg-slate-400"
+                        }`}
+                      />
+                      {refundSseConnected ? "SSE Stream Connected" : "Connecting..."}
+                    </span>
+                    <button
+                      onClick={fetchUserDataAndRefunds}
+                      className="p-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 transition-all"
+                      title="Refresh Refund Status"
+                    >
+                      <RefreshCw className={`w-4 h-4 ${loadingRefunds ? "animate-spin" : ""}`} />
+                    </button>
+                  </div>
                 </div>
+
+                {liveRefundAlert && (
+                  <div className="bg-emerald-50 border border-emerald-200 text-emerald-900 px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-between shadow-xs">
+                    <div className="flex items-center gap-2">
+                      <Radio className="w-4 h-4 text-emerald-600 animate-pulse" />
+                      <span>{liveRefundAlert}</span>
+                    </div>
+                    <button onClick={() => setLiveRefundAlert(null)} className="text-emerald-700 hover:text-emerald-900">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
 
                 <div className="space-y-6">
                   {userRefunds.length > 0 ? (
@@ -769,6 +966,15 @@ const ProfileDashboardPage = () => {
                               </div>
                             </div>
                           </div>
+
+                          {(rf.transactionRef || rf.utrRef) && (
+                            <div className="pt-2 border-t border-slate-200/80 flex items-center justify-between text-[11px]">
+                              <span className="text-slate-500 font-medium">Bank Reference / UTR:</span>
+                              <span className="font-mono font-bold text-slate-700 bg-white px-2 py-0.5 rounded border border-slate-200">
+                                {rf.transactionRef || rf.utrRef}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       );
                     })

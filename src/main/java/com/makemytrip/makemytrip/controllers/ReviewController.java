@@ -4,10 +4,17 @@ import com.makemytrip.makemytrip.models.Review;
 import com.makemytrip.makemytrip.models.ReviewSummaryDTO;
 import com.makemytrip.makemytrip.services.ReviewService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.MediaTypeFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -47,7 +54,7 @@ public class ReviewController {
     @PostMapping("/{id}/helpful")
     public ResponseEntity<Review> toggleHelpful(
             @PathVariable String id,
-            @RequestParam(required = false, defaultValue = "") String userId) {
+            @RequestParam String userId) {
         Review updated = reviewService.toggleHelpful(id, userId);
         return ResponseEntity.ok(updated);
     }
@@ -73,5 +80,41 @@ public class ReviewController {
             @RequestParam String action) {
         Map<String, Object> result = reviewService.moderateReview(id, action);
         return ResponseEntity.ok(result);
+    }
+
+    // Physical Photo Upload Endpoint
+    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Map<String, String>> uploadPhoto(@RequestParam("file") MultipartFile file) {
+        String photoUrl = reviewService.saveReviewPhoto(file);
+        Map<String, String> response = new HashMap<>();
+        response.put("status", "SUCCESS");
+        response.put("url", photoUrl);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    // Photo Resource Retrieval Endpoint
+    @GetMapping("/photos/{fileName:.+}")
+    public ResponseEntity<Resource> getPhoto(@PathVariable String fileName) {
+        Resource resource = reviewService.loadReviewPhoto(fileName);
+        MediaType mediaType = MediaTypeFactory.getMediaType(resource)
+                .orElse(MediaType.APPLICATION_OCTET_STREAM);
+        return ResponseEntity.ok()
+                .contentType(mediaType)
+                .header(HttpHeaders.CACHE_CONTROL, "public, max-age=86400")
+                .body(resource);
+    }
+
+    // Real-Time Server-Sent Events (SSE) Stream for Target Reviews
+    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter streamTargetReviews(
+            @RequestParam String targetId,
+            @RequestParam(required = false, defaultValue = "HOTEL") String targetType) {
+        return reviewService.subscribeToTarget(targetId, targetType);
+    }
+
+    // Real-Time Server-Sent Events (SSE) Stream for Moderation Queue
+    @GetMapping(value = "/moderation/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter streamModerationQueue() {
+        return reviewService.subscribeToModeration();
     }
 }

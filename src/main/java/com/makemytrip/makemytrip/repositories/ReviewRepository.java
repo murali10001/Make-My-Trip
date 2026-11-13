@@ -13,6 +13,10 @@ public interface ReviewRepository extends MongoRepository<Review, String> {
 
     List<Review> findByTargetIdAndTargetType(String targetId, String targetType);
 
+    List<Review> findByTargetIdAndTargetTypeAndFlagged(String targetId, String targetType, boolean flagged);
+
+    List<Review> findByTargetIdAndFlagged(String targetId, boolean flagged);
+
     List<Review> findByFlagged(boolean flagged);
 
     List<Review> findByUserId(String userId);

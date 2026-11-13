@@ -2,50 +2,47 @@ package com.makemytrip.makemytrip.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.makemytrip.makemytrip.exceptions.CancellationNotAllowedException;
+import com.makemytrip.makemytrip.exceptions.RefundExceptionHandler;
+import com.makemytrip.makemytrip.exceptions.RefundNotFoundException;
 import com.makemytrip.makemytrip.models.RefundRequest;
 import com.makemytrip.makemytrip.services.RefundService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
-@AutoConfigureMockMvc(addFilters = false)
 class RefundControllerIntegrationTest {
 
-    @Autowired
     private MockMvc mockMvc;
-
-    @MockBean
-    private RefundService refundService;
-
-    @Autowired
+    private StubRefundService refundService;
     private ObjectMapper objectMapper;
+
+    @BeforeEach
+    void setUp() {
+        RefundController controller = new RefundController();
+        refundService = new StubRefundService();
+        ReflectionTestUtils.setField(controller, "refundService", refundService);
+
+        mockMvc = MockMvcBuilders.standaloneSetup(controller)
+                .setControllerAdvice(new RefundExceptionHandler())
+                .build();
+
+        objectMapper = new ObjectMapper();
+    }
 
     @Test
     @DisplayName("GET /refund/calculate - Returns 200 with refund preview")
     void testCalculateRefundPreviewEndpoint() throws Exception {
-        Map<String, Object> preview = new HashMap<>();
-        preview.put("bookingId", "BK-101");
-        preview.put("originalAmount", 10000.0);
-        preview.put("refundPercentage", 50.0);
-        preview.put("refundAmount", 5000.0);
-        preview.put("policyApplied", "24-Hour Reservation Policy (50% Refund)");
-
-        when(refundService.calculateRefundPreview("USR-1", "BK-101")).thenReturn(preview);
-
         mockMvc.perform(get("/refund/calculate")
                         .param("userId", "USR-1")
                         .param("bookingId", "BK-101"))
@@ -56,23 +53,14 @@ class RefundControllerIntegrationTest {
     }
 
     @Test
-    @DisplayName("POST /refund/cancel-and-request - Returns 200 with RefundRequest")
+    @DisplayName("POST /refund/cancel-and-request - Returns 201 Created with RefundRequest")
     void testCancelBookingAndRequestRefundEndpoint() throws Exception {
-        RefundRequest mockRefund = new RefundRequest();
-        mockRefund.setRefundId("RF-12345");
-        mockRefund.setBookingId("BK-101");
-        mockRefund.setStatus("PENDING");
-        mockRefund.setRefundAmount(5000.0);
-
-        when(refundService.processCancellationAndRequestRefund("USR-1", "BK-101", "Change of travel plans", "Schedule clash"))
-                .thenReturn(mockRefund);
-
         mockMvc.perform(post("/refund/cancel-and-request")
                         .param("userId", "USR-1")
                         .param("bookingId", "BK-101")
                         .param("reason", "Change of travel plans")
                         .param("comment", "Schedule clash"))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.refundId").value("RF-12345"))
                 .andExpect(jsonPath("$.status").value("PENDING"));
     }
@@ -80,13 +68,6 @@ class RefundControllerIntegrationTest {
     @Test
     @DisplayName("GET /refund/status/{refundId} - Returns Refund Status Details")
     void testGetRefundStatusEndpoint() throws Exception {
-        RefundRequest mockRefund = new RefundRequest();
-        mockRefund.setRefundId("RF-999");
-        mockRefund.setStatus("PROCESSED");
-        mockRefund.setCurrentStep(2);
-
-        when(refundService.getRefundByRefundId("RF-999")).thenReturn(mockRefund);
-
         mockMvc.perform(get("/refund/status/RF-999"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.refundId").value("RF-999"))
@@ -97,14 +78,55 @@ class RefundControllerIntegrationTest {
     @Test
     @DisplayName("POST /refund/cancel-and-request - When Already Cancelled Returns 400 Bad Request via ExceptionHandler")
     void testCancelBooking_AlreadyCancelled_Returns400() throws Exception {
-        when(refundService.processCancellationAndRequestRefund(anyString(), anyString(), anyString(), anyString()))
-                .thenThrow(new CancellationNotAllowedException("Booking is already cancelled."));
-
         mockMvc.perform(post("/refund/cancel-and-request")
-                        .param("userId", "USR-1")
-                        .param("bookingId", "BK-ALREADY-CANCELLED")
-                        .param("reason", "Change of travel plans"))
+                        .param("userId", "USR-ALREADY-CANCELLED")
+                        .param("bookingId", "BK-CANCELLED")
+                        .param("reason", "Change of travel plans")
+                        .param("comment", "Clash"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Booking is already cancelled."));
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("Booking 'BK-CANCELLED' has already been cancelled."));
+    }
+
+    // ==========================================
+    // Fast in-memory controller test stub
+    // ==========================================
+
+    static class StubRefundService extends RefundService {
+        @Override
+        public Map<String, Object> calculateRefundPreview(String userId, String bookingId) {
+            Map<String, Object> preview = new HashMap<>();
+            preview.put("bookingId", bookingId);
+            preview.put("originalAmount", 10000.0);
+            preview.put("refundPercentage", 50.0);
+            preview.put("refundAmount", 5000.0);
+            preview.put("policyApplied", "24-Hour Reservation Policy (50% Refund)");
+            return preview;
+        }
+
+        @Override
+        public RefundRequest processCancellationAndRequestRefund(String userId, String bookingId, String reason, String comment) {
+            if ("BK-CANCELLED".equalsIgnoreCase(bookingId)) {
+                throw new CancellationNotAllowedException("Booking 'BK-CANCELLED' has already been cancelled.");
+            }
+            RefundRequest mockRefund = new RefundRequest();
+            mockRefund.setRefundId("RF-12345");
+            mockRefund.setBookingId(bookingId);
+            mockRefund.setStatus("PENDING");
+            mockRefund.setRefundAmount(5000.0);
+            return mockRefund;
+        }
+
+        @Override
+        public RefundRequest getRefundByRefundId(String refundId) {
+            if ("RF-INVALID".equalsIgnoreCase(refundId)) {
+                throw new RefundNotFoundException("Refund request with ID 'RF-INVALID' not found");
+            }
+            RefundRequest mockRefund = new RefundRequest();
+            mockRefund.setRefundId(refundId);
+            mockRefund.setStatus("PROCESSED");
+            mockRefund.setCurrentStep(2);
+            return mockRefund;
+        }
     }
 }

@@ -1,6 +1,7 @@
 package com.makemytrip.makemytrip.controllers;
 
 import com.makemytrip.makemytrip.models.FlightStatus;
+import com.makemytrip.makemytrip.models.Notification;
 import com.makemytrip.makemytrip.services.FlightStatusService;
 import com.makemytrip.makemytrip.services.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +12,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -45,33 +47,7 @@ public class FlightStatusController {
     public void broadcastUpdate(FlightStatus status) {
         if (status == null) return;
 
-        // Routine radar telemetry is broadcast via SSE to connected flight tracker clients.
-        // We do NOT persist spam notifications into MongoDB on every tick, which previously
-        // flooded user accounts with hundreds of telemetry rows.
-        try {
-            if (notificationService != null && status.getStatus() != null) {
-                String st = status.getStatus().toUpperCase();
-                if ("DELAYED".equals(st) || "CANCELLED".equals(st)) {
-                    String title = "Flight " + status.getFlightNumber() + " " + st;
-                    String reason = status.getDelayReason() != null && !status.getDelayReason().isEmpty()
-                                    ? status.getDelayReason()
-                                    : "Flight has been " + st.toLowerCase();
-                    String message = status.getAirline() + " (" + status.getOrigin() + " to " + status.getDestination() + "): " + reason;
-                    com.makemytrip.makemytrip.models.Notification alert = new com.makemytrip.makemytrip.models.Notification(
-                        "FLIGHT-ALERT-" + status.getFlightNumber(),
-                        "ALL",
-                        title,
-                        message,
-                        "Just now",
-                        "flight"
-                    );
-                    notificationService.broadcastRealTimeNotification(alert);
-                }
-            }
-        } catch (Exception e) {
-            System.err.println("Failed to broadcast real-time flight alert: " + e.getMessage());
-        }
-
+        // Broadcast real-time telemetry over SSE for flight radar listeners
         List<SseEmitter> deadEmitters = new ArrayList<>();
         for (SseEmitter emitter : emitters) {
             try {
@@ -85,15 +61,14 @@ public class FlightStatusController {
 
     @RequestMapping(value = "/validate-db", method = {RequestMethod.GET, RequestMethod.POST})
     public ResponseEntity<Map<String, Object>> validateAndSyncDatabase() {
-        List<FlightStatus> validated = flightStatusService.validateAndSyncAllFlights();
-        for (FlightStatus f : validated) {
-            broadcastUpdate(f);
-        }
+        List<FlightStatus> changed = flightStatusService.validateAndSyncChangedFlights();
+        List<FlightStatus> all = flightStatusService.getAllFlights(null, null);
         return ResponseEntity.ok(Map.of(
             "success", true,
             "message", "Flight statuses validated and synchronized with real-time Indian Standard Time.",
-            "totalFlights", validated.size(),
-            "flights", validated
+            "totalFlights", all.size(),
+            "changedFlights", changed.size(),
+            "flights", all
         ));
     }
 
@@ -122,6 +97,29 @@ public class FlightStatusController {
         return ResponseEntity.ok(tracked);
     }
 
+    @GetMapping("/user-tracked/{userId}")
+    public ResponseEntity<List<String>> getUserTrackedFlights(@PathVariable String userId) {
+        List<String> list = flightStatusService.getUserTrackedFlightNumbers(userId);
+        return ResponseEntity.ok(list);
+    }
+
+    @PostMapping("/user-tracked/{userId}")
+    public ResponseEntity<Map<String, Object>> toggleUserTrackedFlight(
+            @PathVariable String userId,
+            @RequestBody Map<String, String> payload) {
+        String flightNumber = payload.get("flightNumber");
+        if (flightNumber == null || flightNumber.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "flightNumber is required"));
+        }
+        List<String> updated = flightStatusService.toggleUserTrackFlight(userId, flightNumber);
+        return ResponseEntity.ok(Map.of(
+            "success", true,
+            "userId", userId,
+            "flightNumber", flightNumber,
+            "trackedFlights", updated
+        ));
+    }
+
     @PostMapping("/simulate")
     public ResponseEntity<FlightStatus> simulateUpdate(@RequestBody(required = false) Map<String, Object> payload) {
         if (payload == null) {
@@ -143,12 +141,12 @@ public class FlightStatusController {
         String terminal = (String) payload.get("terminal");
         Object rawEst = payload.get("estimatedArrivalMinutes");
         Integer estMins = null;
-        if(rawEst instanceof Number) {
+        if (rawEst instanceof Number) {
             estMins = ((Number) rawEst).intValue();
         } else if (rawEst instanceof String) {
             try {
                 estMins = Integer.parseInt((String) rawEst);
-            } catch (Exception e) {}
+            } catch (Exception ignored) {}
         }
 
         FlightStatus updated = flightStatusService.updateFlightStatus(
@@ -179,4 +177,3 @@ public class FlightStatusController {
         return ResponseEntity.ok(updatedFlights);
     }
 }
-

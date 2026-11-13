@@ -1,0 +1,198 @@
+{
+  "timestamp": "2026-11-13T13:32:07.064Z",
+  "baseUrl": "http://localhost:3000",
+  "backendStatus": "OFFLINE",
+  "totalTests": 31,
+  "passed": 31,
+  "failed": 0,
+  "pageErrors": [],
+  "videoPath": "C:\\Users\\manis\\VS Code-work space\\make-my-trip-clone-springboot\\testing\\reports\\videos\\page@bd003f5ee93169e187fb172708a43924.webm",
+  "results": [
+    {
+      "name": "Homepage Load",
+      "passed": true,
+      "details": "Page loaded successfully with HTTP 200",
+      "timestamp": "2026-11-13T13:30:55.270Z"
+    },
+    {
+      "name": "Next.js Error Overlay Check (Homepage Load)",
+      "passed": true,
+      "details": "No runtime error screen",
+      "timestamp": "2026-11-13T13:30:55.367Z"
+    },
+    {
+      "name": "Homepage Tab Switch to Hotels",
+      "passed": true,
+      "details": "Switched search type tab cleanly",
+      "timestamp": "2026-11-13T13:30:56.666Z"
+    },
+    {
+      "name": "Homepage Tab Switch to Flights",
+      "passed": true,
+      "details": "Switched back to Flights tab",
+      "timestamp": "2026-11-13T13:30:57.616Z"
+    },
+    {
+      "name": "Homepage Search Execution",
+      "passed": true,
+      "details": "Search triggered without error overlay",
+      "timestamp": "2026-11-13T13:30:59.717Z"
+    },
+    {
+      "name": "Navbar Notification Drawer",
+      "passed": true,
+      "details": "Drawer opens smoothly showing clean alerts list",
+      "timestamp": "2026-11-13T13:31:01.226Z"
+    },
+    {
+      "name": "Auth Modal Open",
+      "passed": true,
+      "details": "Signup/Login dialog opened properly",
+      "timestamp": "2026-11-13T13:31:03.382Z"
+    },
+    {
+      "name": "Login Offline Error Handling",
+      "passed": true,
+      "details": "Graceful notification: \"Unable to connect to server. Please ensure the backend is running.\"",
+      "timestamp": "2026-11-13T13:31:07.803Z"
+    },
+    {
+      "name": "Next.js Error Overlay Check (Login Submission)",
+      "passed": true,
+      "details": "No runtime error screen",
+      "timestamp": "2026-11-13T13:31:07.823Z"
+    },
+    {
+      "name": "Forgot Password Navigation",
+      "passed": true,
+      "details": "Forgot Password view displayed cleanly",
+      "timestamp": "2026-11-13T13:31:08.870Z"
+    },
+    {
+      "name": "Forgot Password Resilience",
+      "passed": true,
+      "details": "Handled backend unavailability gracefully",
+      "timestamp": "2026-11-13T13:31:12.172Z"
+    },
+    {
+      "name": "Signup Offline Error Handling",
+      "passed": true,
+      "details": "Friendly alert rendered without unhandled rejections",
+      "timestamp": "2026-11-13T13:31:17.071Z"
+    },
+    {
+      "name": "Next.js Error Overlay Check (Signup Submission)",
+      "passed": true,
+      "details": "No runtime error screen",
+      "timestamp": "2026-11-13T13:31:17.092Z"
+    },
+    {
+      "name": "Flight Page Navigation",
+      "passed": true,
+      "details": "Flight page loaded cleanly",
+      "timestamp": "2026-11-13T13:31:22.674Z"
+    },
+    {
+      "name": "Next.js Error Overlay Check (Flight Page)",
+      "passed": true,
+      "details": "No runtime error screen",
+      "timestamp": "2026-11-13T13:31:22.708Z"
+    },
+    {
+      "name": "Hotel Page Navigation",
+      "passed": true,
+      "details": "Hotel listing and filters rendered",
+      "timestamp": "2026-11-13T13:31:26.727Z"
+    },
+    {
+      "name": "Next.js Error Overlay Check (Hotel Page)",
+      "passed": true,
+      "details": "No runtime error screen",
+      "timestamp": "2026-11-13T13:31:26.759Z"
+    },
+    {
+      "name": "Flight Status Radar Navigation",
+      "passed": true,
+      "details": "Radar UI loaded with clock & status tabs",
+      "timestamp": "2026-11-13T13:31:33.030Z"
+    },
+    {
+      "name": "Next.js Error Overlay Check (Flight Status Radar)",
+      "passed": true,
+      "details": "No runtime error screen",
+      "timestamp": "2026-11-13T13:31:33.108Z"
+    },
+    {
+      "name": "Radar Filter On-Time Click",
+      "passed": true,
+      "details": "Filter tab responds without errors",
+      "timestamp": "2026-11-13T13:31:33.883Z"
+    },
+    {
+      "name": "Radar Flight Simulator Modal",
+      "passed": true,
+      "details": "Simulation dialog opens cleanly",
+      "timestamp": "2026-11-13T13:31:35.046Z"
+    },
+    {
+      "name": "Dynamic Rates Page Navigation",
+      "passed": true,
+      "details": "Pricing engine loaded with trend graph",
+      "timestamp": "2026-11-13T13:31:43.911Z"
+    },
+    {
+      "name": "Next.js Error Overlay Check (Dynamic Pricing Page)",
+      "passed": true,
+      "details": "No runtime error screen",
+      "timestamp": "2026-11-13T13:31:43.948Z"
+    },
+    {
+      "name": "Flight Booking Page Fallback",
+      "passed": true,
+      "details": "Renders graceful fallback/details without crashing",
+      "timestamp": "2026-11-13T13:31:49.153Z"
+    },
+    {
+      "name": "Next.js Error Overlay Check (Book Flight Page)",
+      "passed": true,
+      "details": "No runtime error screen",
+      "timestamp": "2026-11-13T13:31:49.232Z"
+    },
+    {
+      "name": "Hotel Booking Page Fallback",
+      "passed": true,
+      "details": "Renders graceful fallback/details without crashing",
+      "timestamp": "2026-11-13T13:31:54.642Z"
+    },
+    {
+      "name": "Next.js Error Overlay Check (Book Hotel Page)",
+      "passed": true,
+      "details": "No runtime error screen",
+      "timestamp": "2026-11-13T13:31:54.674Z"
+    },
+    {
+      "name": "Profile Page Navigation",
+      "passed": true,
+      "details": "Profile and refunds tracker rendered cleanly",
+      "timestamp": "2026-11-13T13:31:58.875Z"
+    },
+    {
+      "name": "Next.js Error Overlay Check (Profile Page)",
+      "passed": true,
+      "details": "No runtime error screen",
+      "timestamp": "2026-11-13T13:31:58.911Z"
+    },
+    {
+      "name": "Homepage Full Scroll & Visuals",
+      "passed": true,
+      "details": "Rendered 3D Showcase and Best Offers sections",
+      "timestamp": "2026-11-13T13:32:05.867Z"
+    },
+    {
+      "name": "Next.js Error Overlay Check (Homepage Final Scroll)",
+      "passed": true,
+      "details": "No runtime error screen",
+      "timestamp": "2026-11-13T13:32:05.903Z"
+    }
+  ]
+}

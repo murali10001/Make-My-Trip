@@ -3,8 +3,10 @@ package com.makemytrip.makemytrip.controllers;
 import com.makemytrip.makemytrip.models.Recommendation;
 import com.makemytrip.makemytrip.services.RecommendationService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.List;
 import java.util.Map;
@@ -23,6 +25,11 @@ public class RecommendationController {
             @RequestParam(required = false, defaultValue = "ALL") String category) {
         List<Recommendation> recommendations = recommendationService.getRecommendations(userId, category);
         return ResponseEntity.ok(recommendations);
+    }
+
+    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter streamRecommendations(@RequestParam(required = false) String userId) {
+        return recommendationService.subscribe(userId);
     }
 
     @GetMapping("/{id}")

@@ -25,6 +25,7 @@ public class RoomTypeOption {
     private List<String> amenities = new ArrayList<>();
     private List<String> imageUrls = new ArrayList<>();
     private String preview3dModelUrl;
+    private Room3dConfig room3dConfig;
     private String description;
     private boolean isPopularUpsell = false;
 
@@ -116,6 +117,14 @@ public class RoomTypeOption {
 
     public void setPreview3dModelUrl(String preview3dModelUrl) {
         this.preview3dModelUrl = preview3dModelUrl;
+    }
+
+    public Room3dConfig getRoom3dConfig() {
+        return room3dConfig;
+    }
+
+    public void setRoom3dConfig(Room3dConfig room3dConfig) {
+        this.room3dConfig = room3dConfig;
     }
 
     public String getDescription() {

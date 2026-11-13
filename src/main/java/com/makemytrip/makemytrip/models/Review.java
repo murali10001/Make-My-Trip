@@ -2,17 +2,25 @@ package com.makemytrip.makemytrip.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Document(collection = "reviews")
+@CompoundIndexes({
+    @CompoundIndex(name = "target_type_idx", def = "{'targetId': 1, 'targetType': 1}"),
+    @CompoundIndex(name = "flagged_idx", def = "{'flagged': 1}")
+})
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Review {
 
     @Id
     private String id;
+    @Indexed
     private String targetId;
     private String targetType;
     private String targetTitle;

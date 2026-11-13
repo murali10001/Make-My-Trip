@@ -5,6 +5,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 @Document(collection = "user_preferences")
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class UserPreferences {
@@ -15,13 +20,17 @@ public class UserPreferences {
     private String userId;
     private String userEmail;
 
-    private String preferredSeatType = "Window";
-    private String preferredSeatNo = "3A";
+    private String preferredSeatType;
+    private String preferredSeatNo;
 
-    private String preferredRoomType = "Executive Ocean View Suite";
-    private String preferredBedType = "King Size Bed";
-    private String preferredFloorView = "High Floor Panoramic View";
+    private String preferredRoomType;
+    private String preferredBedType;
+    private String preferredFloorView;
     private String updatedAt;
+
+    private Map<String, Integer> categoryAffinities = new HashMap<>();
+    private List<String> dismissedRecommendationIds = new ArrayList<>();
+    private List<String> favoredRecommendationIds = new ArrayList<>();
 
     public UserPreferences() {}
 
@@ -95,5 +104,32 @@ public class UserPreferences {
 
     public void setUpdatedAt(String updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public Map<String, Integer> getCategoryAffinities() {
+        if (categoryAffinities == null) categoryAffinities = new HashMap<>();
+        return categoryAffinities;
+    }
+
+    public void setCategoryAffinities(Map<String, Integer> categoryAffinities) {
+        this.categoryAffinities = categoryAffinities != null ? categoryAffinities : new HashMap<>();
+    }
+
+    public List<String> getDismissedRecommendationIds() {
+        if (dismissedRecommendationIds == null) dismissedRecommendationIds = new ArrayList<>();
+        return dismissedRecommendationIds;
+    }
+
+    public void setDismissedRecommendationIds(List<String> dismissedRecommendationIds) {
+        this.dismissedRecommendationIds = dismissedRecommendationIds != null ? dismissedRecommendationIds : new ArrayList<>();
+    }
+
+    public List<String> getFavoredRecommendationIds() {
+        if (favoredRecommendationIds == null) favoredRecommendationIds = new ArrayList<>();
+        return favoredRecommendationIds;
+    }
+
+    public void setFavoredRecommendationIds(List<String> favoredRecommendationIds) {
+        this.favoredRecommendationIds = favoredRecommendationIds != null ? favoredRecommendationIds : new ArrayList<>();
     }
 }

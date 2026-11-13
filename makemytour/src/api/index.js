@@ -56,7 +56,7 @@ export const login = async (email, password) => {
     const errorMsg = typeof res.data === "string" ? res.data : (res.data?.message || res.data?.error || "Invalid email or password");
     throw new Error(errorMsg);
   } catch (error) {
-    console.error("Login failed:", error);
+    console.warn("Login attempt notice:", error?.message || error);
     if (error.response && error.response.data) {
       const msg = typeof error.response.data === "string" ? error.response.data : (error.response.data.message || error.response.data.error || "Invalid email or password");
       throw new Error(msg);
@@ -87,7 +87,7 @@ export const signup = async (
     const errorMsg = typeof res.data === "string" ? res.data : (res.data?.message || res.data?.error || "Signup failed");
     throw new Error(errorMsg);
   } catch (error) {
-    console.error("Signup failed:", error);
+    console.warn("Signup attempt notice:", error?.message || error);
     if (error.response && error.response.data) {
       const msg = typeof error.response.data === "string" ? error.response.data : (error.response.data.message || error.response.data.error || "Signup failed");
       throw new Error(msg);
@@ -296,7 +296,7 @@ export const edithotel = async (...args) => {
   }
 };
 
-export const handleflightbooking = async (userId, flightId, seats, price, freezeId = "") => {
+export const handleflightbooking = async (userId, flightId, seats, price, freezeId = "", seatNo = "", seatTier = "", seatAddon = 0) => {
   if (!userId || String(userId).trim() === "" || userId === "undefined") {
     throw new Error("User must be logged in to book a flight.");
   }
@@ -305,7 +305,8 @@ export const handleflightbooking = async (userId, flightId, seats, price, freeze
   }
   try {
     const freezeParam = freezeId ? `&freezeId=${encodeURIComponent(freezeId)}` : "";
-    const url = `/booking/flight?userId=${encodeURIComponent(userId)}&flightId=${encodeURIComponent(flightId)}&seats=${seats}&price=${price}${freezeParam}`;
+    const seatParams = seatNo ? `&seatNo=${encodeURIComponent(seatNo)}&seatTier=${encodeURIComponent(seatTier || "STANDARD")}&seatAddon=${encodeURIComponent(seatAddon || 0)}` : "";
+    const url = `/booking/flight?userId=${encodeURIComponent(userId)}&flightId=${encodeURIComponent(flightId)}&seats=${seats}&price=${price}${freezeParam}${seatParams}`;
     const res = await apiClient.post(url);
     if (res?.isNetworkError) {
       throw new Error(extractErrorMessage(res, "Unable to connect to server. Please ensure the backend is running."));
@@ -319,7 +320,7 @@ export const handleflightbooking = async (userId, flightId, seats, price, freeze
   }
 };
 
-export const handlehotelbooking = async (userId, hotelId, rooms, price, freezeId = "") => {
+export const handlehotelbooking = async (userId, hotelId, rooms, price, freezeId = "", roomTypeName = "", roomUpgradeAddon = 0) => {
   if (!userId || String(userId).trim() === "" || userId === "undefined") {
     throw new Error("User must be logged in to book a hotel.");
   }
@@ -328,7 +329,8 @@ export const handlehotelbooking = async (userId, hotelId, rooms, price, freezeId
   }
   try {
     const freezeParam = freezeId ? `&freezeId=${encodeURIComponent(freezeId)}` : "";
-    const url = `/booking/hotel?userId=${encodeURIComponent(userId)}&hotelId=${encodeURIComponent(hotelId)}&rooms=${rooms}&price=${price}${freezeParam}`;
+    const roomParams = roomTypeName ? `&roomTypeName=${encodeURIComponent(roomTypeName)}&roomUpgradeAddon=${encodeURIComponent(roomUpgradeAddon || 0)}` : "";
+    const url = `/booking/hotel?userId=${encodeURIComponent(userId)}&hotelId=${encodeURIComponent(hotelId)}&rooms=${rooms}&price=${price}${freezeParam}${roomParams}`;
     const res = await apiClient.post(url);
     if (res?.isNetworkError) {
       throw new Error(extractErrorMessage(res, "Unable to connect to server. Please ensure the backend is running."));
@@ -430,6 +432,37 @@ export const validateFlightStatusDb = async () => {
     return null;
   }
 };
+
+export const getUserTrackedFlights = async (userId) => {
+  if (!userId) return [];
+  try {
+    const res = await apiClient.get(`/api/flight-status/user-tracked/${encodeURIComponent(userId)}`);
+    if (isSuccess(res) && Array.isArray(res.data)) {
+      return res.data;
+    }
+    return [];
+  } catch (error) {
+    console.error("Failed to fetch user tracked flights:", error);
+    return [];
+  }
+};
+
+export const toggleUserTrackFlight = async (userId, flightNumber) => {
+  if (!userId || !flightNumber) return null;
+  try {
+    const res = await apiClient.post(`/api/flight-status/user-tracked/${encodeURIComponent(userId)}`, {
+      flightNumber,
+    });
+    if (isSuccess(res)) {
+      return res.data?.trackedFlights || [];
+    }
+    return null;
+  } catch (error) {
+    console.error("Failed to toggle tracked flight for user:", error);
+    return null;
+  }
+};
+
 
 
 
@@ -565,6 +598,32 @@ export const applyCouponCode = async (code, amount = 5500) => {
   }
 };
 
+export const createPricingStream = (onPriceUpdate, onConnected, onError) => {
+  if (typeof window === "undefined") return null;
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+  const eventSource = new EventSource(`${baseUrl}/api/pricing/stream`);
+
+  eventSource.addEventListener("connection", (e) => {
+    try {
+      const data = JSON.parse(e.data);
+      if (onConnected) onConnected(data);
+    } catch (err) {}
+  });
+
+  eventSource.addEventListener("price-update", (e) => {
+    try {
+      const data = JSON.parse(e.data);
+      if (onPriceUpdate) onPriceUpdate(data);
+    } catch (err) {}
+  });
+
+  eventSource.onerror = (err) => {
+    if (onError) onError(err);
+  };
+
+  return eventSource;
+};
+
 export const getAppNotifications = async (userId = "") => {
   try {
     const params = new URLSearchParams();
@@ -676,6 +735,43 @@ export const getRefundStatus = async (refundId) => {
   }
 };
 
+export const createRefundStream = (onRefundUpdate, onConnected, onError) => {
+  if (typeof window === "undefined") return null;
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || BACKEND_URL || "http://localhost:8081";
+  const eventSource = new EventSource(`${baseUrl}/refund/stream`);
+
+  eventSource.addEventListener("connection", (e) => {
+    try {
+      const data = typeof e.data === "string" ? JSON.parse(e.data) : e.data;
+      if (onConnected) onConnected(data);
+    } catch (err) {
+      if (onConnected) onConnected({ status: "connected" });
+    }
+  });
+
+  eventSource.addEventListener("refund-status-update", (e) => {
+    try {
+      const data = typeof e.data === "string" ? JSON.parse(e.data) : e.data;
+      if (onRefundUpdate) onRefundUpdate(data);
+    } catch (err) {
+      console.warn("Failed to parse refund-status-update SSE event:", err);
+    }
+  });
+
+  eventSource.onmessage = (e) => {
+    try {
+      const data = typeof e.data === "string" ? JSON.parse(e.data) : e.data;
+      if (onRefundUpdate) onRefundUpdate(data);
+    } catch (err) {}
+  };
+
+  eventSource.onerror = (err) => {
+    if (onError) onError(err);
+  };
+
+  return eventSource;
+};
+
 export const getSeatMap = async (flightId) => {
   try {
     const res = await apiClient.get(`/api/selection/seatmap/${encodeURIComponent(flightId)}`);
@@ -718,6 +814,17 @@ export const getHotelRoomOptions = async (hotelId) => {
   }
 };
 
+export const getFeatured3dRooms = async () => {
+  try {
+    const res = await apiClient.get(`/api/selection/featured-rooms`);
+    if (isSuccess(res) && Array.isArray(res.data) && res.data.length > 0) return res.data;
+    return [];
+  } catch (error) {
+    console.error("Failed to fetch featured 3D rooms:", error);
+    return [];
+  }
+};
+
 export const saveUserPreferences = async (preferences) => {
   try {
     const res = await apiClient.post(`/api/selection/preferences`, preferences);
@@ -742,6 +849,66 @@ export const getUserPreferences = async (userId) => {
     console.error(`Failed to fetch user preferences for ${userId}:`, error);
     return null;
   }
+};
+
+export const releaseSeat = async (flightId, seatNo) => {
+  try {
+    const params = new URLSearchParams();
+    params.append("flightId", flightId);
+    params.append("seatNo", seatNo);
+    const res = await apiClient.post(`/api/selection/release-seat?${params.toString()}`);
+    if (isSuccess(res)) return res.data;
+    return null;
+  } catch (error) {
+    console.error(`Failed to release seat ${seatNo}:`, error);
+    return null;
+  }
+};
+
+export const createSelectionStream = (onUpdate, onConnected, onError) => {
+  if (typeof window === "undefined") return null;
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || BACKEND_URL || "http://localhost:8081";
+  const eventSource = new EventSource(`${baseUrl}/api/selection/stream`);
+
+  eventSource.addEventListener("connection", (e) => {
+    try {
+      const data = typeof e.data === "string" ? JSON.parse(e.data) : e.data;
+      if (onConnected) onConnected(data);
+    } catch (err) {
+      if (onConnected) onConnected({ status: "connected" });
+    }
+  });
+
+  eventSource.addEventListener("seat-update", (e) => {
+    try {
+      const data = typeof e.data === "string" ? JSON.parse(e.data) : e.data;
+      if (onUpdate) onUpdate({ type: "SEAT_MAP_UPDATE", ...data });
+    } catch (err) {
+      console.warn("Failed to parse seat-update SSE event:", err);
+    }
+  });
+
+  eventSource.addEventListener("room-update", (e) => {
+    try {
+      const data = typeof e.data === "string" ? JSON.parse(e.data) : e.data;
+      if (onUpdate) onUpdate({ type: "ROOM_AVAILABILITY_UPDATE", ...data });
+    } catch (err) {
+      console.warn("Failed to parse room-update SSE event:", err);
+    }
+  });
+
+  eventSource.onmessage = (e) => {
+    try {
+      const data = typeof e.data === "string" ? JSON.parse(e.data) : e.data;
+      if (onUpdate) onUpdate(data);
+    } catch (err) {}
+  };
+
+  eventSource.onerror = (err) => {
+    if (onError) onError(err);
+  };
+
+  return eventSource;
 };
 
 export const getReviews = async (targetId, targetType = "HOTEL", sort = "helpful", minRating = 0, withPhotosOnly = false) => {
@@ -855,6 +1022,67 @@ export const moderateReview = async (reviewId, action) => {
   }
 };
 
+export const uploadReviewPhoto = async (file) => {
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await apiClient.post("/api/reviews/upload", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    if (res?.isNetworkError) {
+      throw new Error(extractErrorMessage(res, "Unable to connect to server. Please ensure the backend is running."));
+    }
+    if (isSuccess(res) && res.data?.url) {
+      return res.data.url;
+    }
+    const errorMsg = extractErrorMessage(res, "Failed to upload photo");
+    throw new Error(errorMsg);
+  } catch (error) {
+    console.error("Failed to upload review photo:", error);
+    throw error;
+  }
+};
+
+export const createReviewEventSource = (targetId, targetType = "HOTEL", onEvent, onError) => {
+  if (typeof window === "undefined" || !window.EventSource) return null;
+  const url = `${BACKEND_URL}/api/reviews/stream?targetId=${encodeURIComponent(targetId)}&targetType=${encodeURIComponent(targetType)}`;
+  const es = new EventSource(url);
+
+  es.addEventListener("REVIEW_ADDED", (e) => {
+    if (onEvent) onEvent("REVIEW_ADDED", e.data);
+  });
+  es.addEventListener("REPLY_ADDED", (e) => {
+    if (onEvent) onEvent("REPLY_ADDED", e.data);
+  });
+  es.addEventListener("HELPFUL_UPDATED", (e) => {
+    if (onEvent) onEvent("HELPFUL_UPDATED", e.data);
+  });
+  es.addEventListener("REVIEW_FLAGGED", (e) => {
+    if (onEvent) onEvent("REVIEW_FLAGGED", e.data);
+  });
+  es.addEventListener("MODERATION_ACTION_TAKEN", (e) => {
+    if (onEvent) onEvent("MODERATION_ACTION_TAKEN", e.data);
+  });
+  es.onerror = (err) => {
+    if (onError) onError(err);
+  };
+  return es;
+};
+
+export const createModerationEventSource = (onEvent, onError) => {
+  if (typeof window === "undefined" || !window.EventSource) return null;
+  const url = `${BACKEND_URL}/api/reviews/moderation/stream`;
+  const es = new EventSource(url);
+
+  es.addEventListener("MODERATION_QUEUE_UPDATED", (e) => {
+    if (onEvent) onEvent("MODERATION_QUEUE_UPDATED", e.data);
+  });
+  es.onerror = (err) => {
+    if (onError) onError(err);
+  };
+  return es;
+};
+
 export const getRecommendations = async (userId = "", category = "ALL") => {
   try {
     const params = new URLSearchParams();
@@ -909,4 +1137,32 @@ export const seedRecommendations = async () => {
     return null;
   }
 };
+
+export const createRecommendationEventSource = (userId = "", onEvent, onError) => {
+  if (typeof window === "undefined" || !window.EventSource) return null;
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || BACKEND_URL || "http://localhost:8081";
+  const url = `${baseUrl}/api/recommendations/stream${userId ? `?userId=${encodeURIComponent(userId)}` : ""}`;
+  const es = new EventSource(url);
+
+  es.addEventListener("RECOMMENDATION_FEEDBACK", (e) => {
+    if (onEvent) onEvent("RECOMMENDATION_FEEDBACK", e.data);
+  });
+  es.addEventListener("RECOMMENDATION_CATALOG_SYNC", (e) => {
+    if (onEvent) onEvent("RECOMMENDATION_CATALOG_SYNC", e.data);
+  });
+  es.addEventListener("RECOMMENDATION_STREAM_OPEN", (e) => {
+    if (onEvent) onEvent("RECOMMENDATION_STREAM_OPEN", e.data);
+  });
+
+  es.onmessage = (e) => {
+    if (onEvent) onEvent("MESSAGE", e.data);
+  };
+
+  es.onerror = (err) => {
+    if (onError) onError(err);
+  };
+
+  return es;
+};
+
 

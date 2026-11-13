@@ -127,7 +127,13 @@ const Navbar = () => {
           (n: any) =>
             n &&
             n.type !== "freeze" &&
-            (!n.title || !n.title.includes("Fare Locked"))
+            n.type !== "flight" &&
+            (!n.title || (
+              !n.title.includes("Fare Locked") &&
+              !n.title.startsWith("Flight ") &&
+              !n.title.startsWith("✈️ Flight ") &&
+              !n.title.startsWith("Radar ")
+            ))
         );
         setNotifications(filtered);
       } catch (err) {
@@ -147,7 +153,14 @@ const Navbar = () => {
         try {
           const newNotif = JSON.parse(event.data);
           if (!newNotif || !newNotif.id) return;
-          if (newNotif.type === "freeze" || newNotif.title?.includes("Fare Locked")) return;
+          if (
+            newNotif.type === "freeze" ||
+            newNotif.type === "flight" ||
+            newNotif.title?.includes("Fare Locked") ||
+            newNotif.title?.startsWith("Flight ") ||
+            newNotif.title?.startsWith("✈️ Flight ") ||
+            newNotif.title?.startsWith("Radar ")
+          ) return;
 
           setNotifications((prev) => {
             const exists = prev.some((n) => n.id === newNotif.id);
@@ -210,11 +223,9 @@ const Navbar = () => {
       // Mark current notifications as read upon opening drawer
       const currentIds = notifications.map((n) => n.id).filter(Boolean);
       markIdsAsRead(currentIds);
-      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-      const userId = user?.id || user?._id;
-      if (userId) {
-        markAllAppNotificationsRead(userId).catch(() => { });
-      }
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true, read: true })));
+      const effectiveUserId = user?.id || user?._id || "ALL";
+      markAllAppNotificationsRead(effectiveUserId).catch(() => { });
       if (webPushPermission === "default") {
         requestBrowserPushPermission();
       }
@@ -226,24 +237,20 @@ const Navbar = () => {
     const allIds = notifications.map((n) => n.id).filter(Boolean);
     markIdsAsRead(allIds);
     setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true, read: true })));
-    const userId = user?.id || user?._id;
-    if (userId) {
-      try {
-        await markAllAppNotificationsRead(userId);
-      } catch (e) { }
-    }
+    const effectiveUserId = user?.id || user?._id || "ALL";
+    try {
+      await markAllAppNotificationsRead(effectiveUserId);
+    } catch (e) { }
   };
 
   const handleClearAll = async (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     setNotifications([]);
-    const userId = user?.id || user?._id;
-    if (userId) {
-      try {
-        await clearAllAppNotifications(userId);
-      } catch (e) {
-        console.error("Failed to clear notifications:", e);
-      }
+    const effectiveUserId = user?.id || user?._id || "ALL";
+    try {
+      await clearAllAppNotifications(effectiveUserId);
+    } catch (e) {
+      console.error("Failed to clear notifications:", e);
     }
   };
 

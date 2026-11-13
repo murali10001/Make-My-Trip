@@ -3,6 +3,7 @@ import Loader from "@/components/Loader";
 import { SearchSelect } from "@/components/SearchSelect";
 import SignupDialog from "@/components/SignupDialog";
 import PersonalizedRecommendations from "@/components/PersonalizedRecommendations";
+import Home3DRoomShowcase from "@/components/Rooms/Home3DRoomShowcase";
 import { Button } from "@/components/ui/button";
 import {
   Bus,
@@ -397,52 +398,89 @@ export default function Home() {
                 Search Results
               </h2>
               {searchresults.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
                   {searchresults.map((result) => (
                     <div
                       key={result.id || result._id}
-                      className="bg-white rounded-lg shadow p-4 border border-gray-200"
+                      className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow border border-gray-200 p-5 flex flex-col justify-between h-full"
                     >
                       {bookingtype === "flights" ? (
-                        <>
-                          <p className="font-semibold text-lg">
-                            Flight Name: {result.flightName}
-                          </p>
-                          <h3 className="font-semibold text-lg">
-                            {result.from} to {result.to}
-                          </h3>
-                          <p className="text-gray-600">
-                            Departure Time: {formatDate(result.departureTime)}
-                          </p>
-                          <p className="text-gray-600">
-                            Arrival Time: {formatDate(result.arrivalTime)}
-                          </p>
-                          <p className="text-lg font-bold mt-2">
-                            ₹{result.price}
-                          </p>
-                          <Button
-                            className="w-full mt-4"
-                            onClick={() => handlebooknow(result.id || result._id)}
-                          >
-                            Book Now
-                          </Button>
-                        </>
+                        <div className="flex flex-col flex-1 justify-between h-full">
+                          <div>
+                            {/* Flight Name */}
+                            <div className="flex items-center justify-between gap-2 pb-2 border-b border-gray-100">
+                              <p className="font-bold text-base text-slate-900 truncate">
+                                Flight Name: <span className="text-blue-700">{result.flightName}</span>
+                              </p>
+                              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-blue-50 text-blue-600 border border-blue-100 shrink-0">
+                                Confirmed
+                              </span>
+                            </div>
+
+                            {/* Route: Standardized min-height ensures identical spacing whether 1 or 2 lines */}
+                            <div className="min-h-[3rem] flex items-center my-2.5">
+                              <h3 className="font-bold text-base sm:text-lg text-slate-800 leading-snug">
+                                {result.from} <span className="text-blue-500 font-normal mx-1">➔</span> {result.to}
+                              </h3>
+                            </div>
+
+                            {/* Departure & Arrival Time Details */}
+                            <div className="space-y-1.5 text-xs text-gray-600 bg-gray-50/80 rounded-lg p-3 border border-gray-100">
+                              <div className="flex items-baseline justify-between gap-2">
+                                <span className="font-medium text-gray-500 shrink-0">Departure Time:</span>
+                                <span className="font-semibold text-gray-800 text-right">
+                                  {formatDate(result.departureTime)}
+                                </span>
+                              </div>
+                              <div className="flex items-baseline justify-between gap-2">
+                                <span className="font-medium text-gray-500 shrink-0">Arrival Time:</span>
+                                <span className="font-semibold text-gray-800 text-right">
+                                  {formatDate(result.arrivalTime)}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Price & Book Now - Anchored to bottom for equal card baselines */}
+                          <div className="mt-auto pt-4 flex flex-col justify-end">
+                            <p className="text-2xl font-black text-slate-900 mb-3">
+                              ₹{result.price}
+                            </p>
+                            <Button
+                              className="w-full font-bold shadow-sm hover:shadow transition-all bg-slate-900 hover:bg-slate-800 text-white rounded-lg py-2.5"
+                              onClick={() => handlebooknow(result.id || result._id)}
+                            >
+                              Book Now
+                            </Button>
+                          </div>
+                        </div>
                       ) : (
-                        <>
-                          <h3 className="font-semibold text-lg">
-                            {result.hotelName}
-                          </h3>
-                          <p className="text-gray-600">City: {result.location}</p>
-                          <p className="text-lg font-bold mt-2">
-                            ₹{result.pricePerNight} per night
-                          </p>
-                          <Button
-                            className="w-full mt-4"
-                            onClick={() => handlebooknow(result.id || result._id)}
-                          >
-                            Book Now
-                          </Button>
-                        </>
+                        <div className="flex flex-col flex-1 justify-between h-full">
+                          <div>
+                            <div className="min-h-[3rem] flex items-center mb-2.5">
+                              <h3 className="font-bold text-base sm:text-lg text-slate-800 leading-snug">
+                                {result.hotelName}
+                              </h3>
+                            </div>
+                            <div className="bg-gray-50/80 rounded-lg p-3 border border-gray-100 text-xs">
+                              <p className="text-gray-600 font-medium">
+                                City: <span className="text-gray-800 font-semibold">{result.location}</span>
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="mt-auto pt-4 flex flex-col justify-end">
+                            <p className="text-2xl font-black text-slate-900 mb-3">
+                              ₹{result.pricePerNight} <span className="text-xs font-normal text-gray-500">per night</span>
+                            </p>
+                            <Button
+                              className="w-full font-bold shadow-sm hover:shadow transition-all bg-slate-900 hover:bg-slate-800 text-white rounded-lg py-2.5"
+                              onClick={() => handlebooknow(result.id || result._id)}
+                            >
+                              Book Now
+                            </Button>
+                          </div>
+                        </div>
                       )}
                     </div>
                   ))}
@@ -458,6 +496,8 @@ export default function Home() {
         <div className="w-full max-w-7xl mx-auto px-0 sm:px-4">
 
           <PersonalizedRecommendations />
+
+          <Home3DRoomShowcase />
 
           {Array.isArray(homeContent?.offers) && homeContent.offers.length > 0 && (
             <section className="my-16">

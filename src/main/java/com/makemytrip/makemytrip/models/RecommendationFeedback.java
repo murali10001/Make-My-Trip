@@ -3,9 +3,15 @@ package com.makemytrip.makemytrip.models;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document(collection = "recommendation_feedback")
+@CompoundIndexes({
+    @CompoundIndex(name = "user_rec_feedback_idx", def = "{'userId': 1, 'recommendationId': 1}")
+})
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class RecommendationFeedback {
 
@@ -13,7 +19,9 @@ public class RecommendationFeedback {
     @JsonProperty("id")
     private String _id;
 
+    @Indexed
     private String userId;
+    @Indexed
     private String recommendationId;
     private String targetId;
     private String feedbackType;

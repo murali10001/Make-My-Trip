@@ -328,7 +328,10 @@ const BookFlightPage = () => {
         flightId,
         quantity,
         grandTotal,
-        priceFrozen?.freezeId || ""
+        priceFrozen?.freezeId || "",
+        selectedSeat?.seatNo || "",
+        selectedSeat?.tier || "",
+        selectedSeat?.priceAddon || 0
       );
       if (!data) {
         throw new Error("Booking response was empty. Please check your bookings in profile.");

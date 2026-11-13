@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useSelector } from "react-redux";
 import { useRouter } from "next/router";
 import {
@@ -20,8 +20,9 @@ import {
   AlertCircle,
   Crown,
   Castle,
+  Radio,
 } from "lucide-react";
-import { getRecommendations, submitRecommendationFeedback } from "@/api";
+import { getRecommendations, submitRecommendationFeedback, createRecommendationEventSource } from "@/api";
 import {
   Dialog,
   DialogContent,
@@ -71,38 +72,100 @@ interface Props {
 export default function PersonalizedRecommendations({ columns = 4 }: Props) {
   const router = useRouter();
   const user = useSelector((state: any) => state.user?.user);
-  const userId = user?.id || user?._id || user?.email || "";
+  const rawUserId = user?.id || user?._id || user?.email || "";
 
+  const [visitorId, setVisitorId] = useState<string>("");
   const [allRecommendations, setAllRecommendations] = useState<Recommendation[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [activeCategory, setActiveCategory] = useState<string>("ALL");
   const [feedbackState, setFeedbackState] = useState<{ [id: string]: "HELPFUL" | "IRRELEVANT" }>({});
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [sseConnected, setSseConnected] = useState<boolean>(false);
 
   const [selectedExplanation, setSelectedExplanation] = useState<Recommendation | null>(null);
 
+  // Initialize persistent visitor ID for anonymous guest recommendations
   useEffect(() => {
-    let isMounted = true;
-    const load = async () => {
+    if (typeof window !== "undefined") {
+      let vid = localStorage.getItem("mmt_recommendation_visitor_id");
+      if (!vid) {
+        vid = "visitor_" + Math.random().toString(36).substring(2, 10);
+        localStorage.setItem("mmt_recommendation_visitor_id", vid);
+      }
+      setVisitorId(vid);
+    }
+  }, []);
+
+  const effectiveUserId = rawUserId || visitorId;
+
+  // Fetch recommendations from Tier 2 REST API
+  const fetchRecommendations = useCallback(
+    async (categoryToFetch = activeCategory) => {
       setLoading(true);
       try {
-        const data = await getRecommendations(userId, "ALL");
-        if (isMounted) {
-          setAllRecommendations(data || []);
-        }
+        const data = await getRecommendations(effectiveUserId, categoryToFetch);
+        setAllRecommendations(data || []);
       } catch (err) {
-        console.error("Error loading recommendations:", err);
+        console.error("Error loading recommendations from backend:", err);
       } finally {
-        if (isMounted) {
-          setLoading(false);
+        setLoading(false);
+      }
+    },
+    [effectiveUserId, activeCategory]
+  );
+
+  useEffect(() => {
+    fetchRecommendations(activeCategory);
+  }, [effectiveUserId, activeCategory]);
+
+  // Real-time SSE Stream listener for live catalog updates and peer feedback
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const es = createRecommendationEventSource(
+      effectiveUserId,
+      (eventType: string, rawData: any) => {
+        try {
+          const data = typeof rawData === "string" ? JSON.parse(rawData) : rawData;
+          if (eventType === "RECOMMENDATION_STREAM_OPEN") {
+            setSseConnected(true);
+          } else if (eventType === "RECOMMENDATION_FEEDBACK") {
+            if (data?.recommendationId && data?.feedbackType) {
+              setAllRecommendations((prev) =>
+                prev.map((r) => {
+                  if (r.id === data.recommendationId) {
+                    return {
+                      ...r,
+                      helpfulCount:
+                        data.feedbackType === "HELPFUL" ? (r.helpfulCount || 0) + 1 : r.helpfulCount,
+                      irrelevantCount:
+                        data.feedbackType === "IRRELEVANT" ? (r.irrelevantCount || 0) + 1 : r.irrelevantCount,
+                    };
+                  }
+                  return r;
+                })
+              );
+            }
+          } else if (eventType === "RECOMMENDATION_CATALOG_SYNC") {
+            // Live catalog refresh
+            fetchRecommendations(activeCategory);
+          }
+        } catch (e) {
+          // non-critical parse error
         }
+      },
+      () => {
+        setSseConnected(false);
+      }
+    );
+
+    return () => {
+      if (es) {
+        es.close();
+        setSseConnected(false);
       }
     };
-    load();
-    return () => {
-      isMounted = false;
-    };
-  }, [userId]);
+  }, [effectiveUserId, activeCategory, fetchRecommendations]);
 
   const displayedRecommendations = React.useMemo(() => {
     if (activeCategory === "ALL") return allRecommendations;
@@ -189,6 +252,7 @@ export default function PersonalizedRecommendations({ columns = 4 }: Props) {
       if (typeof e.stopPropagation === "function") e.stopPropagation();
     }
     setActiveCategory(tabId);
+    fetchRecommendations(tabId);
   };
 
   const handleFeedback = async (
@@ -203,7 +267,7 @@ export default function PersonalizedRecommendations({ columns = 4 }: Props) {
 
     try {
       setFeedbackState((prev) => ({ ...prev, [rec.id]: type }));
-      await submitRecommendationFeedback(rec.id, userId, type);
+      await submitRecommendationFeedback(rec.id, effectiveUserId, type);
 
       if (type === "IRRELEVANT") {
         setToastMessage(`"${rec.title}" removed. We won't suggest this again.`);
@@ -212,7 +276,7 @@ export default function PersonalizedRecommendations({ columns = 4 }: Props) {
           setAllRecommendations((prev) => prev.filter((item) => item.id !== rec.id));
         }, 300);
       } else {
-        setToastMessage("Thanks for the feedback! We'll tailor more picks like this for you.");
+        setToastMessage("Thanks for the feedback! Your preference profile has been refined.");
       }
     } catch (err) {
       console.error("Feedback failed:", err);
@@ -258,10 +322,17 @@ export default function PersonalizedRecommendations({ columns = 4 }: Props) {
         <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
-
-            <h2 className="text-2xl md:text-3xl font-black tracking-tight">
-              Personalized Recommendations Just For You
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-2xl md:text-3xl font-black tracking-tight">
+                Personalized Recommendations Just For You
+              </h2>
+              {sseConnected && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/25 text-emerald-200 border border-emerald-400/30 backdrop-blur-sm">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Live Stream Active
+                </span>
+              )}
+            </div>
             <p className="text-blue-100 text-sm md:text-base max-w-2xl font-light leading-relaxed">
               Tailored suggestions powered by collaborative travel patterns, your booking history,
               and saved seat/room preferences. Click any card's explanation to see algorithmic transparency.
@@ -398,6 +469,7 @@ export default function PersonalizedRecommendations({ columns = 4 }: Props) {
 
                   <div
                     onClick={(e) => openWhyModal(e, rec)}
+                    title={`Why this recommendation? - ${rec.reasonTitle}: ${rec.reasonExplanation}`}
                     className="cursor-pointer bg-blue-50/80 hover:bg-blue-100/80 border border-blue-200/70 rounded-xl p-2.5 transition flex items-start justify-between gap-2 group/reason"
                   >
                     <div className="space-y-0.5 min-w-0 flex-1">

@@ -30,6 +30,11 @@ public class Flight {
     private double otherServices = 0;
     private double discounts = 0;
 
+    private double rating = 4.2;
+    private double reviewsRating = 4.2;
+    private int reviewsCount = 85;
+    private String reviewsText = "Very Good";
+
     public String getId() {
         return _id;
     }
@@ -180,5 +185,37 @@ public class Flight {
 
     public void setDiscounts(double discounts) {
         this.discounts = discounts;
+    }
+
+    public double getRating() {
+        return rating;
+    }
+
+    public void setRating(double rating) {
+        this.rating = rating;
+    }
+
+    public double getReviewsRating() {
+        return reviewsRating;
+    }
+
+    public void setReviewsRating(double reviewsRating) {
+        this.reviewsRating = reviewsRating;
+    }
+
+    public int getReviewsCount() {
+        return reviewsCount;
+    }
+
+    public void setReviewsCount(int reviewsCount) {
+        this.reviewsCount = reviewsCount;
+    }
+
+    public String getReviewsText() {
+        return reviewsText;
+    }
+
+    public void setReviewsText(String reviewsText) {
+        this.reviewsText = reviewsText;
     }
 }

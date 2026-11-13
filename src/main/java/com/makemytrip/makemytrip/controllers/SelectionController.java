@@ -6,8 +6,10 @@ import com.makemytrip.makemytrip.models.UserPreferences;
 import com.makemytrip.makemytrip.services.SelectionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.List;
 
@@ -34,10 +36,24 @@ public class SelectionController {
         return ResponseEntity.ok(updatedMap);
     }
 
+    @PostMapping({"/release-seat", "/release"})
+    public ResponseEntity<SeatMap> releaseSeat(
+            @RequestParam String flightId,
+            @RequestParam String seatNo) {
+        SeatMap updatedMap = selectionService.releaseSeat(flightId, seatNo);
+        return ResponseEntity.ok(updatedMap);
+    }
+
     @GetMapping({"/hotel-rooms/{hotelId}", "/rooms/{hotelId}"})
     public ResponseEntity<List<RoomTypeOption>> getHotelRoomOptions(@PathVariable String hotelId) {
         List<RoomTypeOption> options = selectionService.getRoomOptionsForHotel(hotelId);
         return ResponseEntity.ok(options);
+    }
+
+    @GetMapping({"/featured-rooms", "/showcase-rooms"})
+    public ResponseEntity<List<RoomTypeOption>> getFeaturedShowcaseRooms() {
+        List<RoomTypeOption> showcase = selectionService.getFeaturedShowcaseRooms();
+        return ResponseEntity.ok(showcase);
     }
 
     @PostMapping("/preferences")
@@ -50,5 +66,10 @@ public class SelectionController {
     public ResponseEntity<UserPreferences> getUserPreferences(@PathVariable String userId) {
         UserPreferences prefs = selectionService.getUserPreferences(userId);
         return ResponseEntity.ok(prefs);
+    }
+
+    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter streamSelectionUpdates() {
+        return selectionService.registerSseClient();
     }
 }

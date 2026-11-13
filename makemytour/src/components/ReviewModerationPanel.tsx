@@ -10,7 +10,7 @@ import {
   Eye,
   MessageSquare,
 } from "lucide-react";
-import { getFlaggedReviews, moderateReview } from "@/api";
+import { getFlaggedReviews, moderateReview, createModerationEventSource, BACKEND_URL } from "@/api";
 import { Button } from "@/components/ui/button";
 
 interface ReviewItem {
@@ -42,6 +42,21 @@ export const ReviewModerationPanel: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [isLiveActive, setIsLiveActive] = useState<boolean>(false);
+
+  const resolveImageUrl = (url: string) => {
+    if (!url) return "";
+    if (url.startsWith("/api/")) {
+      return `${BACKEND_URL}${url}`;
+    }
+    return url;
+  };
+
+  const isSafeLink = (url: string) => {
+    if (!url) return false;
+    const clean = url.trim().toLowerCase();
+    return clean.startsWith("http://") || clean.startsWith("https://") || clean.startsWith("/api/");
+  };
 
   const fetchFlagged = async () => {
     setLoading(true);
@@ -57,6 +72,26 @@ export const ReviewModerationPanel: React.FC = () => {
 
   useEffect(() => {
     fetchFlagged();
+
+    // Real-Time Server-Sent Events (SSE) Stream for Moderation Queue
+    const es = createModerationEventSource(
+      (eventType: string, eventData: any) => {
+        setIsLiveActive(true);
+        fetchFlagged();
+      },
+      (err: any) => {
+        setIsLiveActive(false);
+      }
+    );
+
+    if (es) {
+      setIsLiveActive(true);
+    }
+
+    return () => {
+      if (es) es.close();
+      setIsLiveActive(false);
+    };
   }, []);
 
   const handleAction = async (reviewId: string, action: "DISMISS" | "REMOVE") => {
@@ -82,11 +117,17 @@ export const ReviewModerationPanel: React.FC = () => {
   return (
     <div className="space-y-6">
 
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900 text-white p-6 rounded-2xl">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900 text-white p-6 rounded-2xl shadow-sm">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <ShieldAlert className="w-6 h-6 text-amber-400" />
             <h2 className="text-xl font-extrabold tracking-tight">Review & Content Moderation Queue</h2>
+            {isLiveActive && (
+              <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 animate-pulse">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                Live Sync Active
+              </span>
+            )}
           </div>
           <p className="text-xs text-slate-400">
             Review community-flagged reviews and enforce platform safety by dismissing false reports or removing inappropriate content.
@@ -136,7 +177,7 @@ export const ReviewModerationPanel: React.FC = () => {
           <CheckCircle className="w-12 h-12 text-emerald-500 mx-auto" />
           <h3 className="text-base font-extrabold text-slate-900">All Clear! No Flagged Reviews</h3>
           <p className="text-xs text-slate-500 max-w-md mx-auto">
-            All traveler reviews meet community guidelines. When users flag inappropriate feedback, items will appear here for review.
+            All traveler reviews meet community guidelines. When users flag inappropriate feedback, items will appear here for review in real time.
           </p>
         </div>
       ) : (
@@ -190,20 +231,24 @@ export const ReviewModerationPanel: React.FC = () => {
                 {rev.photoUrls && rev.photoUrls.length > 0 && (
                   <div className="space-y-1">
                     <span className="text-[11px] font-bold text-slate-500 flex items-center gap-1">
-                      <Camera className="w-3 h-3 text-indigo-600" /> Attached Photos ({rev.photoUrls.length}):
+                      <Camera className="w-3.5 h-3.5 text-indigo-600" /> Attached Photos ({rev.photoUrls.length}):
                     </span>
                     <div className="flex flex-wrap gap-2">
-                      {rev.photoUrls.map((url, idx) => (
-                        <a
-                          key={idx}
-                          href={url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="w-16 h-16 rounded-lg overflow-hidden border border-slate-300 block hover:opacity-80 transition-opacity"
-                        >
-                          <img src={url} alt="Attached" className="w-full h-full object-cover" />
-                        </a>
-                      ))}
+                      {rev.photoUrls.map((url, idx) => {
+                        const resolved = resolveImageUrl(url);
+                        if (!isSafeLink(url)) return null;
+                        return (
+                          <a
+                            key={idx}
+                            href={resolved}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="w-16 h-16 rounded-lg overflow-hidden border border-slate-300 block hover:opacity-80 transition-opacity"
+                          >
+                            <img src={resolved} alt="Attached" className="w-full h-full object-cover" />
+                          </a>
+                        );
+                      })}
                     </div>
                   </div>
                 )}

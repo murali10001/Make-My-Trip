@@ -317,7 +317,9 @@ const BookHotelPage = () => {
         hotelId,
         quantity,
         grandTotal,
-        priceFrozen?.freezeId || ""
+        priceFrozen?.freezeId || "",
+        selectedRoom?.roomTypeName || "",
+        selectedRoom?.priceUpgradeAddon || 0
       );
       if (!data) {
         throw new Error("Booking response was empty. Please check your bookings in profile.");

@@ -6,7 +6,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Component
 public class RefundStatusScheduler {
@@ -14,8 +17,11 @@ public class RefundStatusScheduler {
     @Autowired
     private RefundRepository refundRepository;
 
-    @Autowired
+    @Autowired(required = false)
     private NotificationService notificationService;
+
+    @Autowired(required = false)
+    private RefundService refundService;
 
     private static final long STEP_1_TO_2_DELAY_MS = 5_000L;
     private static final long STEP_2_TO_3_DELAY_MS = 10_000L;
@@ -49,8 +55,6 @@ public class RefundStatusScheduler {
                     refund.setLastUpdatedEpochMs(nowMs);
                     refundRepository.save(refund);
 
-                    System.out.println("[REAL-TIME REFUND SCHEDULER] Refund " + refund.getRefundId() + " passed 5s verification. Status updated to PROCESSED (" + bankRef + ")");
-
                     if (notificationService != null) {
                         String targetUser = refund.getUserId() != null && !refund.getUserId().trim().isEmpty() ? refund.getUserId() : "ALL";
                         notificationService.createNotification(
@@ -59,6 +63,20 @@ public class RefundStatusScheduler {
                             "Refund " + refund.getRefundId() + " for Booking " + refund.getBookingId() + " is now PROCESSED by bank (" + bankRef + ").",
                             "refund"
                         );
+                    }
+
+                    if (refundService != null) {
+                        Map<String, Object> broadcast = new HashMap<>();
+                        broadcast.put("type", "REFUND_STATUS_UPDATE");
+                        broadcast.put("refundId", refund.getRefundId());
+                        broadcast.put("bookingId", refund.getBookingId());
+                        broadcast.put("userId", refund.getUserId());
+                        broadcast.put("status", "PROCESSED");
+                        broadcast.put("currentStep", 2);
+                        broadcast.put("transactionRef", bankRef);
+                        broadcast.put("estimatedCompletionDate", refund.getEstimatedCompletionDate());
+                        broadcast.put("timestamp", LocalDateTime.now().toString());
+                        refundService.broadcastRefundUpdate(broadcast);
                     }
                 }
             } else if ("PROCESSED".equals(status)) {
@@ -71,20 +89,31 @@ public class RefundStatusScheduler {
                     refund.setLastUpdatedEpochMs(nowMs);
                     refundRepository.save(refund);
 
-                    System.out.println("[REAL-TIME REFUND SCHEDULER] Refund " + refund.getRefundId() + " passed 10s clearance. Status updated to COMPLETED (UTR: " + utrRef + ")");
-
                     if (notificationService != null) {
                         String targetUser = refund.getUserId() != null && !refund.getUserId().trim().isEmpty() ? refund.getUserId() : "ALL";
                         notificationService.createNotification(
                             targetUser,
                             "Refund Completed & Credited",
-                            "Refund " + refund.getRefundId() + " (INR " + refund.getRefundAmount() + ") has been COMPLETED and credited (UTR: " + utrRef + ").",
+                            "Refund " + refund.getRefundId() + " (₹" + refund.getRefundAmount() + ") has been COMPLETED and credited (UTR: " + utrRef + ").",
                             "refund"
                         );
+                    }
+
+                    if (refundService != null) {
+                        Map<String, Object> broadcast = new HashMap<>();
+                        broadcast.put("type", "REFUND_STATUS_UPDATE");
+                        broadcast.put("refundId", refund.getRefundId());
+                        broadcast.put("bookingId", refund.getBookingId());
+                        broadcast.put("userId", refund.getUserId());
+                        broadcast.put("status", "COMPLETED");
+                        broadcast.put("currentStep", 3);
+                        broadcast.put("transactionRef", utrRef);
+                        broadcast.put("estimatedCompletionDate", refund.getEstimatedCompletionDate());
+                        broadcast.put("timestamp", LocalDateTime.now().toString());
+                        refundService.broadcastRefundUpdate(broadcast);
                     }
                 }
             }
         }
     }
-
 }
