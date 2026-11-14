@@ -99,7 +99,6 @@ class PricingControllerIntegrationTest {
                 .andExpect(jsonPath("$.status").value(400));
     }
 
-    // Stub service to avoid Mockito JVM dynamic agent pipe hangs
     static class StubPricingService extends PricingService {
         @Override
         public DynamicPrice calculateDynamicPrice(String itemId, String itemType, double basePrice, String demandLevel, String seasonType) {
@@ -136,3 +135,4 @@ class PricingControllerIntegrationTest {
         }
     }
 }
+

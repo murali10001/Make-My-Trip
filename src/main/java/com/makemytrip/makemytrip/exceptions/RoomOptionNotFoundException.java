@@ -5,3 +5,4 @@ public class RoomOptionNotFoundException extends RuntimeException {
         super(message);
     }
 }
+

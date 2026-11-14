@@ -12,3 +12,4 @@ public interface RecommendationRepository extends MongoRepository<Recommendation
     List<Recommendation> findByCategoryAndActiveTrue(String category);
     List<Recommendation> findByTargetTypeAndActiveTrue(String targetType);
 }
+

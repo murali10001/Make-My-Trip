@@ -22,7 +22,7 @@ import {
   Castle,
   Radio,
 } from "lucide-react";
-import { getRecommendations, submitRecommendationFeedback, createRecommendationEventSource } from "@/api";
+import { getRecommendations, submitRecommendationFeedback, createRecommendationEventSource, seedRecommendations } from "@/api";
 import {
   Dialog,
   DialogContent,
@@ -38,7 +38,7 @@ interface Recommendation {
   title: string;
   subtitle: string;
   destination: string;
-  category: "BEACH" | "HERITAGE" | "LUXURY" | "NATURE" | "BUSINESS";
+  category: "BEACH" | "HERITAGE" | "LUXURY" | "NATURE" | "BUSINESS" | "FLIGHT" | string;
   imageUrl: string;
   priceEstimate: number;
   originalPrice: number;
@@ -84,7 +84,6 @@ export default function PersonalizedRecommendations({ columns = 4 }: Props) {
 
   const [selectedExplanation, setSelectedExplanation] = useState<Recommendation | null>(null);
 
-  // Initialize persistent visitor ID for anonymous guest recommendations
   useEffect(() => {
     if (typeof window !== "undefined") {
       let vid = localStorage.getItem("mmt_recommendation_visitor_id");
@@ -98,15 +97,32 @@ export default function PersonalizedRecommendations({ columns = 4 }: Props) {
 
   const effectiveUserId = rawUserId || visitorId;
 
-  // Fetch recommendations from Tier 2 REST API
   const fetchRecommendations = useCallback(
     async (categoryToFetch = activeCategory) => {
       setLoading(true);
       try {
         const data = await getRecommendations(effectiveUserId, categoryToFetch);
-        setAllRecommendations(data || []);
+        if (Array.isArray(data) && data.length > 0) {
+          setAllRecommendations(data);
+        } else if (categoryToFetch !== "ALL") {
+          const allData = await getRecommendations(effectiveUserId, "ALL");
+          if (Array.isArray(allData) && allData.length > 0) {
+            setAllRecommendations(allData);
+          } else {
+            setAllRecommendations([]);
+          }
+        } else {
+          try {
+            await seedRecommendations();
+            const reseeded = await getRecommendations(effectiveUserId, "ALL");
+            setAllRecommendations(Array.isArray(reseeded) ? reseeded : []);
+          } catch {
+            setAllRecommendations([]);
+          }
+        }
       } catch (err) {
         console.error("Error loading recommendations from backend:", err);
+        setAllRecommendations([]);
       } finally {
         setLoading(false);
       }
@@ -118,7 +134,6 @@ export default function PersonalizedRecommendations({ columns = 4 }: Props) {
     fetchRecommendations(activeCategory);
   }, [effectiveUserId, activeCategory]);
 
-  // Real-time SSE Stream listener for live catalog updates and peer feedback
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -147,11 +162,9 @@ export default function PersonalizedRecommendations({ columns = 4 }: Props) {
               );
             }
           } else if (eventType === "RECOMMENDATION_CATALOG_SYNC") {
-            // Live catalog refresh
             fetchRecommendations(activeCategory);
           }
         } catch (e) {
-          // non-critical parse error
         }
       },
       () => {
@@ -168,9 +181,10 @@ export default function PersonalizedRecommendations({ columns = 4 }: Props) {
   }, [effectiveUserId, activeCategory, fetchRecommendations]);
 
   const displayedRecommendations = React.useMemo(() => {
+    if (!allRecommendations || allRecommendations.length === 0) return [];
     if (activeCategory === "ALL") return allRecommendations;
 
-    return allRecommendations.filter((item) => {
+    const filtered = allRecommendations.filter((item) => {
       const cat = (item.category || "").toUpperCase();
       const targetType = (item.targetType || "").toUpperCase();
       const title = (item.title || "").toLowerCase();
@@ -244,6 +258,8 @@ export default function PersonalizedRecommendations({ columns = 4 }: Props) {
       }
       return cat === activeCategory;
     });
+
+    return filtered.length > 0 ? filtered : allRecommendations;
   }, [allRecommendations, activeCategory]);
 
   const handleCategorySelect = (e: React.SyntheticEvent, tabId: string) => {
@@ -350,7 +366,10 @@ export default function PersonalizedRecommendations({ columns = 4 }: Props) {
                   {user.firstName} {user.lastName || ""}
                 </div>
                 <div className="text-[11px] text-emerald-300 font-medium flex items-center gap-1">
-                  <ShieldCheck className="w-3 h-3" /> History Profile Active
+                  <ShieldCheck className="w-3 h-3" />
+                  {Array.isArray(user.bookings) && user.bookings.length > 0
+                    ? `Verified History (${user.bookings.length} ${user.bookings.length === 1 ? "Trip" : "Trips"})`
+                    : "Traveler Profile Active"}
                 </div>
               </div>
             </div>
@@ -402,9 +421,10 @@ export default function PersonalizedRecommendations({ columns = 4 }: Props) {
           </p>
           <button
             type="button"
-            onClick={(e) => {
+            onClick={async (e) => {
               e.preventDefault();
               setActiveCategory("ALL");
+              await fetchRecommendations("ALL");
             }}
             className="px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition cursor-pointer"
           >

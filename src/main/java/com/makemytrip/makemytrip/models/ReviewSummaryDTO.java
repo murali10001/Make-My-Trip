@@ -61,3 +61,4 @@ public class ReviewSummaryDTO {
         this.photoCount = photoCount;
     }
 }
+

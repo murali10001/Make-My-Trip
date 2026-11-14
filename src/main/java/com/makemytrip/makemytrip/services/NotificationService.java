@@ -93,7 +93,7 @@ public class NotificationService {
             try {
                 emitter.send(SseEmitter.event().name("notification").data(notif));
             } catch (Exception e) {
-                // dead emitter will be cleaned up on error/completion
+
             }
         }
     }

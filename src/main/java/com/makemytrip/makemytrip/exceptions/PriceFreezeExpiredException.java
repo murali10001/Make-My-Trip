@@ -5,3 +5,4 @@ public class PriceFreezeExpiredException extends RuntimeException {
         super(message);
     }
 }
+

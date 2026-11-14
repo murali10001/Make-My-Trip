@@ -103,7 +103,6 @@ export function parseTimeToMinutes(timeStr?: string): number | null {
 }
 
 export function getISTMinutesAndSeconds(date: Date = new Date()): { currentMins: number; currentSecs: number; exactCurrentMins: number } {
-  // Convert local browser date to Indian Standard Time (UTC+05:30)
   const utc = date.getTime() + date.getTimezoneOffset() * 60000;
   const istDate = new Date(utc + 5.5 * 3600000);
   const hours = istDate.getHours();
@@ -160,7 +159,6 @@ export function getRealTimeFlightStatus(flight: FlightStatusItem, now: Date): Re
   const effectiveDep: number = depMins;
 
   if (arrMins < depMins) {
-    // Overnight flight crossing midnight
     effectiveArr = arrMins + 1440;
     if (currentMins < arrMins + 120) {
       effectiveCurrent = currentMins + 1440;
@@ -168,7 +166,6 @@ export function getRealTimeFlightStatus(flight: FlightStatusItem, now: Date): Re
       effectiveCurrent = currentMins;
     }
   } else {
-    // Same-day flight
     effectiveArr = arrMins;
     effectiveCurrent = currentMins;
   }
@@ -247,7 +244,6 @@ const LiveFlightTracker: React.FC = () => {
   const [validatingDb, setValidatingDb] = useState<boolean>(false);
   const [dbValidationNotice, setDbValidationNotice] = useState<string | null>(null);
 
-  // Push notifications state
   const [notifications, setNotifications] = useState<PushNotification[]>([]);
   const [alertsFeedOpen, setAlertsFeedOpen] = useState<boolean>(true);
   const [selectedFlight, setSelectedFlight] = useState<FlightStatusItem | null>(null);
@@ -255,7 +251,6 @@ const LiveFlightTracker: React.FC = () => {
   const [autoSimulate, setAutoSimulate] = useState<boolean>(false);
   const [webPushPermission, setWebPushPermission] = useState<string>("default");
 
-  // Custom Simulator Modal state
   const [customSimModalOpen, setCustomSimModalOpen] = useState<boolean>(false);
   const [simFlightNumber, setSimFlightNumber] = useState<string>("AI-101");
   const [simStatus, setSimStatus] = useState<string>("DELAYED");
@@ -265,7 +260,6 @@ const LiveFlightTracker: React.FC = () => {
   const [simTerminal, setSimTerminal] = useState<string>("T3");
   const [customSimLoading, setCustomSimLoading] = useState<boolean>(false);
 
-  // Load tracked flights from DB and localStorage
   useEffect(() => {
     setIsMounted(true);
     if (typeof window !== "undefined") {
@@ -287,7 +281,6 @@ const LiveFlightTracker: React.FC = () => {
     }
   }, [userId]);
 
-  // Deep-link from query string (?flightNumber=...)
   useEffect(() => {
     if (router.query.flightNumber && typeof router.query.flightNumber === "string") {
       const target = router.query.flightNumber.trim().toUpperCase();
@@ -299,7 +292,6 @@ const LiveFlightTracker: React.FC = () => {
     }
   }, [router.query.flightNumber, flights]);
 
-  // Clock timer
   useEffect(() => {
     const clockTimer = setInterval(() => {
       setCurrentTime(new Date());
@@ -387,7 +379,6 @@ const LiveFlightTracker: React.FC = () => {
     trackedNumbersRef.current = trackedNumbers;
   }, [trackedNumbers]);
 
-  // Real-time SSE Connection
   useEffect(() => {
     let eventSource: EventSource | null = null;
     if (typeof window !== "undefined") {
@@ -396,7 +387,6 @@ const LiveFlightTracker: React.FC = () => {
         eventSource = new EventSource(`${apiBase}/api/flight-status/stream`);
 
         eventSource.onerror = () => {
-          // Gracefully reconnects automatically
         };
 
         eventSource.addEventListener("flight-update", (event: MessageEvent) => {
@@ -415,7 +405,6 @@ const LiveFlightTracker: React.FC = () => {
 
               const isTracked = trackedNumbersRef.current.includes(updatedFlight.flightNumber);
 
-              // Only add to the user's active Radar Alert Stream if they are tracking this flight
               if (isTracked) {
                 let notifType: "delay" | "boarding" | "gate" | "info" = "info";
                 let title = `Radar Live Update: ${updatedFlight.flightNumber}`;
@@ -461,14 +450,12 @@ const LiveFlightTracker: React.FC = () => {
     };
   }, []);
 
-  // Save to localStorage
   useEffect(() => {
     if (typeof window !== "undefined" && isMounted) {
       localStorage.setItem("tracked_flights", JSON.stringify(trackedNumbers));
     }
   }, [trackedNumbers, isMounted]);
 
-  // Auto simulate
   useEffect(() => {
     let interval: any = null;
     if (autoSimulate) {
@@ -709,7 +696,6 @@ const LiveFlightTracker: React.FC = () => {
     }
   };
 
-  // Dynamically computed flights
   const flightsWithComputed = flights.map((f) => {
     const computed = getRealTimeFlightStatus(f, currentTime);
     return {
@@ -751,7 +737,6 @@ const LiveFlightTracker: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Top Banner */}
       <div className="bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-950 text-white rounded-2xl p-6 shadow-xl relative overflow-hidden border border-blue-900/50">
         <div className="absolute right-0 top-0 opacity-10 pointer-events-none transform translate-x-10 -translate-y-10">
           <Plane className="w-96 h-96 text-white" />
@@ -765,7 +750,6 @@ const LiveFlightTracker: React.FC = () => {
                 Live Flight Status Radar
               </span>
 
-              {/* Real-time Indian Standard Time Clock Indicator */}
               <span className="flex items-center text-xs font-mono font-bold text-amber-300 bg-amber-950/60 px-3 py-1 rounded-full border border-amber-400/30 shadow-xs">
                 <Clock className="w-3.5 h-3.5 mr-1.5 text-amber-400 animate-spin" />
                 Live IST: {formattedClockTime}
@@ -829,7 +813,6 @@ const LiveFlightTracker: React.FC = () => {
           </div>
         </div>
 
-        {/* Real-time DB Validation Notification Toast Banner */}
         {dbValidationNotice && (
           <div className="mt-4 p-3 rounded-xl bg-emerald-950/80 border border-emerald-500/50 flex items-center justify-between text-xs text-emerald-200 animate-in fade-in">
             <div className="flex items-center gap-2">
@@ -845,7 +828,6 @@ const LiveFlightTracker: React.FC = () => {
           </div>
         )}
 
-        {/* Real-Time Live Flight Metrics */}
         <div className="grid grid-cols-2 sm:grid-cols-6 gap-3 mt-6 pt-4 border-t border-white/10">
           <div className="bg-white/5 rounded-xl p-3 border border-white/10">
             <p className="text-xs text-slate-400 font-medium">Total Flights</p>
@@ -874,7 +856,6 @@ const LiveFlightTracker: React.FC = () => {
         </div>
       </div>
 
-      {/* Live Radar Alerts & Push Notification Feed */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <div
           onClick={() => setAlertsFeedOpen(!alertsFeedOpen)}
@@ -960,7 +941,6 @@ const LiveFlightTracker: React.FC = () => {
         )}
       </div>
 
-      {/* Multi-Flight Simultaneous Watchlist */}
       <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
@@ -1031,7 +1011,6 @@ const LiveFlightTracker: React.FC = () => {
         )}
       </div>
 
-      {/* Filter and Search Bar */}
       <div className="flex flex-col md:flex-row gap-3 justify-between items-center bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
         <div className="relative w-full md:w-96">
           <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
@@ -1094,7 +1073,6 @@ const LiveFlightTracker: React.FC = () => {
                   }`}
               >
                 <div className="p-5 pb-4">
-                  {/* Flight Header */}
                   <div className="flex justify-between items-start mb-3">
                     <div>
                       <div className="flex items-center gap-2">
@@ -1111,7 +1089,6 @@ const LiveFlightTracker: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      {/* Real-time Status Badge */}
                       {getStatusBadge(comp.status)}
 
                       <button
@@ -1131,10 +1108,8 @@ const LiveFlightTracker: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Route & Dynamic Real-Time Progress Bar */}
                   <div className="bg-slate-50 rounded-xl p-3.5 border border-slate-100 mb-3">
                     <div className="flex items-center justify-between text-center mb-2">
-                      {/* Origin */}
                       <div className="text-left">
                         <p className="text-xs font-bold text-slate-800">{(flight.origin || "").split("(")[0]}</p>
                         <p className="text-xs text-slate-400 font-mono">{(flight.origin || "").match(/\(([^)]+)\)/)?.[0] || ""}</p>
@@ -1144,10 +1119,8 @@ const LiveFlightTracker: React.FC = () => {
                         )}
                       </div>
 
-                      {/* Dynamic Real-Time Flight Route Progress */}
                       <div className="flex flex-col items-center px-2 flex-1 max-w-[140px]">
                         <div className="relative w-full h-5 flex items-center">
-                          {/* Route line track */}
                           <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
                             <div
                               className={`h-full transition-all duration-700 ${comp.status === "LANDED"
@@ -1162,7 +1135,6 @@ const LiveFlightTracker: React.FC = () => {
                             />
                           </div>
 
-                          {/* Animated Plane icon positioned along the route */}
                           <div
                             className="absolute top-1/2 -translate-y-1/2 transition-all duration-700 flex items-center justify-center pointer-events-none"
                             style={{
@@ -1182,7 +1154,6 @@ const LiveFlightTracker: React.FC = () => {
                           </div>
                         </div>
 
-                        {/* Real-time Countdown Label */}
                         <span
                           className={`text-[10px] font-bold mt-1 font-mono ${comp.status === "LANDED"
                               ? "text-slate-600 font-semibold"
@@ -1205,7 +1176,6 @@ const LiveFlightTracker: React.FC = () => {
                         </span>
                       </div>
 
-                      {/* Destination */}
                       <div className="text-right">
                         <p className="text-xs font-bold text-slate-800">{(flight.destination || "").split("(")[0]}</p>
                         <p className="text-xs text-slate-400 font-mono">{(flight.destination || "").match(/\(([^)]+)\)/)?.[0] || ""}</p>
@@ -1217,7 +1187,6 @@ const LiveFlightTracker: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Status Context Reason */}
                   <div className="space-y-1.5 text-xs text-slate-600 bg-amber-50/50 p-2.5 rounded-lg border border-amber-100">
                     <div className="flex items-start gap-1.5">
                       <Info className="w-3.5 h-3.5 text-amber-600 mt-0.5 flex-shrink-0" />
@@ -1229,7 +1198,6 @@ const LiveFlightTracker: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Card Footer */}
                 <div className="px-5 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-xs">
                   <span className="text-slate-400 font-mono text-[10px]">
                     Updated: {flight.lastUpdated || "Live"}
@@ -1249,7 +1217,6 @@ const LiveFlightTracker: React.FC = () => {
         </div>
       )}
 
-      {/* Flight Details Modal */}
       {selectedFlight && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 relative animate-in fade-in zoom-in-95">
@@ -1334,7 +1301,6 @@ const LiveFlightTracker: React.FC = () => {
         </div>
       )}
 
-      {/* Custom Simulator Modal */}
       {customSimModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 relative animate-in fade-in zoom-in-95">

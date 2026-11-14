@@ -58,7 +58,6 @@ export const HotelRoomPicker: React.FC<HotelRoomPickerProps> = ({
   const [prefSavedMsg, setPrefSavedMsg] = useState<string | null>(null);
   const [streamConnected, setStreamConnected] = useState<boolean>(false);
 
-  // 3D Interactive Spatial Canvas Controls
   const [rotY, setRotY] = useState<number>(25);
   const [rotX, setRotX] = useState<number>(-12);
   const [zoom, setZoom] = useState<number>(1.0);
@@ -79,7 +78,6 @@ export const HotelRoomPicker: React.FC<HotelRoomPickerProps> = ({
         if (isMounted) {
           setRoomOptions(data || []);
 
-          // Auto-apply saved user room preference if present
           if (userId) {
             try {
               const userPrefs = await getUserPreferences(userId);
@@ -118,7 +116,6 @@ export const HotelRoomPicker: React.FC<HotelRoomPickerProps> = ({
     };
   }, [hotelId, userId]);
 
-  // Real-time SSE room availability synchronization
   useEffect(() => {
     let stream: EventSource | null = null;
     try {
@@ -179,7 +176,6 @@ export const HotelRoomPicker: React.FC<HotelRoomPickerProps> = ({
     }
   };
 
-  // 3D Canvas mouse orbit handlers
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
     dragStartRef.current = {
@@ -404,7 +400,6 @@ export const HotelRoomPicker: React.FC<HotelRoomPickerProps> = ({
         </div>
       )}
 
-      {/* Interactive 3D Spatial Walkthrough & High-Res Tour Modal */}
       <Dialog open={!!modalRoom3D} onOpenChange={() => setModalRoom3D(null)}>
         <DialogContent className="max-w-4xl max-h-[92vh] overflow-y-auto bg-slate-950 text-white rounded-3xl p-5 sm:p-6 shadow-2xl border border-slate-800 scrollbar-thin">
           <DialogHeader>
@@ -419,7 +414,6 @@ export const HotelRoomPicker: React.FC<HotelRoomPickerProps> = ({
                 </DialogDescription>
               </div>
 
-              {/* View Switcher: Interactive 3D Model vs Photo Gallery */}
               <div className="flex items-center bg-slate-900 p-1 rounded-xl border border-slate-800 text-xs font-bold">
                 <button
                   onClick={() => setActiveViewTab("3D")}
@@ -446,7 +440,6 @@ export const HotelRoomPicker: React.FC<HotelRoomPickerProps> = ({
           {modalRoom3D && (
             <div className="space-y-4 py-2">
               {activeViewTab === "3D" ? (
-                /* Genuine Interactive 3D Spatial Walkthrough Canvas */
                 <div className="space-y-3">
                   <Room3DViewer
                     roomConfig={modalRoom3D.room3dConfig}
@@ -461,7 +454,6 @@ export const HotelRoomPicker: React.FC<HotelRoomPickerProps> = ({
                   />
                 </div>
               ) : (
-                /* High-Resolution Photo Gallery View */
                 <div className="space-y-3">
                   <div className="relative h-72 sm:h-96 rounded-2xl overflow-hidden bg-slate-900 border border-slate-800">
                     {modalRoom3D.imageUrls && modalRoom3D.imageUrls.length > 0 ? (
@@ -528,7 +520,6 @@ export const HotelRoomPicker: React.FC<HotelRoomPickerProps> = ({
                 </div>
               )}
 
-              {/* Amenities Breakdown */}
               <div className="bg-slate-900/80 p-4 rounded-2xl border border-slate-800">
                 <h5 className="font-bold text-white text-xs mb-2.5">Room Inclusions & Services:</h5>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">

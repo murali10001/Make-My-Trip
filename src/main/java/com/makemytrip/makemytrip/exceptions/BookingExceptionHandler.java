@@ -34,3 +34,4 @@ public class BookingExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 }
+

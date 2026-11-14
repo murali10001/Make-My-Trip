@@ -26,7 +26,7 @@ export const Home3DRoomShowcase: React.FC = () => {
   const router = useRouter();
   const [featuredRooms, setFeaturedRooms] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [activeRoomIndex, setActiveRoomIndex] = useState<number>(1); // Default to Deluxe Balcony
+  const [activeRoomIndex, setActiveRoomIndex] = useState<number>(1);
 
   useEffect(() => {
     let isMounted = true;
@@ -50,7 +50,6 @@ export const Home3DRoomShowcase: React.FC = () => {
     };
   }, []);
 
-  // Professional fallback showcase rooms if backend is starting
   const currentRoom = featuredRooms[activeRoomIndex] || (
     activeRoomIndex === 0
       ? {
@@ -127,7 +126,6 @@ export const Home3DRoomShowcase: React.FC = () => {
 
   return (
     <section className="my-12 sm:my-16 w-full">
-      {/* Section Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6 sm:mb-8">
         <div>
 
@@ -139,7 +137,6 @@ export const Home3DRoomShowcase: React.FC = () => {
           </p>
         </div>
 
-        {/* Live Status Badge */}
         <div className="flex items-center gap-2.5 bg-slate-900/90 border border-slate-800 rounded-2xl px-4 py-2.5 backdrop-blur-md shadow-xl">
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
           <span className="text-xs font-mono font-bold text-slate-200">
@@ -148,9 +145,7 @@ export const Home3DRoomShowcase: React.FC = () => {
         </div>
       </div>
 
-      {/* Main 3D Showcase Container */}
       <div className="bg-slate-900/95 rounded-3xl border border-slate-800 shadow-2xl p-4 sm:p-6 backdrop-blur-xl">
-        {/* Room Tier Selector Tabs */}
         <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-5 scrollbar-none border-b border-slate-800">
           {roomList.map((room, idx) => {
             const isActive = idx === activeRoomIndex;
@@ -185,9 +180,7 @@ export const Home3DRoomShowcase: React.FC = () => {
           })}
         </div>
 
-        {/* 3D Scene Viewport + Specifications Split */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Left/Center: Photorealistic 3D Room Viewer */}
           <div className="lg:col-span-8 w-full">
             <Room3DViewer
               roomConfig={currentRoom.room3dConfig}
@@ -203,9 +196,7 @@ export const Home3DRoomShowcase: React.FC = () => {
             />
           </div>
 
-          {/* Right: Architectural Highlights & Specs */}
           <div className="lg:col-span-4 space-y-4">
-            {/* Hotel & Tier Overview */}
             <div className="bg-slate-950/85 rounded-2xl p-4 sm:p-5 border border-slate-800/80 space-y-3.5 shadow-xl">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-mono tracking-wider text-indigo-400 uppercase font-black">
@@ -222,7 +213,6 @@ export const Home3DRoomShowcase: React.FC = () => {
                 {currentRoom.description}
               </p>
 
-              {/* Specs Pills */}
               <div className="grid grid-cols-2 gap-2.5 pt-1 text-xs">
                 <div className="bg-slate-900/90 rounded-xl p-2.5 border border-slate-800 flex items-center gap-2.5">
                   <Maximize className="w-4 h-4 text-indigo-400 flex-shrink-0" />
@@ -258,7 +248,6 @@ export const Home3DRoomShowcase: React.FC = () => {
               </div>
             </div>
 
-            {/* Room Amenities Highlights */}
             <div className="bg-slate-950/85 rounded-2xl p-4 sm:p-5 border border-slate-800/80 space-y-3 shadow-xl">
               <h4 className="text-xs font-bold text-slate-200 flex items-center gap-2">
                 <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
@@ -282,7 +271,6 @@ export const Home3DRoomShowcase: React.FC = () => {
               </div>
             </div>
 
-            {/* Price Upgrade & Direct Booking Card */}
             <div className="bg-gradient-to-br from-indigo-950/70 via-slate-950 to-slate-950 rounded-2xl p-4 sm:p-5 border border-indigo-500/30 flex items-center justify-between gap-3 shadow-2xl">
               <div>
                 <span className="text-[10px] text-slate-400 block font-semibold">Tier Upgrade Price</span>

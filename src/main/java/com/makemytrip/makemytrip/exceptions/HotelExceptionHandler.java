@@ -20,3 +20,4 @@ public class HotelExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
 }
+

@@ -94,3 +94,4 @@ public class RecommendationFeedback {
         this.notes = notes;
     }
 }
+

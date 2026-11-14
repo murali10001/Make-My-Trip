@@ -1,0 +1,106 @@
+{
+  "passedCount": 14,
+  "failedCount": 0,
+  "total": 14,
+  "results": [
+    {
+      "feature": "Backend & Database",
+      "testName": "Spring Boot & MongoDB Atlas Connectivity",
+      "passed": true,
+      "details": "Connected. Active flights in DB: 139",
+      "timestamp": "2026-11-14T14:36:47.080Z"
+    },
+    {
+      "feature": "Navigation",
+      "testName": "Homepage Initial Render",
+      "passed": true,
+      "details": "Homepage and navbar loaded cleanly",
+      "timestamp": "2026-11-14T14:36:51.323Z"
+    },
+    {
+      "feature": "Authentication",
+      "testName": "User Alpha Registration",
+      "passed": true,
+      "details": "Registered User ID: 6af872030437dc334330d8b9 (alpha_007976@traveltest.com)",
+      "timestamp": "2026-11-14T14:36:52.415Z"
+    },
+    {
+      "feature": "Personalization UI",
+      "testName": "Travel Preferences Tab Navigation",
+      "passed": true,
+      "details": "Tab opened and active",
+      "timestamp": "2026-11-14T14:36:56.545Z"
+    },
+    {
+      "feature": "Personalization Feature",
+      "testName": "Save User Preferences in UI",
+      "passed": true,
+      "details": "UI displayed updated preferences state",
+      "timestamp": "2026-11-14T14:37:00.275Z"
+    },
+    {
+      "feature": "Personalization Feature",
+      "testName": "Retrieve Saved Preferences from MongoDB",
+      "passed": true,
+      "details": "DB record: Seat=Extra Legroom, Room=Presidential Royal Suite, SeatNo=2C",
+      "timestamp": "2026-11-14T14:37:01.701Z"
+    },
+    {
+      "feature": "Personalization Feature",
+      "testName": "Personalized Recommendations Tailored to Alpha",
+      "passed": true,
+      "details": "Total recommendations: 20. Top recommendation: \"Taj Exotica Resort & Spa, Goa\" (99% Match)",
+      "timestamp": "2026-11-14T14:37:06.394Z"
+    },
+    {
+      "feature": "Personalization Feature",
+      "testName": "Preferences Persist After Logout & Login",
+      "passed": true,
+      "details": "User Alpha preferences accurately reloaded from MongoDB into profile UI across sessions",
+      "timestamp": "2026-11-14T14:37:11.881Z"
+    },
+    {
+      "feature": "Personalization Feature",
+      "testName": "Strict User Data Separation (Beta vs Alpha)",
+      "passed": true,
+      "details": "User Beta seat is \"Default\", completely isolated from User Alpha \"2C\"",
+      "timestamp": "2026-11-14T14:37:24.892Z"
+    },
+    {
+      "feature": "Personalization Feature",
+      "testName": "User Beta Distinct Preferences Stored",
+      "passed": true,
+      "details": "Beta Seat: Window (18A), Room: Deluxe Balcony Room",
+      "timestamp": "2026-11-14T14:37:25.162Z"
+    },
+    {
+      "feature": "UI Spacing Fix",
+      "testName": "Flight Search Cards Uniform Spacing & Baseline Alignment",
+      "passed": true,
+      "details": "Rendered 139 cards with uniform height and bottom-anchored Book Now buttons",
+      "timestamp": "2026-11-14T14:37:29.742Z"
+    },
+    {
+      "feature": "Flight Tracker",
+      "testName": "Real-Time Flight Tracker & Radar Engine",
+      "passed": true,
+      "details": "Radar feed connected, no broadcast spam floods",
+      "timestamp": "2026-11-14T14:37:35.061Z"
+    },
+    {
+      "feature": "Dynamic Pricing",
+      "testName": "Price Freeze & Live Volatility Engine",
+      "passed": true,
+      "details": "Interactive graph, price freeze slider and breakdown active",
+      "timestamp": "2026-11-14T14:37:38.857Z"
+    },
+    {
+      "feature": "Hotel & Rooms",
+      "testName": "3D Interactive Room Showcase Section",
+      "passed": true,
+      "details": "Rendered on Homepage",
+      "timestamp": "2026-11-14T14:37:41.441Z"
+    }
+  ],
+  "consoleErrors": []
+}

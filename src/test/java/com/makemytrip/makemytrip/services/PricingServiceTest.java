@@ -64,7 +64,7 @@ class PricingServiceTest {
         testFlight.setFrom("Delhi");
         testFlight.setTo("Mumbai");
         testFlight.setPrice(6000.0);
-        testFlight.setAvailableSeats(20); // triggers HIGH demand
+        testFlight.setAvailableSeats(20);
         flightRepository.save(testFlight);
 
         testHotel = new Hotel();
@@ -72,7 +72,7 @@ class PricingServiceTest {
         testHotel.setHotelName("Taj Mahal Palace");
         testHotel.setLocation("Mumbai");
         testHotel.setPricePerNight(4000.0);
-        testHotel.setAvailableRooms(4); // triggers HIGH demand
+        testHotel.setAvailableRooms(4);
         hotelRepository.save(testHotel);
 
         testCoupon = new OfferCoupon();
@@ -98,7 +98,7 @@ class PricingServiceTest {
         assertEquals(6000.0, result.getBasePrice());
         assertEquals("HIGH", result.getDemandLevel());
         assertEquals("HOLIDAY_PEAK", result.getSeasonType());
-        // 6000 * (1 + 0.35) = 8100.0
+
         assertEquals(8100.0, result.getFinalPrice());
         assertNotNull(result.getPriceHistory());
         assertFalse(result.getPriceHistory().isEmpty());
@@ -107,7 +107,7 @@ class PricingServiceTest {
     @Test
     @DisplayName("Automatic Demand and Season calculation from database inventory")
     void testCalculateDynamicPrice_AutomaticDemand() {
-        // availableSeats is 20 <= 25 -> automatically HIGH demand
+
         DynamicPrice result = pricingService.calculateDynamicPrice("FL-101", "FLIGHT", 6000.0, null, null);
 
         assertNotNull(result);
@@ -134,7 +134,7 @@ class PricingServiceTest {
 
         assertNotNull(history);
         assertEquals(7, history.size());
-        // Verify records were actually saved to repository
+
         List<PriceHistory> inRepo = priceHistoryRepository.findByItemIdOrderByRecordedAtDesc("FL-101");
         assertFalse(inRepo.isEmpty());
         assertTrue(inRepo.size() >= 7);
@@ -229,10 +229,6 @@ class PricingServiceTest {
     void testApplyCoupon_BlankCode() {
         assertThrows(InvalidCouponException.class, () -> pricingService.applyCoupon("   ", 5000.0));
     }
-
-    // ==========================================
-    // In-memory Test Stubs for Fast Reliable Execution
-    // ==========================================
 
     static class StubFlightRepository implements FlightRepository {
         Map<String, Flight> db = new HashMap<>();
@@ -426,3 +422,4 @@ class PricingServiceTest {
         @Override public Page<OfferCoupon> findAll(Pageable pageable) { return null; }
     }
 }
+

@@ -132,3 +132,4 @@ class SelectionControllerIntegrationTest {
                 .andExpect(status().isOk());
     }
 }
+

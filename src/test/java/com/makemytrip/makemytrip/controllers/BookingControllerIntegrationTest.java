@@ -1,29 +1,34 @@
 package com.makemytrip.makemytrip.controllers;
 
+import com.makemytrip.makemytrip.exceptions.BookingExceptionHandler;
 import com.makemytrip.makemytrip.exceptions.InsufficientCapacityException;
 import com.makemytrip.makemytrip.models.Users;
 import com.makemytrip.makemytrip.services.BookingService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
-@AutoConfigureMockMvc(addFilters = false)
 class BookingControllerIntegrationTest {
 
-    @Autowired
     private MockMvc mockMvc;
+    private StubBookingService bookingService;
 
-    @MockBean
-    private BookingService bookingService;
+    @BeforeEach
+    void setUp() {
+        BookingController controller = new BookingController();
+        bookingService = new StubBookingService();
+        ReflectionTestUtils.setField(controller, "bookingService", bookingService);
+
+        mockMvc = MockMvcBuilders.standaloneSetup(controller)
+                .setControllerAdvice(new BookingExceptionHandler())
+                .build();
+    }
 
     @Test
     @DisplayName("POST /booking/flight - Successful Flight Seat Reservation")
@@ -33,8 +38,7 @@ class BookingControllerIntegrationTest {
         mockBooking.setBookingId("FL-101");
         mockBooking.setQuantity(2);
         mockBooking.setTotalPrice(11000.0);
-
-        when(bookingService.bookFlight("USR-001", "FL-101", 2, 11000.0)).thenReturn(mockBooking);
+        bookingService.setBookingToReturn(mockBooking);
 
         mockMvc.perform(post("/booking/flight")
                         .param("userId", "USR-001")
@@ -50,8 +54,7 @@ class BookingControllerIntegrationTest {
     @Test
     @DisplayName("POST /booking/flight - Negative Test: Insufficient Seats (400 Bad Request)")
     void testBookFlight_InsufficientSeats_Returns400() throws Exception {
-        when(bookingService.bookFlight("USR-001", "FL-101", 50, 275000.0))
-                .thenThrow(new InsufficientCapacityException("Not enough seats available. Requested: 50, Available: 5"));
+        bookingService.setExceptionToThrow(new InsufficientCapacityException("Not enough seats available. Requested: 50, Available: 5"));
 
         mockMvc.perform(post("/booking/flight")
                         .param("userId", "USR-001")
@@ -61,5 +64,19 @@ class BookingControllerIntegrationTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Not enough seats available. Requested: 50, Available: 5"))
                 .andExpect(jsonPath("$.status").value(400));
+    }
+
+    static class StubBookingService extends BookingService {
+        private Users.Booking bookingToReturn;
+        private RuntimeException exceptionToThrow;
+
+        public void setBookingToReturn(Users.Booking b) { this.bookingToReturn = b; this.exceptionToThrow = null; }
+        public void setExceptionToThrow(RuntimeException e) { this.exceptionToThrow = e; }
+
+        @Override
+        public Users.Booking bookFlight(String userId, String flightId, int seats, double price, String freezeId, String seatNo, String seatTier, double seatAddon) {
+            if (exceptionToThrow != null) throw exceptionToThrow;
+            return bookingToReturn;
+        }
     }
 }

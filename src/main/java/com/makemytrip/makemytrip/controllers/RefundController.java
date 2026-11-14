@@ -66,11 +66,9 @@ public class RefundController {
         return ResponseEntity.ok(updated);
     }
 
-    /**
-     * Real-time Server-Sent Events (SSE) stream endpoint for live refund status updates.
-     */
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter subscribeToRefundStream() {
         return refundService.registerSseClient();
     }
 }
+

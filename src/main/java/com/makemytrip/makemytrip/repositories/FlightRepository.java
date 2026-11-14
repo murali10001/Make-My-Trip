@@ -9,3 +9,4 @@ public interface FlightRepository extends MongoRepository<Flight,String> {
     List<Flight> findByFromContainingIgnoreCase(String from);
     List<Flight> findByToContainingIgnoreCase(String to);
 }
+

@@ -116,8 +116,7 @@ class FlightStatusServiceTest {
     @Test
     @DisplayName("AlignFlightWithRealTime - Correctly handles overnight cross-midnight flight without premature LANDED")
     void testAlignFlightWithRealTime_OvernightFlight() {
-        // AI-999 departs 11:00 PM (1380m) and arrives 01:30 AM (90m)
-        // Current time: 11:15 PM (1395m)
+
         LocalTime testTime = LocalTime.of(23, 15);
         boolean changed = flightStatusService.alignFlightWithRealTime(overnightFlight, testTime);
 
@@ -149,13 +148,11 @@ class FlightStatusServiceTest {
         assertTrue(updated.contains("6E-202"));
         assertTrue(updated.contains("AI-101"));
 
-        // Toggle again to remove
         List<String> removed = flightStatusService.toggleUserTrackFlight("USR-101", "AI-101");
         assertFalse(removed.contains("AI-101"));
         assertTrue(removed.contains("6E-202"));
     }
 
-    // Concrete mock repository implementations for clean, agentless test execution
     static class TestFlightStatusRepository implements FlightStatusRepository {
         List<FlightStatus> savedFlights = new ArrayList<>();
 
@@ -255,3 +252,4 @@ class FlightStatusServiceTest {
         @Override public <S extends Users, R> R findBy(Example<S> example, Function<FluentQuery.FetchableFluentQuery<S>, R> queryFunction) { return null; }
     }
 }
+

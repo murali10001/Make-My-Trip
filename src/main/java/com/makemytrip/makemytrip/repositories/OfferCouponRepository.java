@@ -10,3 +10,4 @@ import java.util.Optional;
 public interface OfferCouponRepository extends MongoRepository<OfferCoupon, String> {
     Optional<OfferCoupon> findByCode(String code);
 }
+

@@ -47,7 +47,6 @@ public class ReviewServiceTest {
         ReflectionTestUtils.setField(reviewService, "hotelRepository", hotelRepository);
         ReflectionTestUtils.setField(reviewService, "flightRepository", flightRepository);
 
-        // Prepopulate a sample Hotel
         Hotel hotel = new Hotel();
         hotel.setId("HT-101");
         hotel.setHotelName("The Grand Palace Hotel");
@@ -55,7 +54,6 @@ public class ReviewServiceTest {
         hotel.setReviewsCount(0);
         hotelRepository.save(hotel);
 
-        // Prepopulate a sample Flight
         Flight flight = new Flight();
         flight.setId("FL-202");
         flight.setFlightName("IndiGo 6E-202");
@@ -85,7 +83,6 @@ public class ReviewServiceTest {
         assertFalse(saved.isFlagged());
         assertEquals(1, saved.getPhotoUrls().size());
 
-        // Verify Hotel metrics synchronized
         Hotel hotel = hotelRepository.findById("HT-101").orElse(null);
         assertNotNull(hotel);
         assertEquals(1, hotel.getReviewsCount());
@@ -236,15 +233,12 @@ public class ReviewServiceTest {
         r.setComment("Convenient location.");
         Review saved = reviewService.addReview(r);
 
-        // Blank userId must throw
         assertThrows(InvalidReviewException.class, () -> reviewService.toggleHelpful(saved.getId(), ""));
 
-        // First vote -> increments helpfulCount to 1
         Review afterVote1 = reviewService.toggleHelpful(saved.getId(), "user-123");
         assertEquals(1, afterVote1.getHelpfulCount());
         assertTrue(afterVote1.getHelpfulUserIds().contains("user-123"));
 
-        // Second vote from same user -> toggles off (decrements to 0)
         Review afterVote2 = reviewService.toggleHelpful(saved.getId(), "user-123");
         assertEquals(0, afterVote2.getHelpfulCount());
         assertFalse(afterVote2.getHelpfulUserIds().contains("user-123"));
@@ -261,7 +255,6 @@ public class ReviewServiceTest {
         r.setComment("Inappropriate language test");
         Review saved = reviewService.addReview(r);
 
-        // Flag the review
         Review flagged = reviewService.flagReview(saved.getId(), "reporter-1", "Offensive language");
         assertTrue(flagged.isFlagged());
         assertEquals("Offensive language", flagged.getFlagReason());
@@ -269,20 +262,17 @@ public class ReviewServiceTest {
         List<Review> queue = reviewService.getFlaggedReviews();
         assertEquals(1, queue.size());
 
-        // Test DISMISS
         Map<String, Object> dismissRes = reviewService.moderateReview(saved.getId(), "DISMISS");
         assertEquals("DISMISSED", dismissRes.get("action"));
         Review dismissedReview = reviewRepository.findById(saved.getId()).orElse(null);
         assertNotNull(dismissedReview);
         assertFalse(dismissedReview.isFlagged());
 
-        // Re-flag and test REMOVE
         reviewService.flagReview(saved.getId(), "reporter-2", "Spam");
         Map<String, Object> removeRes = reviewService.moderateReview(saved.getId(), "REMOVE");
         assertEquals("REMOVED", removeRes.get("action"));
         assertFalse(reviewRepository.findById(saved.getId()).isPresent());
 
-        // Unknown action throws
         Review r2 = reviewService.addReview(r);
         assertThrows(InvalidReviewException.class, () -> reviewService.moderateReview(r2.getId(), "UNKNOWN_ACTION"));
     }
@@ -309,16 +299,13 @@ public class ReviewServiceTest {
         r2.setComment("Average");
         reviewService.addReview(r2);
 
-        // Filter minRating = 4
         ReviewSummaryDTO summaryMin4 = reviewService.getReviewsForTarget("HT-TEST", "HOTEL", "helpful", 4, false);
         assertEquals(1, summaryMin4.getReviews().size());
         assertEquals(5, summaryMin4.getReviews().get(0).getRating());
 
-        // Filter withPhotosOnly = true
         ReviewSummaryDTO summaryPhotosOnly = reviewService.getReviewsForTarget("HT-TEST", "HOTEL", "helpful", null, true);
         assertEquals(1, summaryPhotosOnly.getReviews().size());
 
-        // Sort by helpful
         ReviewSummaryDTO summaryHelpful = reviewService.getReviewsForTarget("HT-TEST", "HOTEL", "helpful", null, false);
         assertEquals(2, summaryHelpful.getReviews().size());
         assertEquals(2, summaryHelpful.getReviews().get(0).getHelpfulCount());
@@ -334,13 +321,11 @@ public class ReviewServiceTest {
         assertNotNull(url);
         assertTrue(url.startsWith("/api/reviews/photos/"));
 
-        // Invalid content type
         MockMultipartFile textFile = new MockMultipartFile(
                 "file", "notes.txt", "text/plain", "malicious text".getBytes()
         );
         assertThrows(InvalidReviewException.class, () -> reviewService.saveReviewPhoto(textFile));
 
-        // Path traversal in loadReviewPhoto throws
         assertThrows(InvalidReviewException.class, () -> reviewService.loadReviewPhoto("../secret.txt"));
     }
 
@@ -354,9 +339,6 @@ public class ReviewServiceTest {
         assertNotNull(modEmitter);
     }
 
-    // =========================================================================
-    // IN-MEMORY STUB REPOSITORIES
-    // =========================================================================
     public static class StubReviewRepository implements ReviewRepository {
         private final Map<String, Review> storage = new LinkedHashMap<>();
 

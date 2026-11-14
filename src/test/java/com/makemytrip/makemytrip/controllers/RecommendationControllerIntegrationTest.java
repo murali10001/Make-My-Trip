@@ -42,7 +42,6 @@ public class RecommendationControllerIntegrationTest {
         ReflectionTestUtils.setField(recommendationService, "hotelRepository", hotelRepo);
         ReflectionTestUtils.setField(recommendationService, "flightRepository", flightRepo);
 
-        // Prepopulate sample recommendation
         Recommendation rec = new Recommendation();
         rec.setId("REC-100");
         rec.setTitle("Taj Lake Palace Experience");

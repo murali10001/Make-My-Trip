@@ -5,3 +5,4 @@ public class PriceFreezeNotFoundException extends RuntimeException {
         super(message);
     }
 }
+

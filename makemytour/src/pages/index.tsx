@@ -246,7 +246,6 @@ export default function Home() {
       return date.toLocaleString("en-US", options);
     }
 
-    // Try parsing time-only strings like "06:00 AM", "14:30"
     const timeMatch = trimmed.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
     if (timeMatch) {
       let hours = parseInt(timeMatch[1], 10);
@@ -407,7 +406,6 @@ export default function Home() {
                       {bookingtype === "flights" ? (
                         <div className="flex flex-col flex-1 justify-between h-full">
                           <div>
-                            {/* Flight Name */}
                             <div className="flex items-center justify-between gap-2 pb-2 border-b border-gray-100">
                               <p className="font-bold text-base text-slate-900 truncate">
                                 Flight Name: <span className="text-blue-700">{result.flightName}</span>
@@ -417,14 +415,12 @@ export default function Home() {
                               </span>
                             </div>
 
-                            {/* Route: Standardized min-height ensures identical spacing whether 1 or 2 lines */}
                             <div className="min-h-[3rem] flex items-center my-2.5">
                               <h3 className="font-bold text-base sm:text-lg text-slate-800 leading-snug">
                                 {result.from} <span className="text-blue-500 font-normal mx-1">➔</span> {result.to}
                               </h3>
                             </div>
 
-                            {/* Departure & Arrival Time Details */}
                             <div className="space-y-1.5 text-xs text-gray-600 bg-gray-50/80 rounded-lg p-3 border border-gray-100">
                               <div className="flex items-baseline justify-between gap-2">
                                 <span className="font-medium text-gray-500 shrink-0">Departure Time:</span>
@@ -441,7 +437,6 @@ export default function Home() {
                             </div>
                           </div>
 
-                          {/* Price & Book Now - Anchored to bottom for equal card baselines */}
                           <div className="mt-auto pt-4 flex flex-col justify-end">
                             <p className="text-2xl font-black text-slate-900 mb-3">
                               ₹{result.price}

@@ -33,3 +33,4 @@ public class DatabaseExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.SERVICE_UNAVAILABLE);
     }
 }
+

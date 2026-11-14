@@ -3,34 +3,37 @@ package com.makemytrip.makemytrip.controllers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.makemytrip.makemytrip.exceptions.EmailAlreadyExistsException;
 import com.makemytrip.makemytrip.exceptions.InvalidCredentialsException;
+import com.makemytrip.makemytrip.exceptions.UserExceptionHandler;
 import com.makemytrip.makemytrip.models.Users;
 import com.makemytrip.makemytrip.services.UserServices;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
-@AutoConfigureMockMvc(addFilters = false)
 class UserControllerIntegrationTest {
 
-    @Autowired
     private MockMvc mockMvc;
-
-    @MockBean
-    private UserServices userServices;
-
-    @Autowired
+    private StubUserServices userServices;
     private ObjectMapper objectMapper;
+
+    @BeforeEach
+    void setUp() {
+        UserController controller = new UserController();
+        userServices = new StubUserServices();
+        ReflectionTestUtils.setField(controller, "userServices", userServices);
+
+        mockMvc = MockMvcBuilders.standaloneSetup(controller)
+                .setControllerAdvice(new UserExceptionHandler())
+                .build();
+        objectMapper = new ObjectMapper();
+    }
 
     @Test
     @DisplayName("POST /user/login - Successful Authentication")
@@ -39,8 +42,7 @@ class UserControllerIntegrationTest {
         mockUser.setId("USR-001");
         mockUser.setEmail("test@example.com");
         mockUser.setFirstName("Test");
-
-        when(userServices.login("test@example.com", "password123")).thenReturn(mockUser);
+        userServices.setUserToReturn(mockUser);
 
         mockMvc.perform(post("/user/login")
                         .param("email", "test@example.com")
@@ -53,8 +55,7 @@ class UserControllerIntegrationTest {
     @Test
     @DisplayName("POST /user/login - Negative Test with Invalid Credentials (401 Unauthorized)")
     void testLogin_Failure_Returns401() throws Exception {
-        when(userServices.login("test@example.com", "wrongpass"))
-                .thenThrow(new InvalidCredentialsException("Invalid email or password"));
+        userServices.setExceptionToThrow(new InvalidCredentialsException("Invalid email or password"));
 
         mockMvc.perform(post("/user/login")
                         .param("email", "test@example.com")
@@ -70,9 +71,7 @@ class UserControllerIntegrationTest {
         Users duplicateReq = new Users();
         duplicateReq.setEmail("existing@example.com");
         duplicateReq.setPassword("Password123");
-
-        when(userServices.signup(any(Users.class)))
-                .thenThrow(new EmailAlreadyExistsException("Email 'existing@example.com' is already registered"));
+        userServices.setExceptionToThrow(new EmailAlreadyExistsException("Email 'existing@example.com' is already registered"));
 
         mockMvc.perform(post("/user/signup")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -80,5 +79,25 @@ class UserControllerIntegrationTest {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message").value("Email 'existing@example.com' is already registered"))
                 .andExpect(jsonPath("$.status").value(409));
+    }
+
+    static class StubUserServices extends UserServices {
+        private Users userToReturn;
+        private RuntimeException exceptionToThrow;
+
+        public void setUserToReturn(Users u) { this.userToReturn = u; this.exceptionToThrow = null; }
+        public void setExceptionToThrow(RuntimeException e) { this.exceptionToThrow = e; }
+
+        @Override
+        public Users login(String email, String password) {
+            if (exceptionToThrow != null) throw exceptionToThrow;
+            return userToReturn;
+        }
+
+        @Override
+        public Users signup(Users user) {
+            if (exceptionToThrow != null) throw exceptionToThrow;
+            return userToReturn != null ? userToReturn : user;
+        }
     }
 }

@@ -5,3 +5,4 @@ public class BookingFailedException extends RuntimeException {
         super(message);
     }
 }
+

@@ -21,3 +21,4 @@ public interface ReviewRepository extends MongoRepository<Review, String> {
 
     List<Review> findByUserId(String userId);
 }
+

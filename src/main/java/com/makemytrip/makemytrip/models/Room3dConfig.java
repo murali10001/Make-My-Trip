@@ -105,10 +105,6 @@ public class Room3dConfig implements Serializable {
         this.cameraPresets = cameraPresets;
     }
 
-    // ==========================================
-    // Inner Value Objects
-    // ==========================================
-
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class RoomDimensions implements Serializable {
         private double width;
@@ -167,7 +163,7 @@ public class Room3dConfig implements Serializable {
     public static class Room3dFurniture implements Serializable {
         private String id;
         private String name;
-        private String category; // BED, NIGHTSTAND, DESK, SEATING, STORAGE, MEDIA, BATH, WINDOW_BALCONY, DECOR
+        private String category;
         private double x;
         private double y;
         private double z;

@@ -48,3 +48,4 @@ public class UserController {
         return ResponseEntity.ok(userServices.editprofile(id, updatedUser));
     }
 }
+

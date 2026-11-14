@@ -237,3 +237,4 @@ public class Recommendation {
         this.active = active;
     }
 }
+

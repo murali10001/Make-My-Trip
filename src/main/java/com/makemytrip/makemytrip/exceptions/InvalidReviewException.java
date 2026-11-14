@@ -5,3 +5,4 @@ public class InvalidReviewException extends RuntimeException {
         super(message);
     }
 }
+

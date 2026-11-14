@@ -44,7 +44,6 @@ public class ReviewService {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a");
     private static final Path UPLOAD_DIR = Paths.get("uploads", "reviews").toAbsolutePath().normalize();
 
-    // SSE Real-time client registries
     private final Map<String, List<SseEmitter>> targetEmitters = new ConcurrentHashMap<>();
     private final List<SseEmitter> moderationEmitters = new CopyOnWriteArrayList<>();
 
@@ -72,7 +71,6 @@ public class ReviewService {
             allReviews = reviewRepository.findByTargetId(targetId);
         }
 
-        // Separate clean unflagged reviews for public ratings
         List<Review> validReviews = allReviews.stream()
                 .filter(r -> !r.isFlagged())
                 .collect(Collectors.toList());
@@ -96,7 +94,6 @@ public class ReviewService {
 
         double averageRating = totalCount > 0 ? Math.round((sumRating / totalCount) * 10.0) / 10.0 : 0.0;
 
-        // Apply filters to valid unflagged reviews
         List<Review> filtered = validReviews.stream()
                 .filter(r -> {
                     if (minRating != null && minRating > 0 && r.getRating() < minRating) {
@@ -109,7 +106,6 @@ public class ReviewService {
                 })
                 .collect(Collectors.toList());
 
-        // Apply sorting
         String sortOption = sort != null ? sort.toLowerCase().trim() : "helpful";
         switch (sortOption) {
             case "newest":
@@ -172,7 +168,6 @@ public class ReviewService {
         review.setFlagReason(null);
         review.setFlaggedByUserId(null);
 
-        // Sanitize photo URLs to prevent unsafe protocols
         List<String> sanitizedPhotos = new ArrayList<>();
         if (review.getPhotoUrls() != null) {
             for (String photo : review.getPhotoUrls()) {
@@ -189,10 +184,8 @@ public class ReviewService {
 
         Review saved = reviewRepository.save(review);
 
-        // Synchronize parent entity ratings in real-time
         updateParentAggregateMetrics(saved.getTargetId(), saved.getTargetType());
 
-        // Broadcast real-time SSE event to all connected viewers
         broadcastTargetUpdate(saved.getTargetId(), saved.getTargetType(), "REVIEW_ADDED", saved);
 
         return saved;
@@ -219,7 +212,6 @@ public class ReviewService {
         review.getReplies().add(reply);
         Review saved = reviewRepository.save(review);
 
-        // Broadcast real-time SSE event
         broadcastTargetUpdate(saved.getTargetId(), saved.getTargetType(), "REPLY_ADDED", saved);
 
         return saved;
@@ -250,7 +242,6 @@ public class ReviewService {
 
         Review saved = reviewRepository.save(review);
 
-        // Broadcast real-time SSE event
         broadcastTargetUpdate(saved.getTargetId(), saved.getTargetType(), "HELPFUL_UPDATED", saved);
 
         return saved;
@@ -266,10 +257,8 @@ public class ReviewService {
 
         Review saved = reviewRepository.save(review);
 
-        // Update aggregate rating removing flagged review from active calculation
         updateParentAggregateMetrics(saved.getTargetId(), saved.getTargetType());
 
-        // Broadcast to clients & moderators in real-time
         broadcastTargetUpdate(saved.getTargetId(), saved.getTargetType(), "REVIEW_FLAGGED", saved);
         broadcastModerationUpdate("MODERATION_QUEUE_UPDATED", getFlaggedReviews());
 
@@ -315,13 +304,11 @@ public class ReviewService {
             throw new InvalidReviewException("Unknown moderation action: " + action + ". Supported actions: DISMISS, REMOVE");
         }
 
-        // Notify moderators of queue update
         broadcastModerationUpdate("MODERATION_QUEUE_UPDATED", getFlaggedReviews());
 
         return result;
     }
 
-    // Physical Photo Upload Implementation
     public String saveReviewPhoto(MultipartFile file) {
         if (file == null || file.isEmpty()) {
             throw new InvalidReviewException("Photo file cannot be empty.");
@@ -348,7 +335,6 @@ public class ReviewService {
             String safeFileName = UUID.randomUUID().toString() + extension;
             Path targetLocation = UPLOAD_DIR.resolve(safeFileName).normalize();
 
-            // Prevent path traversal
             if (!targetLocation.startsWith(UPLOAD_DIR)) {
                 throw new InvalidReviewException("Invalid file storage destination.");
             }
@@ -381,10 +367,9 @@ public class ReviewService {
         }
     }
 
-    // Real-Time Server-Sent Events (SSE) Subscriptions
     public SseEmitter subscribeToTarget(String targetId, String targetType) {
         String key = (targetType != null ? targetType.trim().toUpperCase() : "HOTEL") + ":" + targetId;
-        SseEmitter emitter = new SseEmitter(180_000L); // 3 minutes timeout
+        SseEmitter emitter = new SseEmitter(180_000L);
 
         targetEmitters.computeIfAbsent(key, k -> new CopyOnWriteArrayList<>()).add(emitter);
 
@@ -458,7 +443,6 @@ public class ReviewService {
         }
     }
 
-    // Synchronize parent entity metrics in database
     public void updateParentAggregateMetrics(String targetId, String targetType) {
         if (targetId == null || targetId.trim().isEmpty()) return;
 
@@ -505,3 +489,4 @@ public class ReviewService {
         }
     }
 }
+

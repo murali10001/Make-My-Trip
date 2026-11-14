@@ -65,7 +65,6 @@ public class BookingService {
             throw new InsufficientCapacityException("Not enough seats available. Requested: " + seats + ", Available: " + flight.getAvailableSeats());
         }
 
-        // If seat requested, reserve it through selectionService
         if (seatNo != null && !seatNo.trim().isEmpty() && selectionService != null) {
             selectionService.reserveSeat(flightId, seatNo.trim(), userId);
         }
@@ -148,7 +147,6 @@ public class BookingService {
             throw new InsufficientCapacityException("Not enough rooms available. Requested: " + rooms + ", Available: " + hotel.getAvailableRooms());
         }
 
-        // If specific room type requested, reserve it in selectionService
         if (roomTypeName != null && !roomTypeName.trim().isEmpty() && selectionService != null) {
             selectionService.reserveRoomOption(hotelId, roomTypeName.trim(), rooms);
         }
@@ -211,3 +209,4 @@ public class BookingService {
         return user.getBookings() != null ? user.getBookings() : java.util.Collections.emptyList();
     }
 }
+

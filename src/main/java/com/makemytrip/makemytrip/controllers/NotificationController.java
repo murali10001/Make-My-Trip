@@ -23,7 +23,7 @@ public class NotificationController {
 
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter streamNotifications(@RequestParam(name = "userId", required = false) String userId) {
-        SseEmitter emitter = new SseEmitter(1800000L); // 30 minutes
+        SseEmitter emitter = new SseEmitter(1800000L);
         notificationService.addEmitter(userId, emitter);
         try {
             emitter.send(SseEmitter.event().name("connect").data("Connected to live notification stream for user: " + (userId != null ? userId : "ALL")));

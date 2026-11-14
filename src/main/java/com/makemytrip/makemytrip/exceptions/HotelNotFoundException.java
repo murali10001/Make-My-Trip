@@ -5,3 +5,4 @@ public class HotelNotFoundException extends RuntimeException {
         super(message);
     }
 }
+

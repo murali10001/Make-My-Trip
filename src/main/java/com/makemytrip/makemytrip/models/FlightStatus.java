@@ -170,3 +170,4 @@ public class FlightStatus {
         this.lastUpdated = lastUpdated;
     }
 }
+

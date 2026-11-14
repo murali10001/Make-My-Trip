@@ -266,3 +266,4 @@ public class Review {
         this.replies = replies != null ? replies : new ArrayList<>();
     }
 }
+

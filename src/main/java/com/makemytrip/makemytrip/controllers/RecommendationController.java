@@ -23,8 +23,16 @@ public class RecommendationController {
     public ResponseEntity<List<Recommendation>> getRecommendations(
             @RequestParam(required = false) String userId,
             @RequestParam(required = false, defaultValue = "ALL") String category) {
-        List<Recommendation> recommendations = recommendationService.getRecommendations(userId, category);
-        return ResponseEntity.ok(recommendations);
+        try {
+            List<Recommendation> recommendations = recommendationService.getRecommendations(userId, category);
+            if (recommendations == null || recommendations.isEmpty()) {
+                recommendations = recommendationService.createCuratedBaseCatalog();
+            }
+            return ResponseEntity.ok(recommendations);
+        } catch (Exception e) {
+            System.err.println("[RECOMMENDATION CONTROLLER] Notice returning curated catalog: " + e.getMessage());
+            return ResponseEntity.ok(recommendationService.createCuratedBaseCatalog());
+        }
     }
 
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
@@ -56,3 +64,4 @@ public class RecommendationController {
         return ResponseEntity.ok(Map.of("status", "SUCCESS", "message", "Recommendations catalog synced dynamically from database entities"));
     }
 }
+

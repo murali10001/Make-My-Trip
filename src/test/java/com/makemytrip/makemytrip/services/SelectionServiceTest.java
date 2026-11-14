@@ -78,14 +78,12 @@ public class SelectionServiceTest {
         assertEquals("Boeing 737-800", map.getAircraftType());
         assertEquals(72, map.getSeats().size());
 
-        // Verify Row 1 Window seat has extra legroom
         SeatItem seat1A = map.getSeats().stream().filter(s -> "1A".equals(s.getSeatNo())).findFirst().orElse(null);
         assertNotNull(seat1A);
         assertEquals("AVAILABLE", seat1A.getStatus());
         assertEquals("WINDOW_EXTRA_LEGROOM", seat1A.getTier());
         assertEquals(850.0, seat1A.getPriceAddon());
 
-        // Verify Row 6 Window Exit row seat
         SeatItem seat6A = map.getSeats().stream().filter(s -> "6A".equals(s.getSeatNo())).findFirst().orElse(null);
         assertNotNull(seat6A);
         assertEquals("AVAILABLE", seat6A.getStatus());
@@ -142,28 +140,23 @@ public class SelectionServiceTest {
         assertNotNull(options);
         assertEquals(4, options.size());
 
-        // Option 1: Standard Room (+₹0)
         RoomTypeOption opt1 = options.get(0);
         assertEquals(0.0, opt1.getPriceUpgradeAddon());
         assertFalse(opt1.isPopularUpsell());
 
-        // Option 2: Deluxe Balcony (+₹1,200, popular upsell)
         RoomTypeOption opt2 = options.get(1);
         assertEquals(1200.0, opt2.getPriceUpgradeAddon());
         assertTrue(opt2.isPopularUpsell());
         assertTrue(opt2.getRoomTypeName().contains("Deluxe"));
 
-        // Option 3: Executive Suite (+₹2,800)
         RoomTypeOption opt3 = options.get(2);
         assertEquals(2800.0, opt3.getPriceUpgradeAddon());
         assertTrue(opt3.getRoomTypeName().contains("Executive"));
 
-        // Option 4: Presidential Suite (+₹5,500)
         RoomTypeOption opt4 = options.get(3);
         assertEquals(5500.0, opt4.getPriceUpgradeAddon());
         assertTrue(opt4.getRoomTypeName().contains("Presidential"));
 
-        // Verify each room has distinct 3D configurations and realistic volumetric furniture objects
         for (RoomTypeOption opt : options) {
             assertNotNull(opt.getRoom3dConfig(), "Room " + opt.getRoomTypeName() + " must have 3D config");
             assertNotNull(opt.getRoom3dConfig().getDimensions());
@@ -171,20 +164,16 @@ public class SelectionServiceTest {
             assertFalse(opt.getRoom3dConfig().getHotspots().isEmpty(), "Must contain 3D inspection hotspots");
         }
 
-        // Standard room has Oak Hardwood & Queen Bed
         assertEquals("STANDARD_CLASSIC", opt1.getRoom3dConfig().getRoomModelType());
         assertEquals("OAK_HARDWOOD", opt1.getRoom3dConfig().getFloorMaterial());
 
-        // Deluxe Balcony has Herringbone Walnut & Balcony Glass Doors
         assertEquals("DELUXE_BALCONY", opt2.getRoom3dConfig().getRoomModelType());
         assertEquals("OCEAN_BALCONY", opt2.getRoom3dConfig().getViewScene());
         assertTrue(opt2.getRoom3dConfig().getFurniture().stream().anyMatch(f -> "Private Balcony".equals(f.getAmenityLinked())));
 
-        // Executive Suite has Soaking Jacuzzi & Skyline corner glass
         assertEquals("EXECUTIVE_PANORAMIC", opt3.getRoom3dConfig().getRoomModelType());
         assertTrue(opt3.getRoom3dConfig().getFurniture().stream().anyMatch(f -> "Soaking Jacuzzi".equals(f.getAmenityLinked())));
 
-        // Presidential Penthouse has Carrara Marble, Canopy Bed, and Dining Salon
         assertEquals("PRESIDENTIAL_ROYAL", opt4.getRoom3dConfig().getRoomModelType());
         assertEquals("ITALIAN_CARRARA_MARBLE", opt4.getRoom3dConfig().getFloorMaterial());
         assertTrue(opt4.getRoom3dConfig().getFurniture().stream().anyMatch(f -> "Chesterfield Parlor".equals(f.getAmenityLinked())));
@@ -202,16 +191,13 @@ public class SelectionServiceTest {
         RoomTypeOption exec = showcase.get(2);
         RoomTypeOption pres = showcase.get(3);
 
-        // Verify distinct floor materials
         assertNotEquals(classic.getRoom3dConfig().getFloorMaterial(), pres.getRoom3dConfig().getFloorMaterial());
         assertNotEquals(deluxe.getRoom3dConfig().getFloorMaterial(), pres.getRoom3dConfig().getFloorMaterial());
 
-        // Verify distinct room dimensions
         assertTrue(pres.getRoom3dConfig().getDimensions().getWidth() > exec.getRoom3dConfig().getDimensions().getWidth());
         assertTrue(exec.getRoom3dConfig().getDimensions().getWidth() > deluxe.getRoom3dConfig().getDimensions().getWidth());
         assertTrue(deluxe.getRoom3dConfig().getDimensions().getWidth() > classic.getRoom3dConfig().getDimensions().getWidth());
 
-        // Verify presence of true 3D furniture objects like bed, table, window, desk
         assertTrue(classic.getRoom3dConfig().getFurniture().stream().anyMatch(f -> "BED".equals(f.getCategory())));
         assertTrue(classic.getRoom3dConfig().getFurniture().stream().anyMatch(f -> "DESK".equals(f.getCategory())));
         assertTrue(classic.getRoom3dConfig().getFurniture().stream().anyMatch(f -> "WINDOW_BALCONY".equals(f.getCategory())));
@@ -280,10 +266,6 @@ public class SelectionServiceTest {
             selectionService.sendHeartbeat();
         });
     }
-
-    // ========================================================
-    // Stub Repositories for Standalone In-Memory Execution
-    // ========================================================
 
     public static class StubSeatMapRepository implements SeatMapRepository {
         private final Map<String, SeatMap> storage = new HashMap<>();
@@ -475,3 +457,4 @@ public class SelectionServiceTest {
         @Override public <S extends Hotel, R> R findBy(Example<S> example, Function<FluentQuery.FetchableFluentQuery<S>, R> queryFunction) { return null; }
     }
 }
+

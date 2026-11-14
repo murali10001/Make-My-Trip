@@ -15,3 +15,4 @@ public class DataSeeder implements CommandLineRunner {
         logger.info("Database connection active. Flights, hotels, and status records are managed directly via Database and Admin Panel.");
     }
 }
+

@@ -208,7 +208,6 @@ const DynamicPricingEngine: React.FC = () => {
     }
   }, [selectedItemId, dbItems]);
 
-  // Real-Time SSE Subscription for live dynamic pricing updates
   useEffect(() => {
     let stream: EventSource | null = null;
     try {

@@ -159,7 +159,6 @@ class RefundServiceTest {
         assertEquals("CANCELLED", flightBooking.getStatus());
         assertEquals(52, testFlight.getAvailableSeats());
 
-        // Verify saved in repository
         assertTrue(refundRepository.findByRefundId(refund.getRefundId()).isPresent());
     }
 
@@ -234,10 +233,6 @@ class RefundServiceTest {
         assertEquals(1, list.size());
         assertEquals("RF-1", list.get(0).getRefundId());
     }
-
-    // ==========================================
-    // In-Memory Test Repositories
-    // ==========================================
 
     static class StubUserRepository implements UserRepository {
         Map<String, Users> db = new HashMap<>();
@@ -391,3 +386,4 @@ class RefundServiceTest {
         @Override public Page<Hotel> findAll(Pageable pageable) { return null; }
     }
 }
+

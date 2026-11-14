@@ -10,14 +10,12 @@ export const BACKEND_URL = (process.env.NEXT_PUBLIC_BACKEND_URL || "http://local
 export const apiClient = axios.create({
   baseURL: BACKEND_URL,
   timeout: 12000,
-  validateStatus: () => true, // Accept all HTTP statuses to prevent unhandled AxiosError rejections
+  validateStatus: () => true,
 });
 
-// Resilient response interceptor: catches offline/network errors and returns a safe payload
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Intercept network/connectivity failure (e.g. server offline, ECONNREFUSED, timeout)
     const isTimeout = Boolean(error?.code === "ECONNABORTED" || error?.message?.toLowerCase().includes("timeout"));
     console.warn("[API Network Notice]: Backend connection unavailable:", error?.message || "Network Error");
     return Promise.resolve({
@@ -600,7 +598,7 @@ export const applyCouponCode = async (code, amount = 5500) => {
 
 export const createPricingStream = (onPriceUpdate, onConnected, onError) => {
   if (typeof window === "undefined") return null;
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || BACKEND_URL || "http://localhost:8081";
   const eventSource = new EventSource(`${baseUrl}/api/pricing/stream`);
 
   eventSource.addEventListener("connection", (e) => {

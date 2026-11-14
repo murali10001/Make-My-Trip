@@ -5,3 +5,4 @@ public class FlightNotFoundException extends RuntimeException {
         super(message);
     }
 }
+

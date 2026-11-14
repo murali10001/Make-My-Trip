@@ -20,3 +20,4 @@ public class FlightExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
 }
+

@@ -120,21 +120,20 @@ public class FlightStatusService {
             return false;
         }
 
-        // Handle overnight (cross-midnight) flight schedules accurately
         int effectiveArr;
         int effectiveCurrent;
 
         if (arrMins < depMins) {
-            // Overnight flight: arrives next calendar day
+
             effectiveArr = arrMins + 1440;
             if (currentMinutes < arrMins + 120) {
-                // Currently in the post-midnight arrival window
+
                 effectiveCurrent = currentMinutes + 1440;
             } else {
                 effectiveCurrent = currentMinutes;
             }
         } else {
-            // Same-day flight
+
             effectiveArr = arrMins;
             effectiveCurrent = currentMinutes;
         }
@@ -270,7 +269,7 @@ public class FlightStatusService {
 
         if ("ON_TIME".equals(currentStatus)) {
             if (roll < 0.40) {
-                // Realistic transition to DELAYED ("Delayed by 1h", "Delayed by 45m", etc.)
+
                 int delayMinutes = random.nextBoolean() ? 60 : (random.nextBoolean() ? 45 : 30);
                 String delayLabel = delayMinutes >= 60 ? "Delayed by " + (delayMinutes / 60) + "h" : "Delayed by " + delayMinutes + "m";
                 f.setStatus("DELAYED");
@@ -294,7 +293,7 @@ public class FlightStatusService {
                 f.setDelayReason("Boarding underway at " + (f.getGate() != null ? f.getGate() : "Gate"));
             }
         } else if ("DELAYED".equals(currentStatus)) {
-            // Delayed flight advances to BOARDING
+
             f.setStatus("BOARDING");
             f.setDelayReason("Boarding underway at " + (f.getGate() != null ? f.getGate() : "Gate") + " (Revised departure)");
         } else if ("BOARDING".equals(currentStatus)) {
@@ -308,7 +307,7 @@ public class FlightStatusService {
             f.setDelayReason("Landed safely at " + nowTime + " - Taxiing to gate");
             f.setEstimatedArrivalMinutes(0);
         } else {
-            // Reset LANDED/CANCELLED back to ON_TIME
+
             f.setStatus("ON_TIME");
             f.setDelayReason("Operating on schedule - Check-in open");
             f.setRevisedDeparture(f.getScheduledDeparture());
@@ -513,3 +512,4 @@ public class FlightStatusService {
         return flightStatusRepository.save(flight);
     }
 }
+

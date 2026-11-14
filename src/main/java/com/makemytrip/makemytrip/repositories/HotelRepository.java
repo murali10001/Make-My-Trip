@@ -8,3 +8,4 @@ public interface HotelRepository extends MongoRepository<Hotel,String> {
     List<Hotel> findByLocationContainingIgnoreCase(String location);
     List<Hotel> findByHotelNameContainingIgnoreCase(String hotelName);
 }
+

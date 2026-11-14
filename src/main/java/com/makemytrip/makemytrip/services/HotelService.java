@@ -77,3 +77,4 @@ public class HotelService {
         throw new HotelNotFoundException("Cannot update: Hotel with ID " + id + " not found");
     }
 }
+

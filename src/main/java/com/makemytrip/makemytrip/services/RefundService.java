@@ -123,7 +123,7 @@ public class RefundService {
         boolean validReason = PREDEFINED_REASONS.stream()
                 .anyMatch(r -> r.equalsIgnoreCase(trimmedReason) || trimmedReason.toLowerCase().contains(r.toLowerCase()));
         if (!validReason && !trimmedReason.toLowerCase().contains("reason")) {
-            // Allow reason as long as it's not a generic single word or blank
+
             validReason = trimmedReason.length() >= 5;
         }
 
@@ -180,7 +180,6 @@ public class RefundService {
             );
         }
 
-        // Broadcast real-time SSE event for dashboard
         Map<String, Object> broadcast = new HashMap<>();
         broadcast.put("type", "REFUND_CREATED");
         broadcast.put("refundId", refundId);
@@ -238,7 +237,6 @@ public class RefundService {
             );
         }
 
-        // Broadcast SSE update
         Map<String, Object> broadcast = new HashMap<>();
         broadcast.put("type", "REFUND_STATUS_UPDATE");
         broadcast.put("refundId", refund.getRefundId());
@@ -299,12 +297,8 @@ public class RefundService {
         }
     }
 
-    // ==========================================
-    // Real-Time SSE (Server-Sent Events) Engine
-    // ==========================================
-
     public SseEmitter registerSseClient() {
-        SseEmitter emitter = new SseEmitter(180_000L); // 3 minutes timeout
+        SseEmitter emitter = new SseEmitter(180_000L);
         sseEmitters.add(emitter);
 
         emitter.onCompletion(() -> sseEmitters.remove(emitter));
@@ -356,3 +350,4 @@ public class RefundService {
         sseEmitters.removeAll(deadEmitters);
     }
 }
+

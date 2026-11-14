@@ -10,3 +10,4 @@ import java.util.List;
 public interface RoomTypeOptionRepository extends MongoRepository<RoomTypeOption, String> {
     List<RoomTypeOption> findByHotelId(String hotelId);
 }
+

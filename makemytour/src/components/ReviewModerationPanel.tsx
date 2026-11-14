@@ -73,7 +73,6 @@ export const ReviewModerationPanel: React.FC = () => {
   useEffect(() => {
     fetchFlagged();
 
-    // Real-Time Server-Sent Events (SSE) Stream for Moderation Queue
     const es = createModerationEventSource(
       (eventType: string, eventData: any) => {
         setIsLiveActive(true);

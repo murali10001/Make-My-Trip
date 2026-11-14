@@ -13,3 +13,4 @@ public interface RecommendationFeedbackRepository extends MongoRepository<Recomm
     Optional<RecommendationFeedback> findByUserIdAndRecommendationId(String userId, String recommendationId);
     List<RecommendationFeedback> findByRecommendationId(String recommendationId);
 }
+

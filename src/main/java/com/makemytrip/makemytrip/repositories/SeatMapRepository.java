@@ -10,3 +10,4 @@ import java.util.Optional;
 public interface SeatMapRepository extends MongoRepository<SeatMap, String> {
     Optional<SeatMap> findByFlightId(String flightId);
 }
+

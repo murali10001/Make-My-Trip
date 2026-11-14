@@ -70,3 +70,4 @@ class HotelServiceTest {
         assertThrows(HotelNotFoundException.class, () -> hotelService.getHotelById("HT-INVALID"));
     }
 }
+

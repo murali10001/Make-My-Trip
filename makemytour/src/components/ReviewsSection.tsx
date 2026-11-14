@@ -164,7 +164,6 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
     fetchReviewsData();
   }, [targetId, targetType, sortOption, filterRating, photosOnly]);
 
-  // Real-Time Server-Sent Events (SSE) Live Connection
   useEffect(() => {
     if (!targetId) return;
     const es = createReviewEventSource(
@@ -805,7 +804,6 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                 <span className="text-[11px] text-slate-400">{formPhotoUrls.length} photos attached</span>
               </div>
 
-              {/* Physical File Upload */}
               <div className="border border-dashed border-slate-300 rounded-xl p-3 bg-slate-50/50 flex flex-col items-center justify-center gap-2 hover:bg-slate-50 transition-colors">
                 <div className="flex items-center gap-2">
                   <label className="cursor-pointer bg-white hover:bg-slate-100 text-slate-800 border border-slate-200 text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-2xs transition-colors">
@@ -826,7 +824,6 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                 )}
               </div>
 
-              {/* Alternative Photo URL input */}
               <div className="flex gap-2">
                 <input
                   type="url"

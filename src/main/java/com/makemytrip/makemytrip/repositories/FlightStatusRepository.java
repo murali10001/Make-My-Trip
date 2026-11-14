@@ -15,3 +15,4 @@ public interface FlightStatusRepository extends MongoRepository<FlightStatus, St
     List<FlightStatus> findByFlightNumberIn(List<String> flightNumbers);
     List<FlightStatus> findByStatusIn(List<String> statuses);
 }
+

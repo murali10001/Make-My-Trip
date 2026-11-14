@@ -35,8 +35,8 @@ export interface RoomAngleView {
     id: string;
     title: string;
     spec: string;
-    x: number; // percentage 0-100
-    y: number; // percentage 0-100
+    x: number;
+    y: number;
     icon: string;
   }[];
 }
@@ -82,7 +82,6 @@ export const Room3DViewer: React.FC<Room3DViewerProps> = ({
   heightClass = "h-[450px] sm:h-[550px]",
   compactMode = false,
 }) => {
-  // Determine room tier from name or modelType
   const tierKey = useMemo(() => {
     const name = (roomTypeName || "").toLowerCase();
     if (name.includes("presidential") || name.includes("royal") || name.includes("penthouse")) return "presidential";
@@ -91,7 +90,6 @@ export const Room3DViewer: React.FC<Room3DViewerProps> = ({
     return "classic";
   }, [roomTypeName]);
 
-  // High-Definition, Realistic 3D Room Photography & Multi-Angle Perspectives
   const defaultAngles: Record<string, RoomAngleView[]> = useMemo(() => ({
     classic: [
       {
@@ -246,14 +244,12 @@ export const Room3DViewer: React.FC<Room3DViewerProps> = ({
   const activeView = angles[currentAngleIndex] || angles[0];
   const activeImageUrl = isNightMode && activeView.nightImageUrl ? activeView.nightImageUrl : activeView.imageUrl;
 
-  // Reset zoom & pan when angle changes
   useEffect(() => {
     setZoomLevel(1.0);
     setPanOffset({ x: 0, y: 0 });
     setActiveHotspot(null);
   }, [currentAngleIndex, tierKey]);
 
-  // Pointer drag for smooth 360° spatial panning
   const handlePointerDown = (e: React.PointerEvent) => {
     setIsDragging(true);
     dragStartRef.current = {
@@ -316,7 +312,6 @@ export const Room3DViewer: React.FC<Room3DViewerProps> = ({
         isFullscreen ? "fixed inset-0 z-50 rounded-none h-screen" : heightClass
       }`}
     >
-      {/* Interactive 3D Spatial Canvas Viewport */}
       <div
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
@@ -324,7 +319,6 @@ export const Room3DViewer: React.FC<Room3DViewerProps> = ({
         onWheel={handleWheel}
         className="w-full h-full relative overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing bg-slate-950"
       >
-        {/* Photorealistic 3D Room Image with Dynamic Spatial Parallax */}
         <div
           className="absolute inset-0 transition-transform duration-100 ease-out will-change-transform bg-cover bg-center"
           style={{
@@ -335,7 +329,6 @@ export const Room3DViewer: React.FC<Room3DViewerProps> = ({
           }}
         />
 
-        {/* Dynamic Atmospheric Lighting Overlay */}
         <div
           className={`absolute inset-0 pointer-events-none transition-opacity duration-700 ${
             isNightMode
@@ -344,14 +337,12 @@ export const Room3DViewer: React.FC<Room3DViewerProps> = ({
           }`}
         />
 
-        {/* Ambient Optical Sunbeam / Window Light Flare */}
         <div
           className={`absolute top-0 right-0 w-96 h-96 rounded-full blur-3xl pointer-events-none transition-opacity duration-700 ${
             isNightMode ? "bg-amber-500/10 opacity-30" : "bg-amber-100/20 opacity-60"
           }`}
         />
 
-        {/* Interactive 3D Hotspot Pins Pinned on the Real Room Scene */}
         {activeView.hotspots?.map((hs) => {
           const isSelected = activeHotspot?.id === hs.id;
 
@@ -369,7 +360,6 @@ export const Room3DViewer: React.FC<Room3DViewerProps> = ({
                 transform: `translate(-50%, -50%) scale(${zoomLevel > 1.2 ? 0.9 : 1.0}) translate3d(${panOffset.x * 0.4}px, ${panOffset.y * 0.4}px, 0px)`,
               }}
             >
-              {/* Pulsating Hotspot Badge */}
               <div
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full backdrop-blur-md transition-all shadow-2xl ${
                   isSelected
@@ -389,11 +379,7 @@ export const Room3DViewer: React.FC<Room3DViewerProps> = ({
           );
         })}
 
-        {/* ========================================================= */}
-        {/* TOP HUD: Room Tier Header & Lighting Controls */}
-        {/* ========================================================= */}
         <div className="absolute top-4 inset-x-4 flex items-center justify-between gap-3 pointer-events-none z-30">
-          {/* Room Title & Architectural Dimension Tag */}
           <div className="bg-slate-950/90 backdrop-blur-md border border-slate-800 rounded-2xl px-4 py-2 pointer-events-auto flex items-center gap-3 shadow-2xl">
             <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
             <div>
@@ -409,9 +395,7 @@ export const Room3DViewer: React.FC<Room3DViewerProps> = ({
             </div>
           </div>
 
-          {/* Top Right: Day/Night Lighting Switch & View Controls */}
           <div className="flex items-center gap-2 pointer-events-auto">
-            {/* Day / Night Mood Lighting Switch */}
             <button
               onClick={() => setIsNightMode((prev) => !prev)}
               className={`px-3 py-2 rounded-xl border backdrop-blur-md transition-all shadow-lg flex items-center gap-1.5 text-xs font-bold ${
@@ -425,7 +409,6 @@ export const Room3DViewer: React.FC<Room3DViewerProps> = ({
               <span className="hidden sm:inline">{isNightMode ? "Evening" : "Daylight"}</span>
             </button>
 
-            {/* Reset View */}
             <button
               onClick={handleReset}
               className="p-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 backdrop-blur-md transition-all shadow-lg"
@@ -434,7 +417,6 @@ export const Room3DViewer: React.FC<Room3DViewerProps> = ({
               <RotateCw className="w-4 h-4" />
             </button>
 
-            {/* Fullscreen Toggle */}
             <button
               onClick={() => setIsFullscreen((prev) => !prev)}
               className="p-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 backdrop-blur-md transition-all shadow-lg"
@@ -445,11 +427,7 @@ export const Room3DViewer: React.FC<Room3DViewerProps> = ({
           </div>
         </div>
 
-        {/* ========================================================= */}
-        {/* BOTTOM HUD: Multi-Angle Perspectives & Zoom Controls */}
-        {/* ========================================================= */}
         <div className="absolute bottom-4 inset-x-4 flex flex-col sm:flex-row items-center justify-between gap-3 pointer-events-none z-30">
-          {/* Multi-Angle 3D Camera Switching Tabs */}
           <div className="flex items-center gap-1.5 bg-slate-950/90 backdrop-blur-md border border-slate-800 p-1.5 rounded-2xl pointer-events-auto shadow-2xl overflow-x-auto max-w-full">
             <span className="text-[10px] text-slate-400 font-mono px-2 hidden sm:inline flex items-center gap-1 font-bold">
               <Compass className="w-3.5 h-3.5 text-indigo-400" /> 3D ANGLES:
@@ -474,7 +452,6 @@ export const Room3DViewer: React.FC<Room3DViewerProps> = ({
             })}
           </div>
 
-          {/* Right Controls: Zoom In / Zoom Out */}
           <div className="flex items-center gap-2 bg-slate-950/90 backdrop-blur-md border border-slate-800 px-3 py-1.5 rounded-2xl pointer-events-auto shadow-2xl">
             <button
               onClick={() => setZoomLevel((z) => Math.max(1.0, parseFloat((z - 0.2).toFixed(2))))}
@@ -504,7 +481,6 @@ export const Room3DViewer: React.FC<Room3DViewerProps> = ({
           </div>
         </div>
 
-        {/* Spatial Pan Instructions Watermark */}
         <div className="absolute top-1/2 left-4 -translate-y-1/2 text-[10px] font-mono text-slate-400/80 pointer-events-none hidden md:flex flex-col gap-1 items-center bg-slate-950/60 backdrop-blur-xs px-2 py-3 rounded-xl border border-white/10">
           <Compass className="w-4 h-4 text-indigo-400 animate-spin-slow" />
           <span>360° SPATIAL</span>
@@ -512,9 +488,6 @@ export const Room3DViewer: React.FC<Room3DViewerProps> = ({
         </div>
       </div>
 
-      {/* ========================================================= */}
-      {/* FLOATING INSPECTION DETAIL CARD (When Hotspot Selected) */}
-      {/* ========================================================= */}
       {activeHotspot && (
         <div className="absolute bottom-20 left-4 sm:left-6 max-w-sm bg-slate-900/95 backdrop-blur-xl border border-indigo-500/40 rounded-2xl p-4 shadow-2xl text-white z-40 animate-in fade-in slide-in-from-bottom-4 duration-200">
           <div className="flex items-start justify-between gap-3">
@@ -546,7 +519,6 @@ export const Room3DViewer: React.FC<Room3DViewerProps> = ({
         </div>
       )}
 
-      {/* Direct Booking CTA Ribbon */}
       {onBookNow && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 pointer-events-auto z-30">
           <button

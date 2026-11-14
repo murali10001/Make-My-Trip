@@ -94,17 +94,11 @@ public class PricingController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Real-time Server-Sent Events (SSE) stream endpoint for live dynamic pricing updates across all clients.
-     */
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter subscribeToPriceStream() {
         return pricingService.registerSseClient();
     }
 
-    /**
-     * Administrative / Event-driven endpoint to broadcast real-time dynamic price updates to all connected platforms.
-     */
     @PostMapping("/broadcast-update")
     public ResponseEntity<Map<String, Object>> broadcastLivePriceUpdate(@RequestBody Map<String, Object> payload) {
         pricingService.broadcastPriceUpdate(payload);
@@ -114,3 +108,4 @@ public class PricingController {
         return ResponseEntity.ok(response);
     }
 }
+

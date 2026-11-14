@@ -133,3 +133,4 @@ public class UserPreferences {
         this.favoredRecommendationIds = favoredRecommendationIds != null ? favoredRecommendationIds : new ArrayList<>();
     }
 }
+

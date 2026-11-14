@@ -164,20 +164,17 @@ class ReviewControllerIntegrationTest {
         Review created = reviewService.addReview(r);
         reviewService.flagReview(created.getId(), "rep-1", "Misleading");
 
-        // Verify moderation queue
         mockMvc.perform(get("/api/reviews/moderation/flagged"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$[0].id").value(created.getId()));
 
-        // Perform moderation action: DISMISS
         mockMvc.perform(post("/api/reviews/moderation/" + created.getId() + "/action")
                         .param("action", "DISMISS"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("SUCCESS"))
                 .andExpect(jsonPath("$.action").value("DISMISSED"));
 
-        // Re-flag and perform REMOVE
         reviewService.flagReview(created.getId(), "rep-2", "Spam");
         mockMvc.perform(post("/api/reviews/moderation/" + created.getId() + "/action")
                         .param("action", "REMOVE"))

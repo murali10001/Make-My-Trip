@@ -50,10 +50,6 @@ public class PricingService {
 
     private final CopyOnWriteArrayList<SseEmitter> sseEmitters = new CopyOnWriteArrayList<>();
 
-    /**
-     * Calculates dynamic price for a flight or hotel using automatic inventory-level demand detection
-     * and seasonal trends (e.g. holiday surge +20%, weekend +10%, high demand +15%).
-     */
     public DynamicPrice calculateDynamicPrice(String itemId, String itemType, double basePrice, String demandLevel, String seasonType) {
         Flight resolvedFlight = null;
         Hotel resolvedHotel = null;
@@ -82,14 +78,12 @@ public class PricingService {
             basePrice = 5000.0;
         }
 
-        // Automatic Demand Determination based on real capacity if not explicitly overridden by client
         if (demandLevel == null || demandLevel.trim().isEmpty() || "AUTO".equalsIgnoreCase(demandLevel)) {
             demandLevel = determineAutomaticDemand(resolvedFlight, resolvedHotel);
         } else {
             demandLevel = demandLevel.trim().toUpperCase();
         }
 
-        // Automatic Seasonal Trend Determination based on calendar date if not explicitly overridden
         if (seasonType == null || seasonType.trim().isEmpty() || "AUTO".equalsIgnoreCase(seasonType)) {
             seasonType = determineAutomaticSeason(resolvedFlight, resolvedHotel);
         } else {
@@ -116,7 +110,6 @@ public class PricingService {
         String reason = String.format("Dynamic Market Pricing: %s & %s Demand (+%.0f%% Adjustment)",
                 seasonType.replace("_", " "), demandLevel, demandPercentage);
 
-        // Fetch or seed genuine persistent price history from MongoDB
         List<Map<String, Object>> history = getOrInitializePriceHistory(itemId, basePrice, finalPrice);
 
         return new DynamicPrice(
@@ -133,9 +126,6 @@ public class PricingService {
         );
     }
 
-    /**
-     * Determines demand automatically from seat/room availability in database.
-     */
     private String determineAutomaticDemand(Flight flight, Hotel hotel) {
         if (flight != null) {
             int seats = flight.getAvailableSeats();
@@ -152,9 +142,6 @@ public class PricingService {
         return "NORMAL";
     }
 
-    /**
-     * Determines season automatically from date (festive holiday, weekend, or standard).
-     */
     private String determineAutomaticSeason(Flight flight, Hotel hotel) {
         LocalDate travelDate = LocalDate.now();
         DayOfWeek dow = travelDate.getDayOfWeek();
@@ -164,7 +151,7 @@ public class PricingService {
 
         Month m = travelDate.getMonth();
         int day = travelDate.getDayOfMonth();
-        // October/November (Diwali/Festive), late Dec to early Jan (New Year), or May/June (Summer Peak)
+
         if (m == Month.OCTOBER || m == Month.NOVEMBER) {
             return "HOLIDAY_PEAK";
         }
@@ -181,10 +168,6 @@ public class PricingService {
         return "REGULAR";
     }
 
-    /**
-     * Retrieves genuine price history from MongoDB.
-     * Seeds initial historical snapshots if not already stored.
-     */
     public List<Map<String, Object>> getPriceHistory(String itemId, double basePrice) {
         if (basePrice <= 0) basePrice = 5500.0;
         return getOrInitializePriceHistory(itemId, basePrice, basePrice * 1.20);
@@ -197,7 +180,6 @@ public class PricingService {
                 ? priceHistoryRepository.findByItemIdOrderByRecordedAtDesc(resolvedId)
                 : Collections.emptyList();
 
-        // If fewer than 7 days exist, seed authentic historical snapshots in MongoDB
         if (existing.size() < 7 && priceHistoryRepository != null) {
             LocalDate today = LocalDate.now();
             double[] varianceRatios = {-0.10, -0.05, -0.02, 0.0, 0.03, 0.08, (currentPrice - basePrice) / (basePrice > 0 ? basePrice : 1.0)};
@@ -226,7 +208,6 @@ public class PricingService {
             existing = priceHistoryRepository.findByItemIdOrderByRecordedAtDesc(resolvedId);
         }
 
-        // Return chronological order (oldest to newest)
         List<PriceHistory> chronological = new ArrayList<>(existing);
         chronological.sort(Comparator.comparing(PriceHistory::getRecordedAt));
 
@@ -244,19 +225,14 @@ public class PricingService {
         return result;
     }
 
-    /**
-     * Freezes a price securely: authoritative price is calculated/verified on backend
-     * so malicious clients cannot tamper with prices.
-     */
     public PriceFreeze freezePrice(String itemId, String itemTitle, double currentPrice, long durationHours) {
         return freezePrice(itemId, itemTitle, currentPrice, durationHours, null);
     }
 
     public PriceFreeze freezePrice(String itemId, String itemTitle, double currentPrice, long durationHours, String userId) {
         if (durationHours <= 0) durationHours = 24;
-        if (durationHours > 48) durationHours = 48; // Max 48 hour freeze period
+        if (durationHours > 48) durationHours = 48;
 
-        // Secure Authoritative Price Resolution
         double authoritativePrice = currentPrice;
         if (itemId != null && !itemId.trim().isEmpty()) {
             String type = itemId.startsWith("HT") ? "HOTEL" : "FLIGHT";
@@ -366,12 +342,8 @@ public class PricingService {
         return result;
     }
 
-    // ==========================================
-    // Real-Time SSE (Server-Sent Events) Engine
-    // ==========================================
-
     public SseEmitter registerSseClient() {
-        SseEmitter emitter = new SseEmitter(180_000L); // 3 minutes timeout
+        SseEmitter emitter = new SseEmitter(180_000L);
         sseEmitters.add(emitter);
 
         emitter.onCompletion(() -> sseEmitters.remove(emitter));
@@ -409,10 +381,6 @@ public class PricingService {
         sseEmitters.removeAll(deadEmitters);
     }
 
-    /**
-     * Periodic background task that simulates/evaluates live demand fluctuations
-     * and broadcasts dynamic price adjustments across all connected clients.
-     */
     @Scheduled(fixedRate = 10000)
     public void autoAdjustAndBroadcastLiveRates() {
         if (sseEmitters.isEmpty()) return;
@@ -443,9 +411,6 @@ public class PricingService {
         } catch (Exception ignored) {}
     }
 
-    /**
-     * Heartbeat every 25 seconds to keep SSE connections active.
-     */
     @Scheduled(fixedRate = 25000)
     public void sendHeartbeat() {
         if (sseEmitters.isEmpty()) return;
@@ -460,3 +425,4 @@ public class PricingService {
         sseEmitters.removeAll(deadEmitters);
     }
 }
+

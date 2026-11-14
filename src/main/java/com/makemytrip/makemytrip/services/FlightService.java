@@ -87,3 +87,4 @@ public class FlightService {
         throw new FlightNotFoundException("Cannot update: Flight with ID " + id + " not found");
     }
 }
+

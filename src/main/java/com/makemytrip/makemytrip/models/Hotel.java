@@ -195,3 +195,4 @@ public class Hotel {
         this.distance = distance;
     }
 }
+

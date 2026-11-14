@@ -219,3 +219,4 @@ public class Flight {
         this.reviewsText = reviewsText;
     }
 }
+

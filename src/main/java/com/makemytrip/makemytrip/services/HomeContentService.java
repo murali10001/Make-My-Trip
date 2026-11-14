@@ -25,3 +25,4 @@ public class HomeContentService {
         return homeContentRepository.save(homeContent);
     }
 }
+

@@ -5,3 +5,4 @@ public class CancellationNotAllowedException extends RuntimeException {
         super(message);
     }
 }
+

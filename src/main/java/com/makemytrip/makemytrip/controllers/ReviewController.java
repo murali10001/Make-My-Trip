@@ -82,7 +82,6 @@ public class ReviewController {
         return ResponseEntity.ok(result);
     }
 
-    // Physical Photo Upload Endpoint
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, String>> uploadPhoto(@RequestParam("file") MultipartFile file) {
         String photoUrl = reviewService.saveReviewPhoto(file);
@@ -92,7 +91,6 @@ public class ReviewController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    // Photo Resource Retrieval Endpoint
     @GetMapping("/photos/{fileName:.+}")
     public ResponseEntity<Resource> getPhoto(@PathVariable String fileName) {
         Resource resource = reviewService.loadReviewPhoto(fileName);
@@ -104,7 +102,6 @@ public class ReviewController {
                 .body(resource);
     }
 
-    // Real-Time Server-Sent Events (SSE) Stream for Target Reviews
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter streamTargetReviews(
             @RequestParam String targetId,
@@ -112,9 +109,9 @@ public class ReviewController {
         return reviewService.subscribeToTarget(targetId, targetType);
     }
 
-    // Real-Time Server-Sent Events (SSE) Stream for Moderation Queue
     @GetMapping(value = "/moderation/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter streamModerationQueue() {
         return reviewService.subscribeToModeration();
     }
 }
+

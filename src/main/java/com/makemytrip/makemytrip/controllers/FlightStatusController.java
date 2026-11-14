@@ -47,7 +47,6 @@ public class FlightStatusController {
     public void broadcastUpdate(FlightStatus status) {
         if (status == null) return;
 
-        // Broadcast real-time telemetry over SSE for flight radar listeners
         List<SseEmitter> deadEmitters = new ArrayList<>();
         for (SseEmitter emitter : emitters) {
             try {
@@ -177,3 +176,4 @@ public class FlightStatusController {
         return ResponseEntity.ok(updatedFlights);
     }
 }
+

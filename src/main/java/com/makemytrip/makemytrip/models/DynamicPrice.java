@@ -63,3 +63,4 @@ public class DynamicPrice {
     public List<Map<String, Object>> getPriceHistory() { return priceHistory; }
     public void setPriceHistory(List<Map<String, Object>> priceHistory) { this.priceHistory = priceHistory; }
 }
+

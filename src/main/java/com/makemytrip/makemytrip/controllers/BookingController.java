@@ -50,3 +50,4 @@ public class BookingController {
         return ResponseEntity.ok(bookings);
     }
 }
+

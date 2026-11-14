@@ -73,7 +73,7 @@ public class RecommendationServiceTest {
     @Test
     @DisplayName("Cold Start User - Transparent Trending Reason without Fabricated History")
     void testGetRecommendations_ColdStart_TransparentAndHonest() {
-        // Cold start user with no bookings
+
         Users newUser = new Users();
         newUser.setId("USR-NEW");
         newUser.setBookings(new ArrayList<>());
@@ -84,7 +84,7 @@ public class RecommendationServiceTest {
         assertNotNull(recs);
         assertFalse(recs.isEmpty());
         Recommendation first = recs.get(0);
-        // Honest cold-start explanation must be present
+
         assertTrue(first.getReasonTitle().contains("Trending") || first.getReasonTitle().contains("Popular"));
         assertTrue(first.getReasonExplanation().toLowerCase().contains("trending") || first.getReasonExplanation().toLowerCase().contains("popular"));
     }
@@ -156,7 +156,6 @@ public class RecommendationServiceTest {
         flightGoa.setTo("Goa");
         flightRepository.save(flightGoa);
 
-        // Create 2 peer users who booked Goa
         Users peer1 = new Users();
         peer1.setId("PEER-1");
         Users.Booking b1 = new Users.Booking();
@@ -186,7 +185,7 @@ public class RecommendationServiceTest {
     @Test
     @DisplayName("Feedback Loop Refinement - Updates Category Affinities and Dismisses Irrelevant Recs")
     void testRecordFeedback_UpdatesAffinitiesAndDismissals() {
-        // Submit helpful feedback
+
         Map<String, Object> respHelpful = recommendationService.recordFeedback("REC-1", "USR-FEEDBACK", "HELPFUL", "Great pick");
         assertEquals("SUCCESS", respHelpful.get("status"));
         assertEquals(1, respHelpful.get("helpfulCount"));
@@ -196,7 +195,6 @@ public class RecommendationServiceTest {
         assertEquals(1, prefs.getCategoryAffinities().get("HERITAGE"));
         assertTrue(prefs.getFavoredRecommendationIds().contains("REC-1"));
 
-        // Submit irrelevant feedback for REC-2
         Map<String, Object> respIrrelevant = recommendationService.recordFeedback("REC-2", "USR-FEEDBACK", "IRRELEVANT", "Not interested");
         assertEquals("SUCCESS", respIrrelevant.get("status"));
         assertEquals(1, respIrrelevant.get("irrelevantCount"));
@@ -206,7 +204,6 @@ public class RecommendationServiceTest {
         assertEquals(-2, updatedPrefs.getCategoryAffinities().get("BEACH"));
         assertTrue(updatedPrefs.getDismissedRecommendationIds().contains("REC-2"));
 
-        // When retrieving recs, dismissed REC-2 must be excluded
         List<Recommendation> activeRecs = recommendationService.getRecommendations("USR-FEEDBACK", "ALL");
         assertFalse(activeRecs.stream().anyMatch(r -> "REC-2".equals(r.getId())));
     }
@@ -217,13 +214,103 @@ public class RecommendationServiceTest {
         SseEmitter emitter = recommendationService.subscribe("USR-SSE-1");
         assertNotNull(emitter);
 
-        // Broadcasting does not throw
         assertDoesNotThrow(() -> recommendationService.recordFeedback("REC-1", "USR-SSE-1", "HELPFUL", ""));
     }
 
-    // =========================================================================
-    // IN-MEMORY STUB REPOSITORIES
-    // =========================================================================
+    @Test
+    @DisplayName("Self-Healing Empty Repository - Seeds Curated Recommendations Automatically")
+    void testEmptyRepositorySelfHealingAndCuratedFallback() {
+        // Clear repository to simulate empty database / cold start
+        recommendationRepository.deleteAll();
+        assertEquals(0, recommendationRepository.count());
+
+        List<Recommendation> recs = recommendationService.getRecommendations("USR-COLD-START", "ALL");
+
+        assertNotNull(recs);
+        assertFalse(recs.isEmpty(), "Self-healing must ensure recommendations are never empty");
+        assertTrue(recs.size() >= 5, "Curated base catalog should contain at least 5 destinations");
+
+        // Verify all 5 categories are present
+        Set<String> categories = recs.stream().map(r -> r.getCategory().toUpperCase()).collect(Collectors.toSet());
+        assertTrue(categories.contains("BEACH"), "Should include Beach Escapes");
+        assertTrue(categories.contains("LUXURY"), "Should include Luxury Stays");
+        assertTrue(categories.contains("FLIGHT"), "Should include Top Flights");
+        assertTrue(categories.contains("HERITAGE"), "Should include Heritage & Culture");
+        assertTrue(categories.contains("NATURE"), "Should include Nature Retreats");
+    }
+
+    @Test
+    @DisplayName("Null-Safe Copy - Prevents NPE When Tags or ReasonBreakdown are Null from MongoDB")
+    void testNullSafeCopyRecommendation() {
+        Recommendation rawMongoDoc = new Recommendation();
+        rawMongoDoc.setId("REC-NULL-FIELDS");
+        rawMongoDoc.setTitle("Raw Mongo Doc");
+        rawMongoDoc.setTags(null); // Simulate null tags loaded from MongoDB
+        rawMongoDoc.setReasonBreakdown(null); // Simulate null breakdown loaded from MongoDB
+        rawMongoDoc.setActive(true);
+        rawMongoDoc.setCategory("BEACH");
+        recommendationRepository.save(rawMongoDoc);
+
+        // This must NOT throw NullPointerException
+        assertDoesNotThrow(() -> {
+            List<Recommendation> result = recommendationService.getRecommendations(null, "BEACH");
+            assertNotNull(result);
+            assertFalse(result.isEmpty());
+        });
+    }
+
+    @Test
+    @DisplayName("Resilient History Processing - Safe Against Null Bookings and Null Target IDs")
+    void testUserWithNullBookingsDoesNotCrash() {
+        Users malformedUser = new Users();
+        malformedUser.setId("USR-MALFORMED");
+        List<Users.Booking> bookingsWithNulls = new ArrayList<>();
+        bookingsWithNulls.add(null); // Null booking element in list
+
+        Users.Booking bNullTarget = new Users.Booking();
+        bNullTarget.setTargetId(null); // Null targetId
+        bookingsWithNulls.add(bNullTarget);
+
+        malformedUser.setBookings(bookingsWithNulls);
+        userRepository.save(malformedUser);
+
+        assertDoesNotThrow(() -> {
+            List<Recommendation> recs = recommendationService.getRecommendations("USR-MALFORMED", "ALL");
+            assertNotNull(recs);
+            assertFalse(recs.isEmpty());
+        });
+    }
+
+    @Test
+    @DisplayName("Category Tab Filtering - Returns Correct Specific Categories")
+    void testCategoryTabFiltering() {
+        recommendationRepository.deleteAll();
+
+        List<Recommendation> beachPicks = recommendationService.getRecommendations(null, "BEACH");
+        assertNotNull(beachPicks);
+        assertFalse(beachPicks.isEmpty());
+        assertTrue(beachPicks.stream().allMatch(r -> "BEACH".equalsIgnoreCase(r.getCategory())));
+
+        List<Recommendation> flightPicks = recommendationService.getRecommendations(null, "FLIGHT");
+        assertNotNull(flightPicks);
+        assertFalse(flightPicks.isEmpty());
+        assertTrue(flightPicks.stream().allMatch(r -> "FLIGHT".equalsIgnoreCase(r.getCategory()) || "FLIGHT".equalsIgnoreCase(r.getTargetType())));
+
+        List<Recommendation> luxuryPicks = recommendationService.getRecommendations(null, "LUXURY");
+        assertNotNull(luxuryPicks);
+        assertFalse(luxuryPicks.isEmpty());
+        assertTrue(luxuryPicks.stream().allMatch(r -> "LUXURY".equalsIgnoreCase(r.getCategory())));
+
+        List<Recommendation> heritagePicks = recommendationService.getRecommendations(null, "HERITAGE");
+        assertNotNull(heritagePicks);
+        assertFalse(heritagePicks.isEmpty());
+        assertTrue(heritagePicks.stream().allMatch(r -> "HERITAGE".equalsIgnoreCase(r.getCategory())));
+
+        List<Recommendation> naturePicks = recommendationService.getRecommendations(null, "NATURE");
+        assertNotNull(naturePicks);
+        assertFalse(naturePicks.isEmpty());
+        assertTrue(naturePicks.stream().allMatch(r -> "NATURE".equalsIgnoreCase(r.getCategory())));
+    }
 
     public static class StubRecommendationRepository implements RecommendationRepository {
         private final Map<String, Recommendation> storage = new LinkedHashMap<>();
@@ -558,3 +645,4 @@ public class RecommendationServiceTest {
         @Override public <S extends Flight, R> R findBy(Example<S> example, Function<FluentQuery.FetchableFluentQuery<S>, R> queryFunction) { return null; }
     }
 }
+

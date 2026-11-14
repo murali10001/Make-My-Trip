@@ -49,9 +49,8 @@ public class NotificationServiceTest {
     void testDismissBroadcastNotification_DoesNotDeleteFromDatabaseForOthers() {
         notificationService.deleteNotification("N-1", "USR-101");
 
-        // Broadcast notification should still exist in repo
         assertTrue(notificationRepository.findById("N-1").isPresent());
-        // User should be in dismissed list
+
         assertTrue(broadcastNotif.getDismissedUserIds().contains("USR-101"));
     }
 
@@ -162,3 +161,4 @@ public class NotificationServiceTest {
         @Override public <S extends Notification, R> R findBy(Example<S> example, Function<FluentQuery.FetchableFluentQuery<S>, R> queryFunction) { return null; }
     }
 }
+

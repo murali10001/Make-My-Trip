@@ -88,10 +88,6 @@ class RefundControllerIntegrationTest {
                 .andExpect(jsonPath("$.message").value("Booking 'BK-CANCELLED' has already been cancelled."));
     }
 
-    // ==========================================
-    // Fast in-memory controller test stub
-    // ==========================================
-
     static class StubRefundService extends RefundService {
         @Override
         public Map<String, Object> calculateRefundPreview(String userId, String bookingId) {
@@ -130,3 +126,4 @@ class RefundControllerIntegrationTest {
         }
     }
 }
+

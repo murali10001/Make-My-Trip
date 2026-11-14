@@ -5,3 +5,4 @@ public class InsufficientCapacityException extends RuntimeException {
         super(message);
     }
 }
+

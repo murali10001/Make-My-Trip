@@ -45,7 +45,6 @@ const Navbar = () => {
   const [readNotifIds, setReadNotifIds] = useState<Set<string>>(new Set());
   const [webPushPermission, setWebPushPermission] = useState<string>("default");
 
-  // Load read notification IDs from localStorage on mount and user change
   useEffect(() => {
     if (typeof window !== "undefined") {
       const storageKey = `read_notif_ids_${user?.id || user?._id || "guest"}`;
@@ -116,7 +115,6 @@ const Navbar = () => {
     }
   }, []);
 
-  // Real-time SSE connection + initial fetch + gentle background sync
   useEffect(() => {
     const userId = user?.id || user?._id || "ALL";
 
@@ -182,13 +180,11 @@ const Navbar = () => {
       });
 
       eventSource.onerror = () => {
-        // EventSource will automatically reconnect on disconnect
       };
     } catch (e) {
       console.error("SSE notification stream connection failed:", e);
     }
 
-    // Gentle fallback sync every 60s and when window regains focus
     const interval = setInterval(fetchNotifs, 60000);
     const onFocus = () => fetchNotifs();
     window.addEventListener("focus", onFocus);
@@ -220,7 +216,6 @@ const Navbar = () => {
     const nextState = !showNotifDrawer;
     setShowNotifDrawer(nextState);
     if (nextState) {
-      // Mark current notifications as read upon opening drawer
       const currentIds = notifications.map((n) => n.id).filter(Boolean);
       markIdsAsRead(currentIds);
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true, read: true })));

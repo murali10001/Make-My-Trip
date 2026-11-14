@@ -5,3 +5,4 @@ public class InvalidCouponException extends RuntimeException {
         super(message);
     }
 }
+

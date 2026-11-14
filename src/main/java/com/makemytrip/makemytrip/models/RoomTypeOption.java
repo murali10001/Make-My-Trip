@@ -143,3 +143,4 @@ public class RoomTypeOption {
         isPopularUpsell = popularUpsell;
     }
 }
+

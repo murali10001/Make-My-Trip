@@ -312,7 +312,6 @@ public class SelectionService {
 
         List<RoomTypeOption> generated = new ArrayList<>();
 
-        // Option 1: Standard Room (Base price inclusion, ₹0 addon)
         RoomTypeOption opt1 = new RoomTypeOption();
         opt1.setHotelId(hotelId.trim());
         opt1.setRoomTypeName(hotel != null && hotel.getRoomType() != null && !hotel.getRoomType().trim().isEmpty() ? hotel.getRoomType() : "Standard Classic Room");
@@ -329,7 +328,6 @@ public class SelectionService {
         opt1.setPopularUpsell(false);
         generated.add(opt1);
 
-        // Option 2: Deluxe Balcony Room (+₹1,200 addon - Popular Upsell)
         RoomTypeOption opt2 = new RoomTypeOption();
         opt2.setHotelId(hotelId.trim());
         opt2.setRoomTypeName("Deluxe Balcony Room");
@@ -348,7 +346,6 @@ public class SelectionService {
         opt2.setPopularUpsell(true);
         generated.add(opt2);
 
-        // Option 3: Executive Panoramic Suite (+₹2,800 addon)
         RoomTypeOption opt3 = new RoomTypeOption();
         opt3.setHotelId(hotelId.trim());
         opt3.setRoomTypeName("Executive Panoramic Suite");
@@ -367,7 +364,6 @@ public class SelectionService {
         opt3.setPopularUpsell(false);
         generated.add(opt3);
 
-        // Option 4: Presidential Royal Suite (+₹5,500 addon)
         RoomTypeOption opt4 = new RoomTypeOption();
         opt4.setHotelId(hotelId.trim());
         opt4.setRoomTypeName("Presidential Royal Suite");
@@ -390,7 +386,6 @@ public class SelectionService {
     public List<RoomTypeOption> getFeaturedShowcaseRooms() {
         List<RoomTypeOption> showcase = new ArrayList<>();
 
-        // 1. Grand Hyatt Classic Room
         RoomTypeOption r1 = new RoomTypeOption();
         r1.setId("SHOWCASE-CLASSIC");
         r1.setHotelId("HT-SHOWCASE-1");
@@ -410,7 +405,6 @@ public class SelectionService {
         r1.setRoom3dConfig(build3dConfigForRoom(r1.getRoomTypeName(), r1.getBedType(), r1.getRoomSize(), r1.getViewType(), r1.getAmenities()));
         showcase.add(r1);
 
-        // 2. The Oberoi Deluxe Balcony Room
         RoomTypeOption r2 = new RoomTypeOption();
         r2.setId("SHOWCASE-DELUXE");
         r2.setHotelId("HT-SHOWCASE-2");
@@ -431,7 +425,6 @@ public class SelectionService {
         r2.setRoom3dConfig(build3dConfigForRoom(r2.getRoomTypeName(), r2.getBedType(), r2.getRoomSize(), r2.getViewType(), r2.getAmenities()));
         showcase.add(r2);
 
-        // 3. Taj Palace Executive Panoramic Suite
         RoomTypeOption r3 = new RoomTypeOption();
         r3.setId("SHOWCASE-EXECUTIVE");
         r3.setHotelId("HT-SHOWCASE-3");
@@ -451,7 +444,6 @@ public class SelectionService {
         r3.setRoom3dConfig(build3dConfigForRoom(r3.getRoomTypeName(), r3.getBedType(), r3.getRoomSize(), r3.getViewType(), r3.getAmenities()));
         showcase.add(r3);
 
-        // 4. The Leela Presidential Penthouse Suite
         RoomTypeOption r4 = new RoomTypeOption();
         r4.setId("SHOWCASE-PRESIDENTIAL");
         r4.setHotelId("HT-SHOWCASE-4");
@@ -503,40 +495,31 @@ public class SelectionService {
             lighting.setBedsideWarmth("2700K");
             config.setLightingProfile(lighting);
 
-            // Furniture: Grand Master Canopy Bed
             furniture.add(new Room3dFurniture("pres_bed_frame", "Master Four-Poster Canopy Bed", "BED", -60, 0, -85, 210, 52, 225, 0, "#1A1512", "#D4AF37", "POLISHED_WOOD", "Solid dark walnut canopy frame with brushed brass capitals", "Master King Bed"));
             furniture.add(new Room3dFurniture("pres_mattress", "Royal Plush Master Mattress", "BED", -60, 48, -83, 202, 32, 218, 0, "#FFFFFF", "#F1F5F9", "FABRIC_VELVET", "Custom 14-inch silk-tufted pillowtop mattress", "Master King Bed"));
             furniture.add(new Room3dFurniture("pres_headboard", "Carved Gold-Leaf Headboard", "BED", -60, 60, -192, 230, 130, 16, 0, "#D4AF37", "#451A03", "BRUSHED_BRASS", "Hand-gilded fluted panel headboard", "Master King Bed"));
             furniture.add(new Room3dFurniture("pres_pillows", "Grand Pillow Array (6x)", "BED", -60, 68, -165, 185, 26, 48, 0, "#FFFFFF", "#FEF3C7", "FABRIC_VELVET", "6-pillow assortment with silk and velvet shams", "Master King Bed"));
             furniture.add(new Room3dFurniture("pres_throw", "Gold Silk Damask Duvet Throw", "BED", -60, 60, -25, 204, 16, 95, 0, "#B45309", "#D97706", "FABRIC_VELVET", "Artisan woven gold damask runner", "Master King Bed"));
 
-            // Nightstands & Crystal Lamps
             furniture.add(new Room3dFurniture("pres_night_l", "Carrara Marble Nightstand (Left)", "NIGHTSTAND", -185, 0, -170, 52, 54, 46, 0, "#F8FAFC", "#D4AF37", "ITALIAN_MARBLE", "Dual-drawer Italian marble bedside table", "Bedside Charging"));
             furniture.add(new Room3dFurniture("pres_night_r", "Carrara Marble Nightstand (Right)", "NIGHTSTAND", 65, 0, -170, 52, 54, 46, 0, "#F8FAFC", "#D4AF37", "ITALIAN_MARBLE", "Dual-drawer Italian marble bedside table", "Bedside Charging"));
             furniture.add(new Room3dFurniture("pres_lamp_l", "Crystal Chandelier Sconce (Left)", "LIGHTING", -185, 54, -170, 22, 50, 22, 0, "#FEF08A", "#D4AF37", "BRUSHED_BRASS", "Crystalline bedside lamp with warm radiance", "Lighting"));
             furniture.add(new Room3dFurniture("pres_lamp_r", "Crystal Chandelier Sconce (Right)", "LIGHTING", 65, 54, -170, 22, 50, 22, 0, "#FEF08A", "#D4AF37", "BRUSHED_BRASS", "Crystalline bedside lamp with warm radiance", "Lighting"));
 
-            // Chesterfield Parlor Living Area
             furniture.add(new Room3dFurniture("pres_sofa", "Chesterfield Leather Grand Sofa", "SEATING", 100, 0, 30, 180, 85, 82, -40, "#3B1E08", "#1C0D02", "LEATHER", "Deep button-tufted cognac leather Chesterfield sofa", "Chesterfield Parlor"));
             furniture.add(new Room3dFurniture("pres_coffee", "Gold-Rimmed Marble Salon Table", "SEATING", 70, 0, 95, 85, 44, 85, 0, "#F8FAFC", "#D4AF37", "ITALIAN_MARBLE", "Circular marble table with brass sculptural base", "Chesterfield Parlor"));
             furniture.add(new Room3dFurniture("pres_rug", "Persian Silk Embroidered Rug", "DECOR", 85, 1, 60, 210, 3, 170, -20, "#78350F", "#D4AF37", "FABRIC_VELVET", "Hand-knotted silk area rug", "Chesterfield Parlor"));
 
-            // Private Dining & Conference Salon
             furniture.add(new Room3dFurniture("pres_dining", "Executive 4-Seater Dining Salon", "SEATING", -170, 0, 60, 130, 76, 85, 45, "#1E293B", "#D4AF37", "ITALIAN_MARBLE", "Private formal dining table for in-suite hospitality", "In-Suite Dining"));
 
-            // Personal Cocktail Bar & Wine Cellar
             furniture.add(new Room3dFurniture("pres_bar", "Private Wet Bar & Wine Vault", "STORAGE", -185, 0, -30, 65, 115, 95, 90, "#1E293B", "#D4AF37", "POLISHED_WOOD", "Illuminated glass wet bar with temperature-controlled wine cellar", "Cocktail Wet Bar"));
 
-            // Spa Sanctuary: Freestanding Marble Jacuzzi
             furniture.add(new Room3dFurniture("pres_jacuzzi", "Carrara Marble Hydro Jacuzzi Tub", "BATH", 155, 0, -110, 145, 70, 95, -45, "#FFFFFF", "#D4AF37", "ITALIAN_MARBLE", "Freestanding oval hydrotherapy jacuzzi bath with 24k gold fixtures", "Marble Jacuzzi"));
 
-            // Sun Terrace Glass Portals
             furniture.add(new Room3dFurniture("pres_terrace", "Penthouse Sun Terrace Portals", "WINDOW_BALCONY", 195, 0, 10, 18, 250, 200, -90, "#0F172A", "#38BDF8", "CLEAR_GLASS", "Floor-to-ceiling multi-panel folding glass terrace portal", "Private Sun Terrace"));
 
-            // 75\" Theater Display
             furniture.add(new Room3dFurniture("pres_tv", "75\" Cinema OLED Display", "MEDIA", -60, 115, 190, 170, 96, 12, 180, "#0A0A0A", "#38BDF8", "ELECTRONICS", "Ultra-wide 75-inch 4K Cinema OLED with Bowers & Wilkins audio", "Cinema Display"));
 
-            // Hotspots
             hotspots.add(new Room3dHotspot("hs_p_bed", "Four-Poster Canopy Bed", "Grand master king canopy bed with silk damask linens.", -60, 50, -85, "Bed", new CameraPreset(15, -10, 1.3, "Canopy Bed Focus")));
             hotspots.add(new Room3dHotspot("hs_p_jacuzzi", "Carrara Marble Jacuzzi", "Hydrotherapy soaking bath overlooking the penthouse horizon.", 155, 55, -110, "Bath", new CameraPreset(65, -12, 1.35, "Jacuzzi Spa Focus")));
             hotspots.add(new Room3dHotspot("hs_p_sofa", "Chesterfield Parlor", "Cognac leather parlor seating with gold-rimmed marble table.", 100, 55, 30, "Sofa", new CameraPreset(-35, -12, 1.3, "Parlor Focus")));
@@ -565,35 +548,28 @@ public class SelectionService {
             lighting.setBedsideWarmth("2900K");
             config.setLightingProfile(lighting);
 
-            // California King Bed
             furniture.add(new Room3dFurniture("exec_bed_frame", "California King Bed Frame", "BED", -50, 0, -80, 200, 46, 220, 0, "#1E293B", "#B45309", "POLISHED_WOOD", "Low-profile upholstered platform bed in espresso walnut", "California King Bed"));
             furniture.add(new Room3dFurniture("exec_mattress", "California King Mattress", "BED", -50, 42, -78, 194, 28, 212, 0, "#FFFFFF", "#E2E8F0", "FABRIC_VELVET", "Ergonomic pocket spring California king mattress", "California King Bed"));
             furniture.add(new Room3dFurniture("exec_headboard", "Bronze-Trimmed Velvet Headboard", "BED", -50, 52, -185, 218, 105, 14, 0, "#064E3B", "#D4AF37", "FABRIC_VELVET", "Vertical ribbed emerald velvet headboard with bronze framing", "California King Bed"));
             furniture.add(new Room3dFurniture("exec_pillows", "Plush Pillow Set (4x)", "BED", -50, 58, -158, 170, 22, 44, 0, "#FFFFFF", "#D1FAE5", "FABRIC_VELVET", "4 high-loft goose feather pillows", "California King Bed"));
             furniture.add(new Room3dFurniture("exec_runner", "Charcoal & Gold Runner", "BED", -50, 54, -20, 196, 14, 85, 0, "#1F2937", "#F59E0B", "FABRIC_VELVET", "Textured contrast bed scarf", "California King Bed"));
 
-            // Floating Nightstands & Sconces
             furniture.add(new Room3dFurniture("exec_night_l", "Walnut Floating Nightstand (Left)", "NIGHTSTAND", -160, 18, -165, 46, 36, 42, 0, "#292524", "#D4AF37", "POLISHED_WOOD", "Wall-mounted nightstand with wireless phone charging", "Charging"));
             furniture.add(new Room3dFurniture("exec_night_r", "Walnut Floating Nightstand (Right)", "NIGHTSTAND", 60, 18, -165, 46, 36, 42, 0, "#292524", "#D4AF37", "POLISHED_WOOD", "Wall-mounted nightstand with wireless phone charging", "Charging"));
             furniture.add(new Room3dFurniture("exec_sconce_l", "Pendant Sconce (Left)", "LIGHTING", -160, 65, -165, 16, 46, 16, 0, "#FDE68A", "#D4AF37", "BRUSHED_BRASS", "Hanging brass bedside lamp", "Lighting"));
             furniture.add(new Room3dFurniture("exec_sconce_r", "Pendant Sconce (Right)", "LIGHTING", 60, 65, -165, 16, 46, 16, 0, "#FDE68A", "#D4AF37", "BRUSHED_BRASS", "Hanging brass bedside lamp", "Lighting"));
 
-            // Living Lounge: Modern L-Sectional Sofa & Marble Table
             furniture.add(new Room3dFurniture("exec_sofa", "Modern L-Sectional Leather Sofa", "SEATING", 100, 0, 25, 170, 78, 130, -35, "#1E293B", "#334155", "LEATHER", "Deep seating Italian leather sectional lounge", "Living Lounge"));
             furniture.add(new Room3dFurniture("exec_coffee", "Calacatta Oval Coffee Table", "SEATING", 75, 0, 85, 75, 40, 75, 0, "#F8FAFC", "#D4AF37", "ITALIAN_MARBLE", "Oval marble coffee table with brushed bronze legs", "Living Lounge"));
             furniture.add(new Room3dFurniture("exec_rug", "Wool Blend Graphic Area Rug", "DECOR", 85, 1, 55, 190, 3, 150, -15, "#E2E8F0", "#064E3B", "FABRIC_VELVET", "Plush luxury area rug", "Living Lounge"));
 
-            // Freestanding Soaking Jacuzzi Bath with Glass Partition
             furniture.add(new Room3dFurniture("exec_jacuzzi", "Freestanding Soaking Jacuzzi Bath", "BATH", -165, 0, 85, 130, 64, 85, 45, "#FFFFFF", "#D4AF37", "ITALIAN_MARBLE", "Deep soaking acrylic-core jacuzzi bath with gold pillar taps", "Soaking Jacuzzi"));
             furniture.add(new Room3dFurniture("exec_partition", "Acoustic Fluted Glass Partition", "WINDOW_BALCONY", -110, 0, 75, 8, 230, 110, 0, "#E2E8F0", "#38BDF8", "CLEAR_GLASS", "Translucent fluted acoustic glass architectural divider", "Glass Partition"));
 
-            // Wrap-Around Corner Panoramic Skyline Window
             furniture.add(new Room3dFurniture("exec_windows", "Wrap-Around Panoramic Skyline Windows", "WINDOW_BALCONY", 185, 0, -20, 15, 235, 220, -90, "#1E293B", "#38BDF8", "CLEAR_GLASS", "Floor-to-ceiling double-glazed panoramic corner glass walls", "Panoramic Skyline"));
 
-            // 65\" OLED TV & Media Console
             furniture.add(new Room3dFurniture("exec_tv", "65\" Ultra HD OLED TV", "MEDIA", -50, 105, 182, 145, 82, 10, 180, "#0F172A", "#38BDF8", "ELECTRONICS", "65-inch OLED smart television on floating credenza", "65\" Smart TV"));
 
-            // Hotspots
             hotspots.add(new Room3dHotspot("hs_e_bed", "California King Bed", "Expansive California king bed with custom emerald headboard.", -50, 50, -80, "Bed", new CameraPreset(18, -8, 1.25, "King Suite Focus")));
             hotspots.add(new Room3dHotspot("hs_e_jacuzzi", "Soaking Jacuzzi Bath", "Deep freestanding hydrotherapy bath behind fluted glass.", -165, 50, 85, "Bath", new CameraPreset(60, -10, 1.3, "Jacuzzi Focus")));
             hotspots.add(new Room3dHotspot("hs_e_lounge", "L-Sectional Lounge", "Italian leather sectional sofa for relaxing and entertaining.", 100, 50, 25, "Sofa", new CameraPreset(-30, -10, 1.25, "Lounge Focus")));
@@ -622,35 +598,28 @@ public class SelectionService {
             lighting.setBedsideWarmth("3000K");
             config.setLightingProfile(lighting);
 
-            // King Bed
             furniture.add(new Room3dFurniture("deluxe_bed_frame", "Platform King Bed Frame", "BED", -30, 0, -80, 190, 42, 215, 0, "#1E293B", "#0F766E", "POLISHED_WOOD", "Dark walnut platform bed frame with hidden support legs", "Plush King Bed"));
             furniture.add(new Room3dFurniture("deluxe_mattress", "King Pocket-Spring Mattress", "BED", -30, 38, -78, 184, 28, 208, 0, "#FFFFFF", "#E2E8F0", "FABRIC_VELVET", "Plush comfort king size mattress", "Plush King Bed"));
             furniture.add(new Room3dFurniture("deluxe_headboard", "Teal Tufted Velvet Headboard", "BED", -30, 48, -182, 210, 95, 14, 0, "#0F766E", "#115E59", "FABRIC_VELVET", "Tufted geometric teal velvet headboard", "Plush King Bed"));
             furniture.add(new Room3dFurniture("deluxe_pillows", "4x King Pillows", "BED", -30, 54, -155, 160, 20, 42, 0, "#F8FAFC", "#E0F2FE", "FABRIC_VELVET", "Plush hypoallergenic king pillow assortment", "Plush King Bed"));
             furniture.add(new Room3dFurniture("deluxe_runner", "Amber Velvet Bed Scarf", "BED", -30, 50, -20, 186, 14, 80, 0, "#D97706", "#B45309", "FABRIC_VELVET", "Warm amber gold velvet bed runner", "Plush King Bed"));
 
-            // Nightstands & Pendant Lights
             furniture.add(new Room3dFurniture("deluxe_night_l", "Floating Walnut Nightstand (Left)", "NIGHTSTAND", -140, 20, -160, 42, 32, 38, 0, "#292524", "#D4AF37", "POLISHED_WOOD", "Floating bedside drawer unit", "Bedside Table"));
             furniture.add(new Room3dFurniture("deluxe_night_r", "Floating Walnut Nightstand (Right)", "NIGHTSTAND", 80, 20, -160, 42, 32, 38, 0, "#292524", "#D4AF37", "POLISHED_WOOD", "Floating bedside drawer unit", "Bedside Table"));
             furniture.add(new Room3dFurniture("deluxe_lamp_l", "Brass Sconce (Left)", "LIGHTING", -140, 65, -160, 16, 45, 16, 0, "#FBBF24", "#D4AF37", "BRUSHED_BRASS", "Modern brushed brass sconce light", "Lighting"));
             furniture.add(new Room3dFurniture("deluxe_lamp_r", "Brass Sconce (Right)", "LIGHTING", 80, 65, -160, 16, 45, 16, 0, "#FBBF24", "#D4AF37", "BRUSHED_BRASS", "Modern brushed brass sconce light", "Lighting"));
 
-            // Velvet Loveseat & Marble Table
             furniture.add(new Room3dFurniture("deluxe_loveseat", "Velvet 2-Seater Loveseat", "SEATING", 95, 0, 20, 125, 72, 68, -35, "#0D9488", "#134E4A", "FABRIC_VELVET", "Contemporary teal velvet upholstered loveseat", "Lounge Loveseat"));
             furniture.add(new Room3dFurniture("deluxe_coffee", "Round Marble Coffee Table", "SEATING", 60, 0, 75, 60, 38, 60, 0, "#F8FAFC", "#D4AF37", "ITALIAN_MARBLE", "Round Italian marble coffee table with brass rim", "Lounge Loveseat"));
             furniture.add(new Room3dFurniture("deluxe_rug", "Geometric Area Rug", "DECOR", 60, 1, 45, 160, 3, 130, 0, "#CBD5E1", "#0F766E", "FABRIC_VELVET", "Luxury textured area rug", "Lounge Loveseat"));
 
-            // Sliding Balcony Glass Doors & Outdoor Terrace
             furniture.add(new Room3dFurniture("deluxe_balcony_doors", "Sliding Balcony Glass Doors", "WINDOW_BALCONY", 175, 0, -60, 12, 215, 155, -90, "#334155", "#38BDF8", "CLEAR_GLASS", "Acoustic sliding glass doors opening to private balcony", "Private Balcony"));
             furniture.add(new Room3dFurniture("deluxe_balcony_terrace", "Private Furnished Balcony", "WINDOW_BALCONY", 230, 0, -60, 85, 105, 155, 0, "#475569", "#0284C7", "BRUSHED_BRASS", "Furnished outdoor balcony terrace overlooking azure waters", "Private Balcony"));
 
-            // Espresso Machine & Minibar
             furniture.add(new Room3dFurniture("deluxe_espresso", "Gourmet Espresso & Minibar", "STORAGE", -150, 0, 40, 50, 88, 70, 90, "#1E293B", "#F59E0B", "POLISHED_WOOD", "Nespresso capsule machine and stocked beverage refrigerator", "Espresso Machine"));
 
-            // 55\" Smart TV Wall
             furniture.add(new Room3dFurniture("deluxe_tv", "55\" Ultra HD Smart TV", "MEDIA", -30, 95, 178, 125, 72, 8, 180, "#0F172A", "#38BDF8", "ELECTRONICS", "55-inch Ultra HD 4K Smart TV with premium streaming", "Smart TV"));
 
-            // Hotspots
             hotspots.add(new Room3dHotspot("hs_d_balcony", "Private Balcony Terrace", "Step outside onto your private balcony with ocean views.", 175, 60, -60, "Eye", new CameraPreset(-82, -5, 1.35, "Balcony Ocean View")));
             hotspots.add(new Room3dHotspot("hs_d_bed", "Plush King Bed", "King size bed with custom teal tufted headboard.", -30, 50, -80, "Bed", new CameraPreset(18, -8, 1.25, "King Bed Focus")));
             hotspots.add(new Room3dHotspot("hs_d_loveseat", "Velvet Lounge Area", "Teal velvet seating area with Italian marble table.", 95, 45, 20, "Sofa", new CameraPreset(-30, -10, 1.25, "Velvet Lounge Focus")));
@@ -662,7 +631,7 @@ public class SelectionService {
             presets.put("LOUNGE", new CameraPreset(-30, -10, 1.25, "Velvet Loveseat"));
 
         } else {
-            // STANDARD_CLASSIC
+
             config.setRoomModelType("STANDARD_CLASSIC");
             config.setDimensions(new RoomDimensions(4.5, 4.0, 2.7, roomSize != null ? roomSize : "320 sq.ft"));
             config.setFloorMaterial("OAK_HARDWOOD");
@@ -679,33 +648,26 @@ public class SelectionService {
             lighting.setBedsideWarmth("2800K");
             config.setLightingProfile(lighting);
 
-            // Queen Bed
             furniture.add(new Room3dFurniture("std_bed_frame", "Oak Platform Bed Frame", "BED", 0, 0, -80, 160, 40, 200, 0, "#4A3525", "#2C1E14", "POLISHED_WOOD", "Solid oak platform bed frame with study legs", "Comfort Queen Bed"));
             furniture.add(new Room3dFurniture("std_mattress", "Queen Pocket-Spring Mattress", "BED", 0, 36, -78, 154, 26, 194, 0, "#FFFFFF", "#E2E8F0", "FABRIC_VELVET", "Plush 10-inch pocket-spring queen mattress", "Comfort Queen Bed"));
             furniture.add(new Room3dFurniture("std_headboard", "Vertical Oak Slatted Headboard", "BED", 0, 45, -178, 172, 80, 10, 0, "#3E2723", "#271613", "POLISHED_WOOD", "Natural oak vertical slatted designer headboard", "Comfort Queen Bed"));
             furniture.add(new Room3dFurniture("std_pillows", "Dual Feather Pillows", "BED", 0, 52, -152, 130, 18, 38, 0, "#F8FAFC", "#E2E8F0", "FABRIC_VELVET", "Hypoallergenic feather-down pillow pair", "Comfort Queen Bed"));
             furniture.add(new Room3dFurniture("std_runner", "Navy Velvet Bed Runner", "BED", 0, 46, -25, 156, 12, 75, 0, "#1E3A8A", "#172554", "FABRIC_VELVET", "Warm navy blue velvet accent bed scarf", "Comfort Queen Bed"));
 
-            // Nightstands & Bedside Lamps
             furniture.add(new Room3dFurniture("std_night_l", "Oak Nightstand (Left)", "NIGHTSTAND", -110, 0, -155, 42, 48, 40, 0, "#4A3525", "#D4AF37", "POLISHED_WOOD", "Oak single-drawer bedside nightstand", "Bedside Table"));
             furniture.add(new Room3dFurniture("std_night_r", "Oak Nightstand (Right)", "NIGHTSTAND", 110, 0, -155, 42, 48, 40, 0, "#4A3525", "#D4AF37", "POLISHED_WOOD", "Oak single-drawer bedside nightstand", "Bedside Table"));
             furniture.add(new Room3dFurniture("std_lamp_l", "Warm Reading Lamp (Left)", "LIGHTING", -110, 48, -155, 18, 36, 18, 0, "#FDE68A", "#B45309", "BRUSHED_BRASS", "Bedside table lamp with warm radiance", "Reading Lights"));
             furniture.add(new Room3dFurniture("std_lamp_r", "Warm Reading Lamp (Right)", "LIGHTING", 110, 48, -155, 18, 36, 18, 0, "#FDE68A", "#B45309", "BRUSHED_BRASS", "Bedside table lamp with warm radiance", "Reading Lights"));
 
-            // Work Desk & Chair
             furniture.add(new Room3dFurniture("std_desk", "Compact Oak Writing Desk", "DESK", 135, 0, 20, 48, 74, 90, -90, "#5D4037", "#3E2723", "POLISHED_WOOD", "Solid oak writing desk with power strip outlets", "Work Desk"));
             furniture.add(new Room3dFurniture("std_chair", "Ergonomic Task Chair", "DESK", 100, 0, 20, 42, 80, 42, 90, "#334155", "#64748B", "LEATHER", "Contoured ergonomic task chair", "Work Desk"));
 
-            // 43\" Smart TV Wall
             furniture.add(new Room3dFurniture("std_tv", "43\" Smart LED TV", "MEDIA", 0, 95, 175, 100, 58, 8, 180, "#0F172A", "#3B82F6", "ELECTRONICS", "Wall mounted 43-inch Smart LED TV", "Smart LED TV"));
 
-            // Built-in Wardrobe
             furniture.add(new Room3dFurniture("std_wardrobe", "Built-in Double Wardrobe", "STORAGE", -140, 0, 50, 50, 190, 90, 90, "#3E2723", "#D4AF37", "POLISHED_WOOD", "Double wardrobe with luggage shelf and safe", "Wardrobe"));
 
-            // Double-Glazed City Window
             furniture.add(new Room3dFurniture("std_window", "Acoustic City Window", "WINDOW_BALCONY", 155, 55, -80, 12, 130, 100, -90, "#E2E8F0", "#38BDF8", "CLEAR_GLASS", "Double-glazed acoustic city view window", "City View"));
 
-            // Hotspots
             hotspots.add(new Room3dHotspot("hs_s_bed", "Comfort Queen Bed", "Ergonomic queen pocket spring mattress with oak headboard.", 0, 45, -80, "Bed", new CameraPreset(12, -8, 1.25, "Queen Bed Focus")));
             hotspots.add(new Room3dHotspot("hs_s_desk", "Dedicated Workspace", "Compact oak writing desk with charging points and ergonomic chair.", 135, 45, 20, "Desk", new CameraPreset(-65, -10, 1.25, "Work Desk Focus")));
             hotspots.add(new Room3dHotspot("hs_s_window", "City View Window", "Acoustically insulated window overlooking the city skyline.", 155, 75, -80, "Eye", new CameraPreset(-85, -6, 1.3, "Skyline Window Focus")));
@@ -785,3 +747,4 @@ public class SelectionService {
         });
     }
 }
+

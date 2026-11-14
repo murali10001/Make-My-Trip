@@ -94,6 +94,18 @@ const ProfileDashboardPage = () => {
   const [cancelError, setCancelError] = useState<string | null>(null);
   const [cancelSuccessMsg, setCancelSuccessMsg] = useState<string | null>(null);
 
+  const [isEditingPrefs, setIsEditingPrefs] = useState<boolean>(false);
+  const [isSavingPrefs, setIsSavingPrefs] = useState<boolean>(false);
+  const [prefsSuccessMsg, setPrefsSuccessMsg] = useState<string | null>(null);
+  const [prefsErrorMsg, setPrefsErrorMsg] = useState<string | null>(null);
+  const [prefsFormData, setPrefsFormData] = useState({
+    preferredSeatType: "Window",
+    preferredSeatNo: "1A",
+    preferredRoomType: "Executive Deluxe Room",
+    preferredBedType: "King Size Bed",
+    preferredFloorView: "High Floor / Panoramic Skyline View",
+  });
+
   const [isEditing, setIsEditing] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [userData, setUserData] = useState({
@@ -189,6 +201,48 @@ const ProfileDashboardPage = () => {
   }, [user?.email, user?.id]);
 
   useEffect(() => {
+    if (userPrefs) {
+      setPrefsFormData({
+        preferredSeatType: userPrefs.preferredSeatType || "Window",
+        preferredSeatNo: userPrefs.preferredSeatNo || "1A",
+        preferredRoomType: userPrefs.preferredRoomType || "Executive Deluxe Room",
+        preferredBedType: userPrefs.preferredBedType || "King Size Bed",
+        preferredFloorView: userPrefs.preferredFloorView || "High Floor / Panoramic Skyline View",
+      });
+    }
+  }, [userPrefs]);
+
+  const handleSavePreferences = async () => {
+    const userId = user?.id || user?._id || "";
+    if (!userId) {
+      setPrefsErrorMsg("Please sign in to save your travel preferences.");
+      return;
+    }
+    setIsSavingPrefs(true);
+    setPrefsErrorMsg(null);
+    setPrefsSuccessMsg(null);
+    try {
+      const saved = await saveUserPreferences({
+        userId,
+        userEmail: user?.email || "",
+        preferredSeatType: prefsFormData.preferredSeatType,
+        preferredSeatNo: (prefsFormData.preferredSeatNo || "1A").toUpperCase().trim(),
+        preferredRoomType: prefsFormData.preferredRoomType,
+        preferredBedType: prefsFormData.preferredBedType,
+        preferredFloorView: prefsFormData.preferredFloorView,
+      });
+      setUserPrefs(saved);
+      setIsEditingPrefs(false);
+      setPrefsSuccessMsg("Travel preferences successfully saved and updated!");
+      setTimeout(() => setPrefsSuccessMsg(null), 4000);
+    } catch (err: any) {
+      setPrefsErrorMsg(err?.message || "Failed to save preferences. Please try again.");
+    } finally {
+      setIsSavingPrefs(false);
+    }
+  };
+
+  useEffect(() => {
     let eventSource: EventSource | null = null;
     try {
       eventSource = createRefundStream(
@@ -213,7 +267,6 @@ const ProfileDashboardPage = () => {
             return prev;
           });
 
-          // Sync booking status in Redux user if cancelled
           if (update.bookingId && user?.bookings) {
             const hasTarget = user.bookings.some(
               (b: any) => (b.bookingId || b.id) === update.bookingId && b.status !== "CANCELLED"
@@ -919,7 +972,6 @@ const ProfileDashboardPage = () => {
                           <div className="pt-2">
                             <p className="text-xs font-bold text-slate-700 mb-3">Live Progress Tracker:</p>
                             <div className="relative">
-                              {/* Horizontal track line connecting the 3 steps */}
                               <div className="absolute top-4 left-[16%] right-[16%] h-0.5 bg-slate-200 z-0">
                                 <div
                                   className="h-full bg-emerald-500 transition-all duration-500"
@@ -1082,55 +1134,206 @@ const ProfileDashboardPage = () => {
 
             {activeTab === "preferences" && (
               <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
                   <div>
                     <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
                       <BookmarkCheck className="w-5 h-5 text-indigo-600" />
                       Saved Travel & Booking Preferences
                     </h2>
                     <p className="text-xs text-slate-500">
-                      Saved seat and room choices are automatically pre-selected during checkout.
+                      Personalize your journey. Saved choices automatically pre-select during checkout and tune recommendations.
                     </p>
                   </div>
-                  <span className="text-xs bg-indigo-50 text-indigo-700 font-bold px-3 py-1 rounded-full border border-indigo-200">
-                    Auto-Applied
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-                  <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-3">
-                    <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
-                      <Plane className="w-4 h-4 text-cyan-600" />
-                      <span>Preferred Flight Seat</span>
-                    </div>
-                    <div className="space-y-1 text-xs">
-                      <p className="text-slate-500">Default Seat Type:</p>
-                      <p className="font-extrabold text-slate-900 text-sm bg-white p-2.5 rounded-xl border border-slate-200">
-                        {userPrefs?.preferredSeatType || "Window / Extra Legroom"} ({userPrefs?.preferredSeatNo || "1A"})
-                      </p>
-                    </div>
-                    <p className="text-[11px] text-slate-500 italic">
-                      Automatically selects {userPrefs?.preferredSeatNo || "1A"} when opening airplane seat map.
-                    </p>
-                  </div>
-
-                  <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-3">
-                    <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
-                      <Building2 className="w-4 h-4 text-indigo-600" />
-                      <span>Preferred Hotel Room</span>
-                    </div>
-                    <div className="space-y-1 text-xs">
-                      <p className="text-slate-500">Default Room Category:</p>
-                      <p className="font-extrabold text-slate-900 text-sm bg-white p-2.5 rounded-xl border border-slate-200">
-                        {userPrefs?.preferredRoomType || "Executive Deluxe Room"}
-                      </p>
-                    </div>
-                    <p className="text-[11px] text-slate-500 italic">
-                      Pre-selects {userPrefs?.preferredRoomType || "Executive Deluxe Room"} in hotel room grids.
-                    </p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs bg-indigo-50 text-indigo-700 font-bold px-3 py-1 rounded-full border border-indigo-200">
+                      Auto-Applied
+                    </span>
+                    {!isEditingPrefs ? (
+                      <button
+                        onClick={() => setIsEditingPrefs(true)}
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-3.5 py-1.5 rounded-xl transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                        Edit Preferences
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setIsEditingPrefs(false)}
+                        className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs px-3 py-1.5 rounded-xl transition-all flex items-center gap-1 cursor-pointer"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                        Cancel
+                      </button>
+                    )}
                   </div>
                 </div>
+
+                {prefsSuccessMsg && (
+                  <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs px-4 py-3 rounded-xl flex items-center gap-2 font-medium animate-fadeIn">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>{prefsSuccessMsg}</span>
+                  </div>
+                )}
+
+                {prefsErrorMsg && (
+                  <div className="bg-red-50 border border-red-200 text-red-800 text-xs px-4 py-3 rounded-xl flex items-center gap-2 font-medium">
+                    <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                    <span>{prefsErrorMsg}</span>
+                  </div>
+                )}
+
+                {isEditingPrefs ? (
+                  <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200 space-y-5">
+                    <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2 border-b border-slate-200/80 pb-3">
+                      <Sparkles className="w-4 h-4 text-indigo-600" />
+                      Configure Your Travel Preferences
+                    </h3>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                      <div className="space-y-1.5">
+                        <label className="block font-bold text-slate-700">Flight Seat Preference</label>
+                        <select
+                          value={prefsFormData.preferredSeatType}
+                          onChange={(e) => setPrefsFormData({ ...prefsFormData, preferredSeatType: e.target.value })}
+                          className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium"
+                        >
+                          <option value="Window">Window Seat</option>
+                          <option value="Aisle">Aisle Seat</option>
+                          <option value="Extra Legroom">Extra Legroom Seat</option>
+                          <option value="Middle">Middle Seat</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="block font-bold text-slate-700">Preferred Seat Number</label>
+                        <input
+                          type="text"
+                          value={prefsFormData.preferredSeatNo}
+                          onChange={(e) => setPrefsFormData({ ...prefsFormData, preferredSeatNo: e.target.value })}
+                          placeholder="e.g. 1A, 2F, 12B"
+                          maxLength={4}
+                          className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none font-mono font-bold"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="block font-bold text-slate-700">Hotel Room Tier</label>
+                        <select
+                          value={prefsFormData.preferredRoomType}
+                          onChange={(e) => setPrefsFormData({ ...prefsFormData, preferredRoomType: e.target.value })}
+                          className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium"
+                        >
+                          <option value="Executive Deluxe Room">Executive Deluxe Room</option>
+                          <option value="Presidential Royal Suite">Presidential Royal Suite</option>
+                          <option value="Deluxe Balcony Room">Deluxe Balcony Room</option>
+                          <option value="Standard Classic Room">Standard Classic Room</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="block font-bold text-slate-700">Preferred Bedding Type</label>
+                        <select
+                          value={prefsFormData.preferredBedType}
+                          onChange={(e) => setPrefsFormData({ ...prefsFormData, preferredBedType: e.target.value })}
+                          className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium"
+                        >
+                          <option value="King Size Bed">King Size Bed</option>
+                          <option value="Queen Bed">Queen Bed</option>
+                          <option value="Twin Beds">Twin Beds</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-1.5 sm:col-span-2">
+                        <label className="block font-bold text-slate-700">Preferred Floor & Room View</label>
+                        <select
+                          value={prefsFormData.preferredFloorView}
+                          onChange={(e) => setPrefsFormData({ ...prefsFormData, preferredFloorView: e.target.value })}
+                          className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium"
+                        >
+                          <option value="High Floor / Panoramic Skyline View">High Floor / Panoramic Skyline View</option>
+                          <option value="Sea / Beachfront View">Sea / Beachfront View</option>
+                          <option value="Garden View">Garden View</option>
+                          <option value="City View">City View</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 pt-3 border-t border-slate-200/80">
+                      <button
+                        onClick={handleSavePreferences}
+                        disabled={isSavingPrefs}
+                        className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
+                      >
+                        {isSavingPrefs ? (
+                          <>
+                            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                            <span>Saving Preferences...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Check className="w-3.5 h-3.5" />
+                            <span>Save Preferences</span>
+                          </>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => setIsEditingPrefs(false)}
+                        disabled={isSavingPrefs}
+                        className="bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-bold text-xs px-4 py-2.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                        <span>Cancel</span>
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-3 relative group">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
+                          <Plane className="w-4 h-4 text-cyan-600" />
+                          <span>Preferred Flight Seat</span>
+                        </div>
+                        <span className="font-mono text-[11px] bg-cyan-100 text-cyan-800 font-bold px-2 py-0.5 rounded">
+                          {userPrefs?.preferredSeatNo || "1A"}
+                        </span>
+                      </div>
+                      <div className="space-y-1 text-xs">
+                        <p className="text-slate-500">Default Seat Type:</p>
+                        <p className="font-extrabold text-slate-900 text-sm bg-white p-2.5 rounded-xl border border-slate-200">
+                          {userPrefs?.preferredSeatType || "Window"} ({userPrefs?.preferredSeatNo || "1A"})
+                        </p>
+                      </div>
+                      <p className="text-[11px] text-slate-500 italic">
+                        Automatically selects {userPrefs?.preferredSeatNo || "1A"} ({userPrefs?.preferredSeatType || "Window"}) when opening airplane seat map.
+                      </p>
+                    </div>
+
+                    <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-3 relative group">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
+                          <Building2 className="w-4 h-4 text-indigo-600" />
+                          <span>Preferred Hotel Room</span>
+                        </div>
+                        <span className="text-[10px] bg-indigo-100 text-indigo-800 font-bold px-2 py-0.5 rounded">
+                          {userPrefs?.preferredBedType || "King Size Bed"}
+                        </span>
+                      </div>
+                      <div className="space-y-1 text-xs">
+                        <p className="text-slate-500">Default Room Category:</p>
+                        <p className="font-extrabold text-slate-900 text-sm bg-white p-2.5 rounded-xl border border-slate-200">
+                          {userPrefs?.preferredRoomType || "Executive Deluxe Room"}
+                        </p>
+                      </div>
+                      <div className="text-[11px] text-slate-500 space-y-0.5">
+                        <p className="flex items-center justify-between">
+                          <span>View Preference:</span>
+                          <span className="font-semibold text-slate-700">{userPrefs?.preferredFloorView || "Panoramic Skyline View"}</span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
