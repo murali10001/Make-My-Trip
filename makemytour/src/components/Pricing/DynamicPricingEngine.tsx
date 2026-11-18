@@ -175,9 +175,23 @@ const DynamicPricingEngine: React.FC = () => {
     try {
       const list = await getPromotionalOffers();
       if (Array.isArray(list) && list.length > 0) {
-        setOffers(list);
+        const unique = list.filter((o, idx, arr) => arr.findIndex(item => item.code === o.code) === idx);
+        setOffers(unique);
       } else {
         setOffers([
+          {
+            id: "CP-NEWUSER",
+            code: "NEWUSER",
+            title: "New User Welcome Offer - Flat 20% OFF",
+            description: "Welcome bonus: Flat 20% instant discount up to ₹2,000 for new users on their first flight or hotel booking.",
+            bankName: "First Booking Offer",
+            bankLogo: "🎉 NEW",
+            discountPercentage: 20,
+            maxDiscountAmount: 2000,
+            minBookingAmount: 2000,
+            badgeText: "FIRST BOOKING • 20% OFF",
+            active: true,
+          },
           {
             id: "CP-MMTFLY",
             code: "MMTFLY",
@@ -188,7 +202,7 @@ const DynamicPricingEngine: React.FC = () => {
             discountPercentage: 12,
             maxDiscountAmount: 2500,
             minBookingAmount: 3000,
-            badgeText: "POPULAR",
+            badgeText: "POPULAR • 12% OFF",
             active: true,
           },
           {
@@ -197,11 +211,11 @@ const DynamicPricingEngine: React.FC = () => {
             title: "HDFC Bank 10% Instant Discount",
             description: "Instant 10% off using HDFC Bank Credit & Debit Cards.",
             bankName: "HDFC Bank",
-            bankLogo: "🏦 HDFC",
+            bankLogo: "💳 HDFC",
             discountPercentage: 10,
             maxDiscountAmount: 2000,
             minBookingAmount: 4000,
-            badgeText: "BANK OFFER",
+            badgeText: "BANK OFFER • 10% OFF",
             active: true,
           },
           {
@@ -214,7 +228,7 @@ const DynamicPricingEngine: React.FC = () => {
             discountPercentage: 15,
             maxDiscountAmount: 1000,
             minBookingAmount: 5000,
-            badgeText: "HOT DEAL",
+            badgeText: "HOT DEAL • FLAT ₹1,000 OFF",
             active: true,
           },
           {
@@ -227,7 +241,33 @@ const DynamicPricingEngine: React.FC = () => {
             discountPercentage: 15,
             maxDiscountAmount: 3500,
             minBookingAmount: 3500,
-            badgeText: "HOTEL DEALS",
+            badgeText: "HOTEL DEALS • 15% OFF",
+            active: true,
+          },
+          {
+            id: "CP-ICICIFLAT",
+            code: "ICICIFLAT",
+            title: "ICICI Bank Travel Saver",
+            description: "Save Flat ₹1,200 instantly on flight & hotel bookings",
+            bankName: "ICICI Bank",
+            bankLogo: "💳 ICICI Bank",
+            discountPercentage: 12,
+            maxDiscountAmount: 1200,
+            minBookingAmount: 4500,
+            badgeText: "FLAT ₹1,200 OFF",
+            active: true,
+          },
+          {
+            id: "CP-MAKETOUR20",
+            code: "MAKETOUR20",
+            title: "MakeMyTour Festival Special",
+            description: "Special 20% Discount for holiday season travelers up to ₹3,000",
+            bankName: "MakeMyTour",
+            bankLogo: "🎉 Special Deal",
+            discountPercentage: 20,
+            maxDiscountAmount: 3000,
+            minBookingAmount: 3000,
+            badgeText: "20% OFF Special",
             active: true,
           },
         ]);
@@ -966,9 +1006,13 @@ const DynamicPricingEngine: React.FC = () => {
                     </div>
                     <p className="text-xs font-semibold text-slate-800">{offer.title}</p>
                     <p className="text-[11px] text-slate-500 leading-tight">{offer.description}</p>
-                    <div className="pt-1">
+                    <div className="pt-1 flex items-center gap-2 flex-wrap">
                       <span className="font-mono text-[10px] bg-slate-200 text-slate-800 px-2 py-0.5 rounded font-bold">
                         {offer.code}
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-medium">
+                        {offer.maxDiscountAmount ? `Save up to ₹${offer.maxDiscountAmount.toLocaleString()}` : ""}
+                        {offer.minBookingAmount ? ` • Min order: ₹${offer.minBookingAmount.toLocaleString()}` : ""}
                       </span>
                     </div>
                   </div>

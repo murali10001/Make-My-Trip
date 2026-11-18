@@ -373,23 +373,44 @@ public class PricingService {
         return result;
     }
 
+    private volatile boolean defaultOffersSeeded = false;
+
     @EventListener(ApplicationReadyEvent.class)
-    public void seedDefaultOffersIfEmpty() {
+    public synchronized void seedDefaultOffersIfEmpty() {
+        if (defaultOffersSeeded) return;
         if (offerCouponRepository != null) {
-            List<OfferCoupon> defaultCoupons = List.of(
-                new OfferCoupon("CP-MMTFLY", "MMTFLY", "Flyer Special - Flat 12% OFF", "Get flat 12% discount on domestic & international flight tickets.", "MakeMyTour Special", "✈️ MMT", 12.0, 2500.0, 3000.0, "POPULAR", true),
-                new OfferCoupon("CP-HDFC10", "HDFC10", "HDFC Bank 10% Instant Discount", "Instant 10% off using HDFC Bank Credit & Debit Cards.", "HDFC Bank", "💳 HDFC", 10.0, 2000.0, 4000.0, "BANK OFFER", true),
-                new OfferCoupon("CP-SBISAVE", "SBISAVE", "SBI Cards Flat ₹1,000 Off", "Save flat ₹1,000 on bookings above ₹5,000 with SBI credit cards.", "State Bank of India", "💳 SBI", 15.0, 1800.0, 3500.0, "HOT DEAL", true),
-                new OfferCoupon("CP-HOTELSPL", "HOTELSPL", "Hotel Luxury Retreats 15% Off", "Exclusive 15% off on handpicked luxury hotels & beach resorts.", "Staycation Club", "🏨 STAY", 15.0, 3500.0, 3500.0, "HOTEL DEALS", true),
-                new OfferCoupon("CP-HOTEL25", "HOTEL25", "Hotel Luxury Retreats 15% Off", "Exclusive 15% off on handpicked luxury hotels & beach resorts.", "Staycation Club", "🏨 STAY", 15.0, 3500.0, 3500.0, "HOTEL DEALS", true),
-                new OfferCoupon("CP-ICICIFLAT", "ICICIFLAT", "ICICI Bank Travel Saver", "Save Flat ₹1,200 instantly on flight & hotel bookings", "ICICI Bank", "💳 ICICI Bank", 12.0, 1200.0, 4500.0, "Flat ₹1200 Off", true),
-                new OfferCoupon("CP-MAKETOUR20", "MAKETOUR20", "MakeMyTour Festival Special", "Special 20% Discount for holiday season travelers up to ₹3,000", "MakeMyTour", "🎉 Special Deal", 20.0, 3000.0, 3000.0, "20% OFF Special", true)
-            );
-            for (OfferCoupon c : defaultCoupons) {
-                if (offerCouponRepository.findByCode(c.getCode()).isEmpty()) {
-                    offerCouponRepository.save(c);
+            try {
+                offerCouponRepository.findByCode("HOTEL25").ifPresent(c -> offerCouponRepository.delete(c));
+
+                List<OfferCoupon> defaultCoupons = List.of(
+                    new OfferCoupon("CP-NEWUSER", "NEWUSER", "New User Welcome Offer - Flat 20% OFF", "Welcome bonus: Flat 20% instant discount up to ₹2,000 on your first flight or hotel booking.", "First Booking Offer", "🎉 NEW", 20.0, 2000.0, 2000.0, "FIRST BOOKING • 20% OFF", true),
+                    new OfferCoupon("CP-MMTFLY", "MMTFLY", "Flyer Special - Flat 12% OFF", "Get flat 12% discount on domestic & international flight tickets.", "MakeMyTour Special", "✈️ MMT", 12.0, 2500.0, 3000.0, "POPULAR • 12% OFF", true),
+                    new OfferCoupon("CP-HDFC10", "HDFC10", "HDFC Bank 10% Instant Discount", "Instant 10% off using HDFC Bank Credit & Debit Cards.", "HDFC Bank", "💳 HDFC", 10.0, 2000.0, 4000.0, "BANK OFFER • 10% OFF", true),
+                    new OfferCoupon("CP-SBISAVE", "SBISAVE", "SBI Cards Flat ₹1,000 Off", "Save flat ₹1,000 on bookings above ₹5,000 with SBI credit cards.", "State Bank of India", "💳 SBI", 15.0, 1000.0, 5000.0, "HOT DEAL • FLAT ₹1,000 OFF", true),
+                    new OfferCoupon("CP-HOTELSPL", "HOTELSPL", "Hotel Luxury Retreats 15% Off", "Exclusive 15% off on handpicked luxury hotels & beach resorts.", "Staycation Club", "🏨 STAY", 15.0, 3500.0, 3500.0, "HOTEL DEALS • 15% OFF", true),
+                    new OfferCoupon("CP-ICICIFLAT", "ICICIFLAT", "ICICI Bank Travel Saver", "Save Flat ₹1,200 instantly on flight & hotel bookings", "ICICI Bank", "💳 ICICI Bank", 12.0, 1200.0, 4500.0, "FLAT ₹1,200 OFF", true),
+                    new OfferCoupon("CP-MAKETOUR20", "MAKETOUR20", "MakeMyTour Festival Special", "Special 20% Discount for holiday season travelers up to ₹3,000", "MakeMyTour", "🎉 Special Deal", 20.0, 3000.0, 3000.0, "20% OFF Special", true)
+                );
+                for (OfferCoupon c : defaultCoupons) {
+                    Optional<OfferCoupon> existing = offerCouponRepository.findByCode(c.getCode());
+                    if (existing.isEmpty()) {
+                        offerCouponRepository.save(c);
+                    } else {
+                        OfferCoupon e = existing.get();
+                        e.setTitle(c.getTitle());
+                        e.setDescription(c.getDescription());
+                        e.setBankName(c.getBankName());
+                        e.setBankLogo(c.getBankLogo());
+                        e.setDiscountPercentage(c.getDiscountPercentage());
+                        e.setMaxDiscountAmount(c.getMaxDiscountAmount());
+                        e.setMinBookingAmount(c.getMinBookingAmount());
+                        e.setBadgeText(c.getBadgeText());
+                        e.setActive(true);
+                        offerCouponRepository.save(e);
+                    }
                 }
-            }
+                defaultOffersSeeded = true;
+            } catch (Exception ignored) {}
         }
     }
 
@@ -407,16 +428,19 @@ public class PricingService {
         seedDefaultOffersIfEmpty();
 
         String searchCode = code.trim().toUpperCase();
-        if ("HOTEL25".equals(searchCode) && offerCouponRepository != null && offerCouponRepository.findByCode("HOTEL25").isEmpty()) {
+        if ("HOTEL25".equals(searchCode)) {
             searchCode = "HOTELSPL";
+        } else if ("FIRSTBOOK".equals(searchCode) || "FIRSTTRIP".equals(searchCode) || "WELCOME".equals(searchCode)) {
+            searchCode = "NEWUSER";
         }
 
-        List<OfferCoupon> all = offerCouponRepository != null ? offerCouponRepository.findAll() : Collections.emptyList();
-        final String finalSearch = searchCode;
-        OfferCoupon coupon = all.stream()
-                .filter(c -> c.getCode() != null && c.getCode().equalsIgnoreCase(finalSearch))
-                .findFirst()
-                .orElseThrow(() -> new InvalidCouponException("Invalid promo coupon code: " + code));
+        OfferCoupon coupon = null;
+        if (offerCouponRepository != null) {
+            coupon = offerCouponRepository.findByCodeIgnoreCase(searchCode).orElse(null);
+        }
+        if (coupon == null) {
+            throw new InvalidCouponException("Invalid promo coupon code: " + code);
+        }
 
         if (!coupon.isActive()) {
             throw new InvalidCouponException("This coupon code is no longer active.");

@@ -316,7 +316,8 @@ class PricingServiceTest {
         List<OfferCoupon> seeded = pricingService.getAvailableOffers();
 
         assertNotNull(seeded);
-        assertEquals(5, seeded.size());
+        assertEquals(7, seeded.size());
+        assertTrue(seeded.stream().anyMatch(c -> "NEWUSER".equals(c.getCode())));
         assertTrue(seeded.stream().anyMatch(c -> "MMTFLY".equals(c.getCode())));
         assertTrue(seeded.stream().anyMatch(c -> "HDFC10".equals(c.getCode())));
         assertTrue(seeded.stream().anyMatch(c -> "SBISAVE".equals(c.getCode())));

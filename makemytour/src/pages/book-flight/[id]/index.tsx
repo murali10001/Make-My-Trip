@@ -118,7 +118,8 @@ const BookFlightPage = () => {
 
         const offersData = await getPromotionalOffers();
         if (!isMounted) return;
-        setOffers(offersData || []);
+        const uniqueOffers = (offersData || []).filter((o: any, idx: number, arr: any[]) => arr.findIndex((item: any) => item.code === o.code) === idx);
+        setOffers(uniqueOffers);
 
         if (filteredData.length > 0) {
           const target = filteredData[0];
@@ -698,21 +699,35 @@ const BookFlightPage = () => {
                   </div>
                 )}
 
-                <div className="space-y-2 pt-1 border-t border-slate-200">
-                  <p className="text-[11px] font-bold text-slate-700">Select Bank Card Deal:</p>
+                <div className="space-y-2.5 pt-1 border-t border-slate-200">
+                  <p className="text-[11px] font-bold text-slate-700">Available Coupons & Bank Deals:</p>
                   {offers.map((offer) => (
                     <div
                       key={offer.id || offer.code}
-                      className="bg-white p-2 rounded-lg border border-slate-200 flex items-center justify-between text-xs hover:border-emerald-500 transition-colors"
+                      className="bg-white p-2.5 rounded-xl border border-slate-200 flex items-center justify-between gap-3 text-xs hover:border-emerald-500 transition-all shadow-xs"
                     >
-                      <div>
-                        <span className="font-bold text-slate-900 text-[11px]">{offer.bankName}</span>
-                        <p className="text-[10px] text-slate-500">{offer.badgeText}</p>
+                      <div className="min-w-0 space-y-0.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-bold text-slate-900 text-[11px]">{offer.bankName || offer.title}</span>
+                          <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 font-extrabold text-[10px] px-1.5 py-0.5 rounded">
+                            {offer.discountPercentage ? `${offer.discountPercentage}% OFF` : (offer.badgeText || "OFFER")}
+                          </span>
+                          <span className="font-mono text-[10px] bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded border border-slate-200 font-bold">
+                            {offer.code}
+                          </span>
+                        </div>
+                        <p className="text-[10.5px] text-slate-600 font-medium">
+                          {offer.title}
+                        </p>
+                        <p className="text-[10px] text-slate-400">
+                          {offer.maxDiscountAmount ? `Save up to ₹${offer.maxDiscountAmount.toLocaleString()}` : ""}
+                          {offer.minBookingAmount ? ` • Min. booking ₹${offer.minBookingAmount.toLocaleString()}` : ""}
+                        </p>
                       </div>
                       <Button
                         onClick={() => handleApplyCoupon(offer.code)}
                         variant="outline"
-                        className="text-[10px] font-bold border-emerald-300 hover:bg-emerald-50 text-emerald-700 px-2 py-1 h-auto"
+                        className="text-[11px] font-bold border-emerald-500 hover:bg-emerald-50 text-emerald-700 px-3 py-1 h-auto flex-shrink-0"
                       >
                         Apply
                       </Button>
