@@ -2,10 +2,13 @@ package com.makemytrip.makemytrip.services;
 
 import com.makemytrip.makemytrip.exceptions.InvalidReviewException;
 import com.makemytrip.makemytrip.exceptions.ReviewNotFoundException;
+import com.makemytrip.makemytrip.exceptions.UnverifiedReviewException;
 import com.makemytrip.makemytrip.models.Flight;
 import com.makemytrip.makemytrip.models.Hotel;
 import com.makemytrip.makemytrip.models.Review;
 import com.makemytrip.makemytrip.models.ReviewSummaryDTO;
+import com.makemytrip.makemytrip.models.Users;
+import com.makemytrip.makemytrip.repositories.BookingRepository;
 import com.makemytrip.makemytrip.repositories.FlightRepository;
 import com.makemytrip.makemytrip.repositories.HotelRepository;
 import com.makemytrip.makemytrip.repositories.ReviewRepository;
@@ -26,6 +29,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -35,6 +39,7 @@ public class ReviewServiceTest {
     private StubReviewRepository reviewRepository;
     private StubHotelRepository hotelRepository;
     private StubFlightRepository flightRepository;
+    private StubBookingRepository bookingRepository;
 
     @BeforeEach
     void setUp() {
@@ -42,10 +47,35 @@ public class ReviewServiceTest {
         reviewRepository = new StubReviewRepository();
         hotelRepository = new StubHotelRepository();
         flightRepository = new StubFlightRepository();
+        bookingRepository = new StubBookingRepository();
 
         ReflectionTestUtils.setField(reviewService, "reviewRepository", reviewRepository);
         ReflectionTestUtils.setField(reviewService, "hotelRepository", hotelRepository);
         ReflectionTestUtils.setField(reviewService, "flightRepository", flightRepository);
+        ReflectionTestUtils.setField(reviewService, "bookingRepository", bookingRepository);
+        ReflectionTestUtils.setField(reviewService, "reviewSentimentAnalyzer", new ReviewSentimentAnalyzer());
+
+        // Seed confirmed bookings for test user USR-101
+        Users.Booking hotelBooking = new Users.Booking();
+        hotelBooking.setBookingId("BK-HT-1");
+        hotelBooking.setTargetId("HT-101");
+        hotelBooking.setStatus("CONFIRMED");
+        hotelBooking.setType("Hotel");
+        bookingRepository.addBooking("USR-101", hotelBooking);
+
+        Users.Booking flightBooking = new Users.Booking();
+        flightBooking.setBookingId("BK-FL-1");
+        flightBooking.setTargetId("FL-202");
+        flightBooking.setStatus("CONFIRMED");
+        flightBooking.setType("Flight");
+        bookingRepository.addBooking("USR-101", flightBooking);
+
+        Users.Booking testBooking = new Users.Booking();
+        testBooking.setBookingId("BK-HT-2");
+        testBooking.setTargetId("HT-TEST");
+        testBooking.setStatus("CONFIRMED");
+        testBooking.setType("Hotel");
+        bookingRepository.addBooking("USR-101", testBooking);
 
         Hotel hotel = new Hotel();
         hotel.setId("HT-101");
@@ -67,6 +97,7 @@ public class ReviewServiceTest {
     void testAddReviewSuccess() {
         Review r = new Review();
         r.setTargetId("HT-101");
+        r.setUserId("USR-101");
         r.setTargetType("HOTEL");
         r.setRating(5);
         r.setTitle("Magnificent experience");
@@ -95,6 +126,7 @@ public class ReviewServiceTest {
     void testAddReviewInvalidRatings() {
         Review rLow = new Review();
         rLow.setTargetId("HT-101");
+        rLow.setUserId("USR-101");
         rLow.setRating(0);
         rLow.setTitle("Too low");
         rLow.setComment("Testing 0 rating");
@@ -103,6 +135,7 @@ public class ReviewServiceTest {
 
         Review rHigh = new Review();
         rHigh.setTargetId("HT-101");
+        rHigh.setUserId("USR-101");
         rHigh.setRating(6);
         rHigh.setTitle("Too high");
         rHigh.setComment("Testing 6 rating");
@@ -115,6 +148,7 @@ public class ReviewServiceTest {
     void testAddReviewTitleValidations() {
         Review emptyTitle = new Review();
         emptyTitle.setTargetId("HT-101");
+        emptyTitle.setUserId("USR-101");
         emptyTitle.setRating(4);
         emptyTitle.setTitle("   ");
         emptyTitle.setComment("Valid comment");
@@ -123,6 +157,7 @@ public class ReviewServiceTest {
 
         Review longTitle = new Review();
         longTitle.setTargetId("HT-101");
+        longTitle.setUserId("USR-101");
         longTitle.setRating(4);
         longTitle.setTitle("A".repeat(151));
         longTitle.setComment("Valid comment");
@@ -135,6 +170,7 @@ public class ReviewServiceTest {
     void testAddReviewCommentValidations() {
         Review emptyComment = new Review();
         emptyComment.setTargetId("HT-101");
+        emptyComment.setUserId("USR-101");
         emptyComment.setRating(4);
         emptyComment.setTitle("Valid Title");
         emptyComment.setComment("");
@@ -143,6 +179,7 @@ public class ReviewServiceTest {
 
         Review longComment = new Review();
         longComment.setTargetId("HT-101");
+        longComment.setUserId("USR-101");
         longComment.setRating(4);
         longComment.setTitle("Valid Title");
         longComment.setComment("C".repeat(3001));
@@ -155,6 +192,7 @@ public class ReviewServiceTest {
     void testAddReviewMissingTargetId() {
         Review r = new Review();
         r.setTargetId("");
+        r.setUserId("USR-101");
         r.setRating(4);
         r.setTitle("Good");
         r.setComment("Nice experience");
@@ -167,6 +205,7 @@ public class ReviewServiceTest {
     void testAddReviewSanitizesPhotoUrls() {
         Review r = new Review();
         r.setTargetId("HT-101");
+        r.setUserId("USR-101");
         r.setRating(4);
         r.setTitle("Great Place");
         r.setComment("Loved the ambiance");
@@ -188,6 +227,7 @@ public class ReviewServiceTest {
     void testAddReplySuccess() {
         Review r = new Review();
         r.setTargetId("HT-101");
+        r.setUserId("USR-101");
         r.setRating(5);
         r.setTitle("Amazing View");
         r.setComment("Loved every minute.");
@@ -209,6 +249,7 @@ public class ReviewServiceTest {
     void testAddReplyErrorScenarios() {
         Review r = new Review();
         r.setTargetId("HT-101");
+        r.setUserId("USR-101");
         r.setRating(5);
         r.setTitle("Clean Room");
         r.setComment("Comfortable bed.");
@@ -228,6 +269,7 @@ public class ReviewServiceTest {
     void testToggleHelpful() {
         Review r = new Review();
         r.setTargetId("HT-101");
+        r.setUserId("USR-101");
         r.setRating(4);
         r.setTitle("Solid Stay");
         r.setComment("Convenient location.");
@@ -249,6 +291,7 @@ public class ReviewServiceTest {
     void testFlagAndModerationFlow() {
         Review r = new Review();
         r.setTargetId("HT-101");
+        r.setUserId("USR-101");
         r.setTargetType("HOTEL");
         r.setRating(1);
         r.setTitle("Dispute");
@@ -282,6 +325,7 @@ public class ReviewServiceTest {
     void testGetReviewsFiltersAndSorts() {
         Review r1 = new Review();
         r1.setTargetId("HT-TEST");
+        r1.setUserId("USR-101");
         r1.setTargetType("HOTEL");
         r1.setRating(5);
         r1.setTitle("5 Star with Photo");
@@ -293,6 +337,7 @@ public class ReviewServiceTest {
 
         Review r2 = new Review();
         r2.setTargetId("HT-TEST");
+        r2.setUserId("USR-101");
         r2.setTargetType("HOTEL");
         r2.setRating(3);
         r2.setTitle("3 Star No Photo");
@@ -337,6 +382,93 @@ public class ReviewServiceTest {
 
         SseEmitter modEmitter = reviewService.subscribeToModeration();
         assertNotNull(modEmitter);
+    }
+
+    @Test
+    @DisplayName("addReview - Unverified User Without Booking Throws UnverifiedReviewException")
+    void testAddReviewUnverifiedUserThrowsException() {
+        Review r = new Review();
+        r.setTargetId("HT-101");
+        r.setUserId("UNVERIFIED-GUEST");
+        r.setRating(5);
+        r.setTitle("Great Hotel");
+        r.setComment("I loved staying here but I never booked it.");
+
+        assertThrows(UnverifiedReviewException.class, () -> reviewService.addReview(r));
+    }
+
+    @Test
+    @DisplayName("addReview - Cancelled Booking Throws UnverifiedReviewException")
+    void testAddReviewCancelledBookingThrowsException() {
+        Users.Booking cancelledBooking = new Users.Booking();
+        cancelledBooking.setBookingId("BK-CANCELLED-99");
+        cancelledBooking.setTargetId("HT-101");
+        cancelledBooking.setStatus("CANCELLED");
+        cancelledBooking.setType("Hotel");
+        bookingRepository.addBooking("USR-CANCELLED", cancelledBooking);
+
+        Review r = new Review();
+        r.setTargetId("HT-101");
+        r.setUserId("USR-CANCELLED");
+        r.setRating(1);
+        r.setTitle("Cancelled stay");
+        r.setComment("I cancelled my room and should not be allowed to review.");
+
+        assertThrows(UnverifiedReviewException.class, () -> reviewService.addReview(r));
+    }
+
+    @Test
+    @DisplayName("addReview - Verified User Computes Algorithmic Sentiment and Aspect Ratings")
+    void testAddReviewVerifiedUserComputesSentimentAndAspects() {
+        Review r = new Review();
+        r.setTargetId("HT-101");
+        r.setUserId("USR-101");
+        r.setRating(5);
+        r.setTitle("Magnificent luxury retreat");
+        r.setComment("Exceptional, spotless room, friendly and helpful staff, amazing central location, and great value!");
+        r.setUserName("Verified Traveler");
+
+        Review saved = reviewService.addReview(r);
+
+        assertNotNull(saved.getId());
+        assertTrue(saved.isVerifiedBooking());
+        assertTrue(saved.isVerifiedStay());
+        assertNotNull(saved.getSentimentScore());
+        assertTrue(saved.getSentimentScore() >= 0.65, "Expected positive sentiment score >= 0.65, got: " + saved.getSentimentScore());
+        assertEquals("POSITIVE", saved.getSentimentCategory());
+
+        Map<String, Double> aspects = saved.getAspectRatings();
+        assertNotNull(aspects);
+        assertTrue(aspects.containsKey("cleanliness"));
+        assertTrue(aspects.containsKey("service"));
+        assertTrue(aspects.containsKey("location"));
+        assertTrue(aspects.containsKey("value"));
+        assertTrue(aspects.get("cleanliness") >= 4.0);
+    }
+
+    @Test
+    @DisplayName("getReviewsForTarget - Computes Aspect Breakdown and Sentiment Summary in DTO")
+    void testGetReviewsComputesAspectBreakdownAndSentiment() {
+        Review r = new Review();
+        r.setTargetId("HT-101");
+        r.setUserId("USR-101");
+        r.setRating(5);
+        r.setTitle("Superb and pristine experience");
+        r.setComment("Spotless clean sheets, polite staff, perfect location, very affordable price.");
+        reviewService.addReview(r);
+
+        ReviewSummaryDTO summary = reviewService.getReviewsForTarget("HT-101", "HOTEL", "helpful", null, false);
+        assertNotNull(summary);
+        assertEquals(1, summary.getTotalCount());
+        assertNotNull(summary.getAspectBreakdown());
+        assertTrue(summary.getAspectBreakdown().containsKey("cleanliness"));
+        assertTrue(summary.getAspectBreakdown().containsKey("service"));
+        assertTrue(summary.getAspectBreakdown().containsKey("location"));
+        assertTrue(summary.getAspectBreakdown().containsKey("value"));
+        assertNotNull(summary.getAverageSentimentScore());
+        assertEquals("POSITIVE", summary.getOverallSentiment());
+        assertNotNull(summary.getSentimentCounts());
+        assertEquals(1, summary.getSentimentCounts().get("POSITIVE"));
     }
 
     public static class StubReviewRepository implements ReviewRepository {
@@ -521,6 +653,37 @@ public class ReviewServiceTest {
         @Override public <S extends Flight> long count(Example<S> example) { return 0; }
         @Override public <S extends Flight> boolean exists(Example<S> example) { return false; }
         @Override public <S extends Flight, R> R findBy(Example<S> example, Function<FluentQuery.FetchableFluentQuery<S>, R> queryFunction) { return null; }
+    }
+
+    public static class StubBookingRepository implements BookingRepository {
+        private final Map<String, List<Users.Booking>> userBookings = new LinkedHashMap<>();
+
+        public void addBooking(String userId, Users.Booking booking) {
+            userBookings.computeIfAbsent(userId, k -> new ArrayList<>()).add(booking);
+        }
+
+        @Override
+        public List<Users.Booking> findByUserIdAndTargetIdAndStatusIn(String userId, String targetId, List<String> statuses) {
+            List<Users.Booking> list = userBookings.getOrDefault(userId, Collections.emptyList());
+            return list.stream()
+                    .filter(b -> targetId != null && targetId.equalsIgnoreCase(b.getTargetId()))
+                    .filter(b -> {
+                        if (statuses == null || statuses.isEmpty()) return true;
+                        String status = b.getStatus() != null ? b.getStatus() : "CONFIRMED";
+                        return statuses.stream().anyMatch(s -> s.equalsIgnoreCase(status));
+                    })
+                    .collect(Collectors.toList());
+        }
+
+        @Override
+        public List<Users.Booking> findByUserId(String userId) {
+            return new ArrayList<>(userBookings.getOrDefault(userId, Collections.emptyList()));
+        }
+
+        @Override
+        public boolean existsByUserIdAndTargetIdAndStatusIn(String userId, String targetId, List<String> statuses) {
+            return !findByUserIdAndTargetIdAndStatusIn(userId, targetId, statuses).isEmpty();
+        }
     }
 }
 

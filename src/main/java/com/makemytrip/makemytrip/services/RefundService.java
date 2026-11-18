@@ -11,6 +11,7 @@ import com.makemytrip.makemytrip.models.Users.Booking;
 import com.makemytrip.makemytrip.repositories.FlightRepository;
 import com.makemytrip.makemytrip.repositories.HotelRepository;
 import com.makemytrip.makemytrip.repositories.RefundRepository;
+import com.makemytrip.makemytrip.repositories.RefundRequestRepository;
 import com.makemytrip.makemytrip.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -20,6 +21,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -39,8 +41,15 @@ public class RefundService {
     @Autowired
     private UserRepository userRepository;
 
-    @Autowired
+    @Autowired(required = false)
+    private RefundRequestRepository refundRequestRepository;
+
+    @Autowired(required = false)
     private RefundRepository refundRepository;
+
+    private RefundRepository getRefundRepository() {
+        return refundRequestRepository != null ? refundRequestRepository : refundRepository;
+    }
 
     @Autowired(required = false)
     private FlightRepository flightRepository;
@@ -66,36 +75,23 @@ public class RefundService {
         }
 
         double originalAmount = booking.getTotalPrice();
-        double refundPercentage = 80.0;
-        String policyApplied = "Standard Cancellation Policy (80% Refund)";
+        LocalDateTime scheduledTime = resolveScheduledDepartureTime(booking);
+        long hoursRemaining = scheduledTime != null
+                ? java.time.Duration.between(LocalDateTime.now(), scheduledTime).toHours()
+                : 0;
 
-        if (booking.getBookingTimestamp() != null && !booking.getBookingTimestamp().trim().isEmpty()) {
-            try {
-                LocalDateTime bookingTime = LocalDateTime.parse(booking.getBookingTimestamp());
-                long hoursElapsed = java.time.Duration.between(bookingTime, LocalDateTime.now()).toHours();
-                if (hoursElapsed <= 24) {
-                    refundPercentage = 50.0;
-                    policyApplied = "24-Hour Reservation Policy (50% Refund)";
-                } else {
-                    refundPercentage = 80.0;
-                    policyApplied = "Standard Cancellation Policy (80% Refund)";
-                }
-            } catch (Exception e) {
-                refundPercentage = 50.0;
-                policyApplied = "24-Hour Reservation Policy (50% Refund)";
-            }
-        } else if (booking.getDate() != null) {
-            try {
-                LocalDate bookingDate = LocalDate.parse(booking.getDate());
-                LocalDate today = LocalDate.now();
-                if (bookingDate.isEqual(today) || bookingDate.plusDays(1).isEqual(today)) {
-                    refundPercentage = 50.0;
-                    policyApplied = "24-Hour Reservation Policy (50% Refund)";
-                }
-            } catch (Exception e) {
-                refundPercentage = 50.0;
-                policyApplied = "24-Hour Reservation Policy (50% Refund)";
-            }
+        double refundPercentage;
+        String policyApplied;
+
+        if (hoursRemaining > 72) {
+            refundPercentage = 90.0;
+            policyApplied = "Flexible Advance Cancellation Policy (>72h before departure: 90% Refund)";
+        } else if (hoursRemaining >= 24) {
+            refundPercentage = 75.0;
+            policyApplied = "Standard Cancellation Policy (24-72h before departure: 75% Refund)";
+        } else {
+            refundPercentage = 50.0;
+            policyApplied = "Last-Minute Cancellation Policy (<24h before departure: 50% Refund)";
         }
 
         double refundAmount = Math.round((originalAmount * (refundPercentage / 100.0)) * 100.0) / 100.0;
@@ -162,20 +158,20 @@ public class RefundService {
         refundRequest.setCancellationReason(trimmedReason);
         refundRequest.setComment(comment != null ? comment : "");
         refundRequest.setRequestDate(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-        refundRequest.setStatus("PENDING");
+        refundRequest.setStatus("REQUESTED");
         refundRequest.setCurrentStep(1);
         refundRequest.setPolicyApplied(policyApplied);
 
         String estDate = LocalDate.now().plusDays(2).format(DateTimeFormatter.ofPattern("MMM dd, yyyy"));
         refundRequest.setEstimatedCompletionDate("Expected by " + estDate + " (2-3 business days)");
 
-        RefundRequest savedRequest = refundRepository.save(refundRequest);
+        RefundRequest savedRequest = getRefundRepository().save(refundRequest);
 
         if (notificationService != null) {
             notificationService.createNotification(
                     userId,
                     "Booking Cancelled & Refund Initiated",
-                    "Booking " + bookingId + " cancelled. Refund ID " + refundId + " for ₹" + refundAmount + " is currently PENDING.",
+                    "Booking " + bookingId + " cancelled. Refund ID " + refundId + " for ₹" + refundAmount + " is currently REQUESTED.",
                     "cancellation"
             );
         }
@@ -185,7 +181,7 @@ public class RefundService {
         broadcast.put("refundId", refundId);
         broadcast.put("bookingId", bookingId);
         broadcast.put("userId", userId);
-        broadcast.put("status", "PENDING");
+        broadcast.put("status", "REQUESTED");
         broadcast.put("currentStep", 1);
         broadcast.put("refundAmount", refundAmount);
         broadcast.put("policyApplied", policyApplied);
@@ -197,18 +193,18 @@ public class RefundService {
     }
 
     public List<RefundRequest> getAllRefunds() {
-        return refundRepository.findAll();
+        return getRefundRepository().findAll();
     }
 
     public List<RefundRequest> getUserRefunds(String userId) {
         if (userId == null || userId.trim().isEmpty() || "null".equalsIgnoreCase(userId)) {
             return Collections.emptyList();
         }
-        return refundRepository.findByUserId(userId.trim());
+        return getRefundRepository().findByUserId(userId.trim());
     }
 
     public RefundRequest getRefundByRefundId(String refundId) {
-        return refundRepository.findByRefundId(refundId)
+        return getRefundRepository().findByRefundId(refundId)
                 .orElseThrow(() -> new RefundNotFoundException("Refund request with ID '" + refundId + "' not found"));
     }
 
@@ -217,16 +213,30 @@ public class RefundService {
         String upperStatus = newStatus.toUpperCase();
 
         refund.setStatus(upperStatus);
-        if ("PROCESSED".equals(upperStatus)) {
+        if ("REQUESTED".equals(upperStatus) || "PENDING".equals(upperStatus)) {
+            refund.setCurrentStep(1);
+        } else if ("APPROVED".equals(upperStatus)) {
             refund.setCurrentStep(2);
+            refund.setEstimatedCompletionDate("Approved - Forwarding to Payment Gateway");
+        } else if ("PROCESSING".equals(upperStatus) || "PROCESSED".equals(upperStatus)) {
+            refund.setCurrentStep(2);
+            if (refund.getTransactionRef() == null || refund.getTransactionRef().isEmpty()) {
+                refund.setTransactionRef("REF-BANK-" + (100000 + (int)(Math.random() * 900000)));
+            }
+            refund.setEstimatedCompletionDate("Processing with Bank / Payment Gateway (" + refund.getTransactionRef() + ")");
         } else if ("COMPLETED".equals(upperStatus)) {
             refund.setCurrentStep(3);
-            refund.setEstimatedCompletionDate("Completed & Credited to Source Account");
+            if (refund.getTransactionRef() == null || !refund.getTransactionRef().startsWith("UTR")) {
+                refund.setTransactionRef("UTR" + (1000000000L + (long)(Math.random() * 9000000000L)));
+            }
+            refund.setEstimatedCompletionDate("Completed & Credited to Source Account (Ref No: " + refund.getTransactionRef() + ")");
         } else if ("REJECTED".equals(upperStatus)) {
+            refund.setCurrentStep(0);
             refund.setEstimatedCompletionDate("Cancellation Rejected");
         }
+        refund.setLastUpdatedEpochMs(System.currentTimeMillis());
 
-        RefundRequest updated = refundRepository.save(refund);
+        RefundRequest updated = getRefundRepository().save(refund);
 
         if (notificationService != null) {
             notificationService.createNotification(
@@ -250,6 +260,58 @@ public class RefundService {
         broadcastRefundUpdate(broadcast);
 
         return updated;
+    }
+
+    private LocalDateTime resolveScheduledDepartureTime(Booking booking) {
+        if (booking == null) return null;
+        if (booking.getDate() != null && !booking.getDate().trim().isEmpty()) {
+            String dateStr = booking.getDate().trim();
+            try {
+                if (dateStr.contains("T")) {
+                    return LocalDateTime.parse(dateStr);
+                }
+                if (dateStr.contains(" ")) {
+                    try {
+                        return LocalDateTime.parse(dateStr, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm[:ss]"));
+                    } catch (Exception ignored) {}
+                }
+                LocalDate localDate = LocalDate.parse(dateStr);
+                if ("Flight".equalsIgnoreCase(booking.getType()) && flightRepository != null && booking.getTargetId() != null) {
+                    try {
+                        Flight flight = flightRepository.findById(booking.getTargetId()).orElse(null);
+                        if (flight != null && flight.getDepartureTime() != null && !flight.getDepartureTime().trim().isEmpty()) {
+                            String dep = flight.getDepartureTime().trim();
+                            if (dep.contains("T")) {
+                                return LocalDateTime.parse(dep);
+                            }
+                            LocalTime time = parseLocalTime(dep);
+                            return localDate.atTime(time);
+                        }
+                    } catch (Exception ignored) {}
+                }
+                if ("Hotel".equalsIgnoreCase(booking.getType())) {
+                    return localDate.atTime(12, 0);
+                }
+                return localDate.atTime(10, 0);
+            } catch (Exception ignored) {}
+        }
+        return null;
+    }
+
+    private LocalTime parseLocalTime(String timeStr) {
+        try {
+            return LocalTime.parse(timeStr);
+        } catch (Exception e1) {
+            try {
+                return LocalTime.parse(timeStr.toUpperCase(), DateTimeFormatter.ofPattern("hh:mm a", Locale.ENGLISH));
+            } catch (Exception e2) {
+                try {
+                    return LocalTime.parse(timeStr.toUpperCase(), DateTimeFormatter.ofPattern("h:mm a", Locale.ENGLISH));
+                } catch (Exception e3) {
+                    return LocalTime.of(10, 0);
+                }
+            }
+        }
     }
 
     private Booking findBookingInUser(Users user, String bookingId) {

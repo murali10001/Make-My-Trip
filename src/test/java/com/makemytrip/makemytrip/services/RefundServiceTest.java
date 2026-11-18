@@ -11,6 +11,7 @@ import com.makemytrip.makemytrip.models.Users.Booking;
 import com.makemytrip.makemytrip.repositories.FlightRepository;
 import com.makemytrip.makemytrip.repositories.HotelRepository;
 import com.makemytrip.makemytrip.repositories.RefundRepository;
+import com.makemytrip.makemytrip.repositories.RefundRequestRepository;
 import com.makemytrip.makemytrip.repositories.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -53,6 +54,7 @@ class RefundServiceTest {
         hotelRepository = new StubHotelRepository();
 
         ReflectionTestUtils.setField(refundService, "userRepository", userRepository);
+        ReflectionTestUtils.setField(refundService, "refundRequestRepository", refundRepository);
         ReflectionTestUtils.setField(refundService, "refundRepository", refundRepository);
         ReflectionTestUtils.setField(refundService, "flightRepository", flightRepository);
         ReflectionTestUtils.setField(refundService, "hotelRepository", hotelRepository);
@@ -65,7 +67,7 @@ class RefundServiceTest {
         flightBooking = new Booking();
         flightBooking.setBookingId("BK-FL-12345");
         flightBooking.setType("Flight");
-        flightBooking.setDate(LocalDate.now().toString());
+        flightBooking.setDate(LocalDate.now().plusDays(5).toString());
         flightBooking.setBookingTimestamp(LocalDateTime.now().minusHours(2).toString());
         flightBooking.setQuantity(2);
         flightBooking.setTotalPrice(10000.0);
@@ -75,15 +77,25 @@ class RefundServiceTest {
         hotelBooking = new Booking();
         hotelBooking.setBookingId("BK-HT-67890");
         hotelBooking.setType("Hotel");
-        hotelBooking.setDate(LocalDate.now().minusDays(5).toString());
+        hotelBooking.setDate(LocalDate.now().plusDays(2).toString());
         hotelBooking.setBookingTimestamp(LocalDateTime.now().minusHours(72).toString());
         hotelBooking.setQuantity(1);
         hotelBooking.setTotalPrice(6000.0);
         hotelBooking.setTargetId("HT-202");
         hotelBooking.setStatus("CONFIRMED");
 
+        Booking urgentBooking = new Booking();
+        urgentBooking.setBookingId("BK-FL-URGENT");
+        urgentBooking.setType("Flight");
+        urgentBooking.setDate(LocalDate.now().toString());
+        urgentBooking.setQuantity(1);
+        urgentBooking.setTotalPrice(4000.0);
+        urgentBooking.setTargetId("FL-101");
+        urgentBooking.setStatus("CONFIRMED");
+
         testUser.getBookings().add(flightBooking);
         testUser.getBookings().add(hotelBooking);
+        testUser.getBookings().add(urgentBooking);
         userRepository.save(testUser);
 
         testFlight = new Flight();
@@ -100,29 +112,42 @@ class RefundServiceTest {
     }
 
     @Test
-    @DisplayName("Calculate Refund Preview - Within 24 Hours applies 50% Refund Policy")
-    void testCalculateRefundPreview_Within24Hours_Applies50Percent() {
+    @DisplayName("Calculate Refund Preview - More than 72 hours before departure applies 90% Refund Policy")
+    void testCalculateRefundPreview_MoreThan72Hours_Applies90Percent() {
         Map<String, Object> preview = refundService.calculateRefundPreview("USR-001", "BK-FL-12345");
 
         assertNotNull(preview);
         assertEquals("BK-FL-12345", preview.get("bookingId"));
-        assertEquals(50.0, preview.get("refundPercentage"));
-        assertEquals(5000.0, preview.get("refundAmount"));
-        assertEquals(5000.0, preview.get("deductionAmount"));
-        assertTrue(preview.get("policyApplied").toString().contains("50% Refund"));
+        assertEquals(90.0, preview.get("refundPercentage"));
+        assertEquals(9000.0, preview.get("refundAmount"));
+        assertEquals(1000.0, preview.get("deductionAmount"));
+        assertTrue(preview.get("policyApplied").toString().contains("90% Refund"));
     }
 
     @Test
-    @DisplayName("Calculate Refund Preview - After 24 Hours applies 80% Standard Policy")
-    void testCalculateRefundPreview_After24Hours_Applies80Percent() {
+    @DisplayName("Calculate Refund Preview - Between 24 and 72 hours applies 75% Standard Policy")
+    void testCalculateRefundPreview_Between24And72Hours_Applies75Percent() {
         Map<String, Object> preview = refundService.calculateRefundPreview("USR-001", "BK-HT-67890");
 
         assertNotNull(preview);
         assertEquals("BK-HT-67890", preview.get("bookingId"));
-        assertEquals(80.0, preview.get("refundPercentage"));
-        assertEquals(4800.0, preview.get("refundAmount"));
-        assertEquals(1200.0, preview.get("deductionAmount"));
-        assertTrue(preview.get("policyApplied").toString().contains("80% Refund"));
+        assertEquals(75.0, preview.get("refundPercentage"));
+        assertEquals(4500.0, preview.get("refundAmount"));
+        assertEquals(1500.0, preview.get("deductionAmount"));
+        assertTrue(preview.get("policyApplied").toString().contains("75% Refund"));
+    }
+
+    @Test
+    @DisplayName("Calculate Refund Preview - Less than 24 hours applies 50% Last-Minute Policy")
+    void testCalculateRefundPreview_LessThan24Hours_Applies50Percent() {
+        Map<String, Object> preview = refundService.calculateRefundPreview("USR-001", "BK-FL-URGENT");
+
+        assertNotNull(preview);
+        assertEquals("BK-FL-URGENT", preview.get("bookingId"));
+        assertEquals(50.0, preview.get("refundPercentage"));
+        assertEquals(2000.0, preview.get("refundAmount"));
+        assertEquals(2000.0, preview.get("deductionAmount"));
+        assertTrue(preview.get("policyApplied").toString().contains("50% Refund"));
     }
 
     @Test
@@ -154,8 +179,9 @@ class RefundServiceTest {
         assertNotNull(refund);
         assertTrue(refund.getRefundId().startsWith("RF-"));
         assertEquals("BK-FL-12345", refund.getBookingId());
-        assertEquals("PENDING", refund.getStatus());
-        assertEquals(5000.0, refund.getRefundAmount());
+        assertEquals("REQUESTED", refund.getStatus());
+        assertEquals(1, refund.getCurrentStep());
+        assertEquals(9000.0, refund.getRefundAmount());
         assertEquals("CANCELLED", flightBooking.getStatus());
         assertEquals(52, testFlight.getAvailableSeats());
 
@@ -202,23 +228,33 @@ class RefundServiceTest {
     }
 
     @Test
-    @DisplayName("Update Refund Status - Transitions to PROCESSED and COMPLETED")
+    @DisplayName("Update Refund Status - Transitions to APPROVED, PROCESSING, and COMPLETED")
     void testUpdateRefundStatus_Transitions() {
         RefundRequest mockRequest = new RefundRequest();
         mockRequest.setRefundId("RF-999");
         mockRequest.setUserId("USR-001");
         mockRequest.setBookingId("BK-FL-12345");
-        mockRequest.setStatus("PENDING");
-        mockRequest.setRefundAmount(5000.0);
+        mockRequest.setStatus("REQUESTED");
+        mockRequest.setRefundAmount(9000.0);
         refundRepository.save(mockRequest);
 
-        RefundRequest processed = refundService.updateRefundStatus("RF-999", "PROCESSED");
-        assertEquals("PROCESSED", processed.getStatus());
-        assertEquals(2, processed.getCurrentStep());
+        RefundRequest approved = refundService.updateRefundStatus("RF-999", "APPROVED");
+        assertEquals("APPROVED", approved.getStatus());
+        assertEquals(2, approved.getCurrentStep());
+
+        RefundRequest processing = refundService.updateRefundStatus("RF-999", "PROCESSING");
+        assertEquals("PROCESSING", processing.getStatus());
+        assertEquals(2, processing.getCurrentStep());
+        assertNotNull(processing.getTransactionRef());
 
         RefundRequest completed = refundService.updateRefundStatus("RF-999", "COMPLETED");
         assertEquals("COMPLETED", completed.getStatus());
         assertEquals(3, completed.getCurrentStep());
+        assertNotNull(completed.getTransactionRef());
+
+        RefundRequest legacyProcessed = refundService.updateRefundStatus("RF-999", "PROCESSED");
+        assertEquals("PROCESSED", legacyProcessed.getStatus());
+        assertEquals(2, legacyProcessed.getCurrentStep());
     }
 
     @Test
@@ -265,7 +301,7 @@ class RefundServiceTest {
         @Override public Page<Users> findAll(Pageable pageable) { return null; }
     }
 
-    static class StubRefundRepository implements RefundRepository {
+    static class StubRefundRepository implements RefundRequestRepository {
         Map<String, RefundRequest> db = new HashMap<>();
 
         @Override public List<RefundRequest> findByUserId(String userId) {

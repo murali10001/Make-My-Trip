@@ -379,9 +379,20 @@ const ProfileDashboardPage = () => {
       setCalculatingPreview(true);
       try {
         const preview = await calculateRefundPreview(userId, bookingId);
-        setRefundPreview(preview);
+        if (preview && !preview.error) {
+          setRefundPreview(preview);
+        } else {
+          const total = booking?.totalPrice || booking?.price || 0;
+          const refundAmt = Math.round(total * 0.5);
+          setRefundPreview({
+            originalAmount: total,
+            refundPercentage: 50.0,
+            refundAmount: refundAmt,
+            deductionAmount: total - refundAmt,
+            policyApplied: "24-Hour Reservation Policy (50% Refund)",
+          });
+        }
       } catch (err: any) {
-
         const total = booking?.totalPrice || booking?.price || 0;
         const refundAmt = Math.round(total * 0.5);
         setRefundPreview({
@@ -422,6 +433,11 @@ const ProfileDashboardPage = () => {
         cancellationComment
       );
 
+      if (!refundRecord || refundRecord.error || refundRecord.success === false) {
+        setCancelError(refundRecord?.error || "Unable to connect to server. Please ensure the backend is running.");
+        return;
+      }
+
       setCancelSuccessMsg(
         `Booking ${bookingId} cancelled successfully! Refund Request ID: ${refundRecord?.refundId || 'RF-SUCCESS'}`
       );
@@ -433,7 +449,7 @@ const ProfileDashboardPage = () => {
         setActiveTab("refunds");
       }, 1800);
     } catch (err: any) {
-      setCancelError(err.message || "Failed to process cancellation. Please try again.");
+      setCancelError(err?.message || "Failed to process cancellation. Please try again.");
     } finally {
       setSubmittingCancel(false);
     }

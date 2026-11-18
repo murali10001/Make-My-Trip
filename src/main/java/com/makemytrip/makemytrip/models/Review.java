@@ -8,7 +8,9 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Document(collection = "reviews")
 @CompoundIndexes({
@@ -39,6 +41,11 @@ public class Review {
     private String createdAt;
     private long createdAtEpochMs;
     private List<ReviewReply> replies = new ArrayList<>();
+    private Double sentimentScore;
+    private String sentimentCategory;
+    private boolean verifiedBooking = false;
+    private boolean verifiedStay = false;
+    private Map<String, Double> aspectRatings = new LinkedHashMap<>();
 
     public Review() {
         this.createdAtEpochMs = System.currentTimeMillis();
@@ -264,6 +271,57 @@ public class Review {
 
     public void setReplies(List<ReviewReply> replies) {
         this.replies = replies != null ? replies : new ArrayList<>();
+    }
+
+    public Double getSentimentScore() {
+        return sentimentScore;
+    }
+
+    public void setSentimentScore(Double sentimentScore) {
+        this.sentimentScore = sentimentScore;
+    }
+
+    public String getSentimentCategory() {
+        return sentimentCategory;
+    }
+
+    public void setSentimentCategory(String sentimentCategory) {
+        this.sentimentCategory = sentimentCategory;
+    }
+
+    public boolean isVerifiedBooking() {
+        return verifiedBooking;
+    }
+
+    public boolean getVerifiedBooking() {
+        return verifiedBooking;
+    }
+
+    public void setVerifiedBooking(boolean verifiedBooking) {
+        this.verifiedBooking = verifiedBooking;
+    }
+
+    public boolean isVerifiedStay() {
+        return verifiedStay;
+    }
+
+    public boolean getVerifiedStay() {
+        return verifiedStay;
+    }
+
+    public void setVerifiedStay(boolean verifiedStay) {
+        this.verifiedStay = verifiedStay;
+    }
+
+    public Map<String, Double> getAspectRatings() {
+        if (aspectRatings == null) {
+            aspectRatings = new LinkedHashMap<>();
+        }
+        return aspectRatings;
+    }
+
+    public void setAspectRatings(Map<String, Double> aspectRatings) {
+        this.aspectRatings = aspectRatings != null ? aspectRatings : new LinkedHashMap<>();
     }
 }
 

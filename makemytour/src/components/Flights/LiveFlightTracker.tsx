@@ -170,13 +170,37 @@ export function getRealTimeFlightStatus(flight: FlightStatusItem, now: Date): Re
     effectiveCurrent = currentMins;
   }
 
+  const isDelayed = flight.status === "DELAYED" ||
+    (flight.revisedDeparture && flight.revisedDeparture !== flight.scheduledDeparture) ||
+    (flight.revisedArrival && flight.revisedArrival !== flight.scheduledArrival);
+
   if (effectiveCurrent >= effectiveArr) {
     return {
       status: "LANDED",
       estimatedMinutesLeft: 0,
       progressPercent: 100,
       isLanded: true,
-      contextReason: `Landed safely at ${arrStr} - Taxiing to gate`,
+      contextReason: isDelayed
+        ? `Landed at ${arrStr} (Delayed arrival) - Taxiing to gate`
+        : `Landed safely at ${arrStr} - Taxiing to gate`,
+    };
+  } else if (isDelayed) {
+    const elapsed = (currentMins + currentSecs / 60) >= depMins
+      ? ((currentMins + currentSecs / 60) - depMins)
+      : (((currentMins + currentSecs / 60) + 1440) - depMins);
+    const progress = effectiveCurrent >= effectiveDep
+      ? Math.min(99, Math.max(2, Math.round((elapsed / (totalDuration || 1)) * 100)))
+      : 0;
+    const minutesLeft = Math.max(1, effectiveArr - effectiveCurrent);
+    const delayContext = (flight.delayReason && flight.delayReason.trim().length > 0 && !flight.delayReason.toLowerCase().includes("check-in"))
+      ? flight.delayReason
+      : (effectiveCurrent >= effectiveDep ? "En route - Operating behind schedule" : "Delayed departure");
+    return {
+      status: "DELAYED",
+      estimatedMinutesLeft: minutesLeft,
+      progressPercent: progress,
+      isLanded: false,
+      contextReason: delayContext,
     };
   } else if (effectiveCurrent >= effectiveDep) {
     const elapsed = (currentMins + currentSecs / 60) >= depMins
@@ -204,8 +228,6 @@ export function getRealTimeFlightStatus(flight: FlightStatusItem, now: Date): Re
       contextReason: `Boarding underway at ${gate} (Departs in ${minutesToDep}m)`,
     };
   } else {
-    const isDelayed = flight.status === "DELAYED" ||
-      (flight.revisedDeparture && flight.revisedDeparture !== flight.scheduledDeparture);
     let minutesToDep = effectiveDep - effectiveCurrent;
     if (minutesToDep < 0) minutesToDep += 1440;
     const hours = Math.floor(minutesToDep / 60);
@@ -216,16 +238,16 @@ export function getRealTimeFlightStatus(flight: FlightStatusItem, now: Date): Re
     if (minutesToArr < 0) minutesToArr += 1440;
 
     return {
-      status: isDelayed ? "DELAYED" : "ON_TIME",
+      status: "ON_TIME",
       estimatedMinutesLeft: Math.max(1, minutesToArr),
       progressPercent: 0,
       isLanded: false,
-      contextReason: isDelayed
-        ? (flight.delayReason || "Delayed departure")
-        : `Operating on schedule - Check-in open (Departs in ${timeToDepStr})`,
+      contextReason: `Operating on schedule - Check-in open (Departs in ${timeToDepStr})`,
     };
   }
 }
+
+export const normalizeFlightNum = (s?: string) => (s || "").replace(/[\s-]+/g, "").toUpperCase();
 
 const LiveFlightTracker: React.FC = () => {
   const router = useRouter();
@@ -239,6 +261,7 @@ const LiveFlightTracker: React.FC = () => {
 
   const [trackedNumbers, setTrackedNumbers] = useState<string[]>([]);
   const [isMounted, setIsMounted] = useState<boolean>(false);
+  const [sseStatus, setSseStatus] = useState<"connected" | "connecting" | "offline">("connecting");
 
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
   const [validatingDb, setValidatingDb] = useState<boolean>(false);
@@ -323,7 +346,7 @@ const LiveFlightTracker: React.FC = () => {
 
   const fetchFlights = async () => {
     try {
-      const data = await getFlightStatuses(searchQuery, selectedStatus);
+      const data = await getFlightStatuses();
       setFlights(data || []);
     } catch (err) {
       console.error("Error fetching flight statuses:", err);
@@ -368,7 +391,7 @@ const LiveFlightTracker: React.FC = () => {
 
   useEffect(() => {
     fetchFlights();
-  }, [searchQuery, selectedStatus]);
+  }, []);
 
   useEffect(() => {
     handleValidateDb(false);
@@ -386,7 +409,20 @@ const LiveFlightTracker: React.FC = () => {
         const apiBase = BACKEND_URL;
         eventSource = new EventSource(`${apiBase}/api/flight-status/stream`);
 
+        eventSource.onopen = () => {
+          setSseStatus("connected");
+        };
+
+        eventSource.addEventListener("connect", () => {
+          setSseStatus("connected");
+        });
+
+        eventSource.addEventListener("ping", () => {
+          setSseStatus("connected");
+        });
+
         eventSource.onerror = () => {
+          setSseStatus("offline");
         };
 
         eventSource.addEventListener("flight-update", (event: MessageEvent) => {
@@ -403,7 +439,9 @@ const LiveFlightTracker: React.FC = () => {
                 return [updatedFlight, ...prev];
               });
 
-              const isTracked = trackedNumbersRef.current.includes(updatedFlight.flightNumber);
+              const isTracked = trackedNumbersRef.current.some(
+                (num) => normalizeFlightNum(num) === normalizeFlightNum(updatedFlight.flightNumber)
+              );
 
               if (isTracked) {
                 let notifType: "delay" | "boarding" | "gate" | "info" = "info";
@@ -459,8 +497,8 @@ const LiveFlightTracker: React.FC = () => {
   useEffect(() => {
     let interval: any = null;
     if (autoSimulate) {
-      interval = setInterval(async () => {
-        await handleRandomSimulation(true);
+      interval = setInterval(() => {
+        handleRandomSimulation(true).catch(() => {});
       }, 7000);
     }
     return () => {
@@ -469,9 +507,22 @@ const LiveFlightTracker: React.FC = () => {
   }, [autoSimulate, trackedNumbers]);
 
   const toggleTrackFlight = async (flightNumber: string) => {
-    const isCurrentlyTracked = trackedNumbers.includes(flightNumber);
+    if (typeof window !== "undefined" && "Notification" in window) {
+      if (Notification.permission === "default") {
+        try {
+          const perm = await Notification.requestPermission();
+          setWebPushPermission(perm);
+        } catch (e) {
+          console.error("Failed to request push permission:", e);
+        }
+      }
+    }
+
+    const isCurrentlyTracked = trackedNumbers.some(
+      (num) => normalizeFlightNum(num) === normalizeFlightNum(flightNumber)
+    );
     const updated = isCurrentlyTracked
-      ? trackedNumbers.filter((num) => num !== flightNumber)
+      ? trackedNumbers.filter((num) => normalizeFlightNum(num) !== normalizeFlightNum(flightNumber))
       : [...trackedNumbers, flightNumber];
 
     setTrackedNumbers(updated);
@@ -516,6 +567,20 @@ const LiveFlightTracker: React.FC = () => {
         } catch (e) {
           console.error("Error firing native push notification", e);
         }
+      } else if (Notification.permission === "default") {
+        Notification.requestPermission().then((perm) => {
+          setWebPushPermission(perm);
+          if (perm === "granted") {
+            try {
+              new window.Notification(notif.title, {
+                body: notif.message,
+                icon: "/favicon.ico",
+              });
+            } catch (e) {
+              console.error("Error firing native push notification", e);
+            }
+          }
+        }).catch((e) => console.error("Error requesting permission:", e));
       }
     }
   };
@@ -531,11 +596,13 @@ const LiveFlightTracker: React.FC = () => {
   const handleRandomSimulation = async (isBackground = false) => {
     if (!isBackground) setSimulationLoading(true);
     try {
-      const updatedFlight: FlightStatusItem = await triggerRandomFlightSimulation();
+      const updatedFlight: FlightStatusItem | null = await triggerRandomFlightSimulation().catch(() => null);
       if (updatedFlight) {
         await fetchFlights();
 
-        const isTracked = trackedNumbers.includes(updatedFlight.flightNumber);
+        const isTracked = trackedNumbers.some(
+          (num) => normalizeFlightNum(num) === normalizeFlightNum(updatedFlight.flightNumber)
+        );
         let notifType: "delay" | "boarding" | "gate" | "info" = "info";
         let title = `Update for ${updatedFlight.flightNumber}`;
 
@@ -629,10 +696,13 @@ const LiveFlightTracker: React.FC = () => {
       const updated = await simulateFlightUpdate(payload);
       if (updated) {
         await fetchFlights();
+        const isTracked = trackedNumbers.some(
+          (num) => normalizeFlightNum(num) === normalizeFlightNum(updated.flightNumber)
+        );
         addNotification({
           id: "CUSTOM-SIM-" + Date.now().toString(),
           flightNumber: updated.flightNumber,
-          title: `Simulator: Flight ${updated.flightNumber} ${updated.status}`,
+          title: isTracked ? `[WATCHLIST] Flight ${updated.flightNumber} ${updated.status}` : `Flight ${updated.flightNumber} ${updated.status}`,
           message: `${updated.airline}: ${updated.delayReason}`,
           timestamp: new Date().toLocaleTimeString(),
           type: updated.status === "DELAYED" ? "delay" : "info",
@@ -899,8 +969,30 @@ const LiveFlightTracker: React.FC = () => {
         {alertsFeedOpen && (
           <div className="p-4">
             {notifications.length === 0 ? (
-              <div className="py-5 text-center text-slate-400 text-xs flex flex-col items-center justify-center">
+              <div className="py-5 text-center text-slate-400 text-xs flex flex-col items-center justify-center gap-2">
                 <Bell className="w-6 h-6 text-slate-300 mb-1" />
+                <div className="flex items-center gap-2">
+                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+                    sseStatus === "connected"
+                      ? "bg-emerald-100 text-emerald-800"
+                      : sseStatus === "connecting"
+                      ? "bg-amber-100 text-amber-800"
+                      : "bg-rose-100 text-rose-800"
+                  }`}>
+                    <span className={`w-2 h-2 rounded-full ${
+                      sseStatus === "connected"
+                        ? "bg-emerald-500 animate-pulse"
+                        : sseStatus === "connecting"
+                        ? "bg-amber-500 animate-ping"
+                        : "bg-rose-500"
+                    }`} />
+                    {sseStatus === "connected"
+                      ? "Radar SSE Stream Live"
+                      : sseStatus === "connecting"
+                      ? "Connecting to Radar SSE..."
+                      : "Radar Stream Reconnecting..."}
+                  </span>
+                </div>
                 <span>Listening for live flight radar updates via SSE stream... Push notifications active.</span>
               </div>
             ) : (
@@ -961,7 +1053,9 @@ const LiveFlightTracker: React.FC = () => {
         ) : (
           <div className="flex sm:grid sm:grid-cols-2 md:grid-cols-3 gap-3 overflow-x-auto pb-2 sm:pb-0 scrollbar-none snap-x">
             {trackedNumbers.map((num) => {
-              const matched = flightsWithComputed.find((f) => f.flightNumber === num);
+              const matched = flightsWithComputed.find(
+                (f) => normalizeFlightNum(f.flightNumber) === normalizeFlightNum(num)
+              );
               return (
                 <div
                   key={num}
@@ -989,7 +1083,7 @@ const LiveFlightTracker: React.FC = () => {
                         )}
                         {matched.computed.status === "DELAYED" && (
                           <span className="text-amber-700 font-semibold ml-1.5">
-                            • Delayed
+                            • {matched.computed.estimatedMinutesLeft > 0 ? `${matched.computed.estimatedMinutesLeft}m left` : "Delayed"}
                           </span>
                         )}
                       </p>
@@ -1063,7 +1157,9 @@ const LiveFlightTracker: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredFlights.map((flight) => {
-            const isTracked = trackedNumbers.includes(flight.flightNumber);
+            const isTracked = trackedNumbers.some(
+              (num) => normalizeFlightNum(num) === normalizeFlightNum(flight.flightNumber)
+            );
             const comp = flight.computed;
 
             return (
@@ -1288,7 +1384,7 @@ const LiveFlightTracker: React.FC = () => {
                       onClick={() => toggleTrackFlight(selectedFlight.flightNumber)}
                       className="text-xs"
                     >
-                      {trackedNumbers.includes(selectedFlight.flightNumber) ? "Remove from Watchlist" : "Pin & Track Live"}
+                      {trackedNumbers.some((num) => normalizeFlightNum(num) === normalizeFlightNum(selectedFlight.flightNumber)) ? "Remove from Watchlist" : "Pin & Track Live"}
                     </Button>
                     <Button onClick={() => setSelectedFlight(null)} className="bg-blue-600 text-xs">
                       Close Details

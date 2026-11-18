@@ -18,6 +18,11 @@ public class Room3dConfig implements Serializable {
     private String wallMaterial;
     private double ceilingHeight = 2.8;
     private String viewScene;
+    private String spatialPanoramaUrl;
+    private Map<String, String> room3dImages = new HashMap<>();
+    private String dayLightingImage;
+    private String nightLightingImage;
+    private String floorPlanUrl;
     private RoomLightingProfile lightingProfile;
     private List<Room3dFurniture> furniture = new ArrayList<>();
     private List<Room3dHotspot> hotspots = new ArrayList<>();
@@ -71,6 +76,46 @@ public class Room3dConfig implements Serializable {
 
     public void setViewScene(String viewScene) {
         this.viewScene = viewScene;
+    }
+
+    public String getSpatialPanoramaUrl() {
+        return spatialPanoramaUrl;
+    }
+
+    public void setSpatialPanoramaUrl(String spatialPanoramaUrl) {
+        this.spatialPanoramaUrl = spatialPanoramaUrl;
+    }
+
+    public Map<String, String> getRoom3dImages() {
+        return room3dImages;
+    }
+
+    public void setRoom3dImages(Map<String, String> room3dImages) {
+        this.room3dImages = room3dImages;
+    }
+
+    public String getDayLightingImage() {
+        return dayLightingImage;
+    }
+
+    public void setDayLightingImage(String dayLightingImage) {
+        this.dayLightingImage = dayLightingImage;
+    }
+
+    public String getNightLightingImage() {
+        return nightLightingImage;
+    }
+
+    public void setNightLightingImage(String nightLightingImage) {
+        this.nightLightingImage = nightLightingImage;
+    }
+
+    public String getFloorPlanUrl() {
+        return floorPlanUrl;
+    }
+
+    public void setFloorPlanUrl(String floorPlanUrl) {
+        this.floorPlanUrl = floorPlanUrl;
     }
 
     public RoomLightingProfile getLightingProfile() {

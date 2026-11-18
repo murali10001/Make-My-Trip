@@ -1,7 +1,10 @@
 package com.makemytrip.makemytrip.services;
 
+import com.makemytrip.makemytrip.models.Flight;
 import com.makemytrip.makemytrip.models.FlightStatus;
+import com.makemytrip.makemytrip.models.Notification;
 import com.makemytrip.makemytrip.models.Users;
+import com.makemytrip.makemytrip.repositories.FlightRepository;
 import com.makemytrip.makemytrip.repositories.FlightStatusRepository;
 import com.makemytrip.makemytrip.repositories.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,6 +20,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.time.LocalTime;
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -25,6 +29,8 @@ class FlightStatusServiceTest {
     private FlightStatusService flightStatusService;
     private TestFlightStatusRepository testRepo;
     private TestUserRepository testUserRepo;
+    private StubFlightRepository testFlightRepo;
+    private TestNotificationService testNotificationService;
 
     private FlightStatus flight1;
     private FlightStatus flight2;
@@ -35,9 +41,13 @@ class FlightStatusServiceTest {
         flightStatusService = new FlightStatusService();
         testRepo = new TestFlightStatusRepository();
         testUserRepo = new TestUserRepository();
+        testFlightRepo = new StubFlightRepository();
+        testNotificationService = new TestNotificationService();
 
         ReflectionTestUtils.setField(flightStatusService, "flightStatusRepository", testRepo);
         ReflectionTestUtils.setField(flightStatusService, "userRepository", testUserRepo);
+        ReflectionTestUtils.setField(flightStatusService, "flightRepository", testFlightRepo);
+        ReflectionTestUtils.setField(flightStatusService, "notificationService", testNotificationService);
 
         flight1 = new FlightStatus("1", "AI-101", "Air India", "DEL", "BOM",
                 "10:00", "12:00", "10:00", "12:00", "ON_TIME",
@@ -104,13 +114,108 @@ class FlightStatusServiceTest {
     }
 
     @Test
-    @DisplayName("TriggerRandomSimulation - Transitions flight status to BOARDING or DELAYED")
+    @DisplayName("TriggerRandomSimulation - Transitions flight status to BOARDING or DELAYED or CANCELLED")
     void testTriggerRandomSimulation() {
         FlightStatus result = flightStatusService.triggerRandomSimulation();
 
         assertNotNull(result);
         assertNotNull(result.getStatus());
-        assertTrue(Arrays.asList("ON_TIME", "DELAYED", "BOARDING", "IN_FLIGHT", "LANDED").contains(result.getStatus()));
+        assertTrue(Arrays.asList("ON_TIME", "DELAYED", "BOARDING", "IN_FLIGHT", "LANDED", "CANCELLED").contains(result.getStatus()));
+    }
+
+    @Test
+    @DisplayName("ColdStartSeeding - Auto-seeds from FlightRepository when FlightStatusRepository is empty")
+    void testColdStartSeeding_WhenCatalogEmpty() {
+        testRepo.savedFlights.clear();
+        assertEquals(0, testRepo.count());
+
+        Flight catFlight1 = new Flight();
+        catFlight1.setId("CAT-1");
+        catFlight1.setFlightNo("6E-555");
+        catFlight1.setAirline("IndiGo");
+        catFlight1.setFrom("DEL");
+        catFlight1.setTo("BLR");
+        catFlight1.setDepartureTime("08:00 AM");
+        catFlight1.setArrivalTime("10:45 AM");
+        testFlightRepo.save(catFlight1);
+
+        Flight catFlight2 = new Flight();
+        catFlight2.setId("CAT-2");
+        catFlight2.setFlightNo("AI-777");
+        catFlight2.setAirline("Air India");
+        catFlight2.setFrom("BOM");
+        catFlight2.setTo("GOI");
+        catFlight2.setDepartureTime("11:30 AM");
+        catFlight2.setArrivalTime("01:00 PM");
+        testFlightRepo.save(catFlight2);
+
+        List<FlightStatus> all = flightStatusService.getAllFlights(null, null);
+
+        assertEquals(2, all.size());
+        assertTrue(all.stream().anyMatch(f -> "6E-555".equals(f.getFlightNumber())));
+        assertTrue(all.stream().anyMatch(f -> "AI-777".equals(f.getFlightNumber())));
+        assertEquals("ON_TIME", all.get(0).getStatus());
+    }
+
+    @Test
+    @DisplayName("ColdStartSeeding - Does not duplicate records when catalog already populated")
+    void testColdStartSeeding_WhenAlreadyPopulated() {
+        assertEquals(3, testRepo.count());
+
+        Flight catFlight = new Flight();
+        catFlight.setId("CAT-NEW");
+        catFlight.setFlightNo("UK-888");
+        testFlightRepo.save(catFlight);
+
+        flightStatusService.seedFromFlightCatalog();
+
+        assertEquals(3, testRepo.count(), "Should not reseed when status collection has entries");
+    }
+
+    @Test
+    @DisplayName("TriggerRandomSimulation - Realistic CANCELLED status simulation")
+    void testTriggerRandomSimulation_CancellationSimulation() {
+        boolean cancelledGenerated = false;
+        for (int i = 0; i < 200; i++) {
+            FlightStatus res = flightStatusService.triggerRandomSimulation();
+            if ("CANCELLED".equals(res.getStatus())) {
+                cancelledGenerated = true;
+                assertEquals(0, res.getEstimatedArrivalMinutes());
+                assertNotNull(res.getDelayReason());
+                assertTrue(res.getDelayReason().length() > 5);
+                break;
+            }
+        }
+        assertTrue(cancelledGenerated, "CANCELLED status should be probabilistically reachable in simulation");
+    }
+
+    @Test
+    @DisplayName("UpdateFlightStatus - Explicit CANCELLED status update sets 0 arrival minutes and reason")
+    void testUpdateFlightStatus_ExplicitCancellation() {
+        FlightStatus updated = flightStatusService.updateFlightStatus(
+                "AI-101", "CANCELLED", "Technical maintenance inspection required", null, null, null, null, null
+        );
+
+        assertNotNull(updated);
+        assertEquals("CANCELLED", updated.getStatus());
+        assertEquals(0, updated.getEstimatedArrivalMinutes());
+        assertEquals("Technical maintenance inspection required", updated.getDelayReason());
+    }
+
+    @Test
+    @DisplayName("NotifyInterestedUsers - Sends cancellation notification to tracked users")
+    void testNotifyInterestedUsers_OnCancellation() {
+        Users user = new Users();
+        user.setId("USR-NOTIF");
+        user.setTrackedFlights(new ArrayList<>(List.of("AI-101")));
+        testUserRepo.savedUsers.put("USR-NOTIF", user);
+
+        flightStatusService.updateFlightStatus(
+                "AI-101", "CANCELLED", "Adverse weather conditions & runway closure", null, null, null, null, null
+        );
+
+        assertFalse(testNotificationService.createdNotifications.isEmpty());
+        assertTrue(testNotificationService.createdNotifications.stream().anyMatch(n -> n.contains("USR-NOTIF") && n.contains("Cancellation Alert")));
     }
 
     @Test
@@ -187,7 +292,15 @@ class FlightStatusServiceTest {
             return new ArrayList<>(savedFlights);
         }
 
-        @Override public <S extends FlightStatus> List<S> saveAll(Iterable<S> entities) { return null; }
+        @Override
+        public <S extends FlightStatus> List<S> saveAll(Iterable<S> entities) {
+            List<S> result = new ArrayList<>();
+            for (S entity : entities) {
+                save(entity);
+                result.add(entity);
+            }
+            return result;
+        }
         @Override public Optional<FlightStatus> findById(String s) { return Optional.empty(); }
         @Override public boolean existsById(String s) { return false; }
         @Override public List<FlightStatus> findAllById(Iterable<String> strings) { return null; }
@@ -250,6 +363,81 @@ class FlightStatusServiceTest {
         @Override public <S extends Users> long count(Example<S> example) { return 0; }
         @Override public <S extends Users> boolean exists(Example<S> example) { return false; }
         @Override public <S extends Users, R> R findBy(Example<S> example, Function<FluentQuery.FetchableFluentQuery<S>, R> queryFunction) { return null; }
+    }
+
+    static class StubFlightRepository implements FlightRepository {
+        Map<String, Flight> flightMap = new HashMap<>();
+
+        @Override
+        public List<Flight> findByFromContainingIgnoreCaseAndToContainingIgnoreCase(String from, String to) {
+            return flightMap.values().stream()
+                    .filter(f -> f.getFrom() != null && f.getFrom().toLowerCase().contains(from.toLowerCase())
+                            && f.getTo() != null && f.getTo().toLowerCase().contains(to.toLowerCase()))
+                    .collect(Collectors.toList());
+        }
+
+        @Override
+        public List<Flight> findByFromContainingIgnoreCase(String from) {
+            return flightMap.values().stream()
+                    .filter(f -> f.getFrom() != null && f.getFrom().toLowerCase().contains(from.toLowerCase()))
+                    .collect(Collectors.toList());
+        }
+
+        @Override
+        public List<Flight> findByToContainingIgnoreCase(String to) {
+            return flightMap.values().stream()
+                    .filter(f -> f.getTo() != null && f.getTo().toLowerCase().contains(to.toLowerCase()))
+                    .collect(Collectors.toList());
+        }
+
+        @Override
+        public <S extends Flight> S save(S entity) {
+            String id = entity.getId() != null ? entity.getId() : UUID.randomUUID().toString();
+            entity.setId(id);
+            flightMap.put(id, entity);
+            return entity;
+        }
+
+        @Override
+        public List<Flight> findAll() {
+            return new ArrayList<>(flightMap.values());
+        }
+
+        @Override
+        public Optional<Flight> findById(String s) {
+            return Optional.ofNullable(flightMap.get(s));
+        }
+
+        @Override public <S extends Flight> List<S> saveAll(Iterable<S> entities) { return null; }
+        @Override public boolean existsById(String s) { return flightMap.containsKey(s); }
+        @Override public List<Flight> findAllById(Iterable<String> strings) { return null; }
+        @Override public long count() { return flightMap.size(); }
+        @Override public void deleteById(String s) { flightMap.remove(s); }
+        @Override public void delete(Flight entity) {}
+        @Override public void deleteAllById(Iterable<? extends String> strings) {}
+        @Override public void deleteAll(Iterable<? extends Flight> entities) {}
+        @Override public void deleteAll() { flightMap.clear(); }
+        @Override public List<Flight> findAll(Sort sort) { return null; }
+        @Override public Page<Flight> findAll(Pageable pageable) { return null; }
+        @Override public <S extends Flight> S insert(S entity) { return null; }
+        @Override public <S extends Flight> List<S> insert(Iterable<S> entities) { return null; }
+        @Override public <S extends Flight> Optional<S> findOne(Example<S> example) { return Optional.empty(); }
+        @Override public <S extends Flight> List<S> findAll(Example<S> example) { return null; }
+        @Override public <S extends Flight> List<S> findAll(Example<S> example, Sort sort) { return null; }
+        @Override public <S extends Flight> Page<S> findAll(Example<S> example, Pageable pageable) { return null; }
+        @Override public <S extends Flight> long count(Example<S> example) { return 0; }
+        @Override public <S extends Flight> boolean exists(Example<S> example) { return false; }
+        @Override public <S extends Flight, R> R findBy(Example<S> example, Function<FluentQuery.FetchableFluentQuery<S>, R> queryFunction) { return null; }
+    }
+
+    static class TestNotificationService extends NotificationService {
+        List<String> createdNotifications = new ArrayList<>();
+
+        @Override
+        public Notification createNotification(String userId, String title, String desc, String type) {
+            createdNotifications.add(userId + "::" + title + "::" + desc);
+            return new Notification("N-TEST", userId, title, desc, "now", type);
+        }
     }
 }
 

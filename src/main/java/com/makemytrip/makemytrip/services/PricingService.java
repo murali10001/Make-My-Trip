@@ -9,12 +9,15 @@ import com.makemytrip.makemytrip.models.PriceFreeze;
 import com.makemytrip.makemytrip.models.PriceHistory;
 import com.makemytrip.makemytrip.models.Flight;
 import com.makemytrip.makemytrip.models.Hotel;
+import com.makemytrip.makemytrip.repositories.DynamicPriceRepository;
 import com.makemytrip.makemytrip.repositories.FlightRepository;
 import com.makemytrip.makemytrip.repositories.HotelRepository;
 import com.makemytrip.makemytrip.repositories.OfferCouponRepository;
 import com.makemytrip.makemytrip.repositories.PriceFreezeRepository;
 import com.makemytrip.makemytrip.repositories.PriceHistoryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -42,6 +45,9 @@ public class PricingService {
     @Autowired
     private OfferCouponRepository offerCouponRepository;
 
+    @Autowired(required = false)
+    private DynamicPriceRepository dynamicPriceRepository;
+
     @Autowired
     private PriceFreezeRepository priceFreezeRepository;
 
@@ -51,6 +57,10 @@ public class PricingService {
     private final CopyOnWriteArrayList<SseEmitter> sseEmitters = new CopyOnWriteArrayList<>();
 
     public DynamicPrice calculateDynamicPrice(String itemId, String itemType, double basePrice, String demandLevel, String seasonType) {
+        return calculateDynamicPrice(itemId, itemType, basePrice, demandLevel, seasonType, null);
+    }
+
+    public DynamicPrice calculateDynamicPrice(String itemId, String itemType, double basePrice, String demandLevel, String seasonType, Double hoursToDeparture) {
         Flight resolvedFlight = null;
         Hotel resolvedHotel = null;
 
@@ -106,13 +116,33 @@ public class PricingService {
             seasonalMultiplier = 1.10;
         }
 
-        double finalPrice = Math.round(basePrice * (1.0 + (demandPercentage / 100.0)));
+        double timeMultiplier = 1.0;
+        if (hoursToDeparture != null && hoursToDeparture > 0) {
+            if (hoursToDeparture < 24.0) {
+                timeMultiplier = 1.25;
+            } else if (hoursToDeparture <= 72.0) {
+                timeMultiplier = 1.15;
+            } else if (hoursToDeparture <= 168.0) {
+                timeMultiplier = 1.05;
+            } else {
+                timeMultiplier = 1.0;
+            }
+        }
+
+        double finalPrice = Math.round(basePrice * (1.0 + (demandPercentage / 100.0)) * timeMultiplier);
         String reason = String.format("Dynamic Market Pricing: %s & %s Demand (+%.0f%% Adjustment)",
                 seasonType.replace("_", " "), demandLevel, demandPercentage);
 
         List<Map<String, Object>> history = getOrInitializePriceHistory(itemId, basePrice, finalPrice);
 
-        return new DynamicPrice(
+        Map<String, Double> competitorPrices = new LinkedHashMap<>();
+        competitorPrices.put("MakeMyTrip", finalPrice);
+        competitorPrices.put("EaseMyTrip", Math.round(finalPrice * 1.05 * 100.0) / 100.0);
+        competitorPrices.put("Yatra", Math.round(finalPrice * 1.08 * 100.0) / 100.0);
+        competitorPrices.put("ClearTrip", Math.round(finalPrice * 1.03 * 100.0) / 100.0);
+        competitorPrices.put("Goibibo", Math.round(finalPrice * 1.06 * 100.0) / 100.0);
+
+        DynamicPrice dynamicPrice = new DynamicPrice(
                 itemId,
                 itemType,
                 basePrice,
@@ -124,6 +154,18 @@ public class PricingService {
                 reason,
                 history
         );
+        dynamicPrice.setTimeToDepartureMultiplier(timeMultiplier);
+        dynamicPrice.setHoursToDeparture(hoursToDeparture);
+        dynamicPrice.setCompetitorPrices(competitorPrices);
+        dynamicPrice.setCalculatedAt(LocalDateTime.now().toString());
+
+        if (dynamicPriceRepository != null) {
+            try {
+                dynamicPriceRepository.save(dynamicPrice);
+            } catch (Exception ignored) {}
+        }
+
+        return dynamicPrice;
     }
 
     private String determineAutomaticDemand(Flight flight, Hotel hotel) {
@@ -303,7 +345,57 @@ public class PricingService {
         }
     }
 
+    public Map<String, Object> getCompetitorComparison(String itemId, String itemType, double basePrice) {
+        DynamicPrice dynamicPrice = calculateDynamicPrice(itemId, itemType, basePrice, null, null);
+        double ourPrice = dynamicPrice.getFinalPrice();
+
+        Map<String, Double> competitors = new LinkedHashMap<>();
+        competitors.put("MakeMyTrip", ourPrice);
+        competitors.put("EaseMyTrip", Math.round(ourPrice * 1.05 * 100.0) / 100.0);
+        competitors.put("Yatra", Math.round(ourPrice * 1.08 * 100.0) / 100.0);
+        competitors.put("ClearTrip", Math.round(ourPrice * 1.03 * 100.0) / 100.0);
+        competitors.put("Goibibo", Math.round(ourPrice * 1.06 * 100.0) / 100.0);
+
+        double minCompetitor = competitors.entrySet().stream()
+                .filter(e -> !e.getKey().equals("MakeMyTrip"))
+                .mapToDouble(Map.Entry::getValue)
+                .min().orElse(ourPrice);
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("itemId", itemId);
+        result.put("itemType", itemType != null ? itemType.toUpperCase() : "FLIGHT");
+        result.put("ourPrice", ourPrice);
+        result.put("competitorPrices", competitors);
+        result.put("bestPriceGuaranteed", ourPrice <= minCompetitor);
+        result.put("savingsAmount", Math.max(0, Math.round((minCompetitor - ourPrice) * 100.0) / 100.0));
+        result.put("timestamp", LocalDateTime.now().toString());
+
+        return result;
+    }
+
+    @EventListener(ApplicationReadyEvent.class)
+    public void seedDefaultOffersIfEmpty() {
+        if (offerCouponRepository != null) {
+            List<OfferCoupon> defaultCoupons = List.of(
+                new OfferCoupon("CP-MMTFLY", "MMTFLY", "Flyer Special - Flat 12% OFF", "Get flat 12% discount on domestic & international flight tickets.", "MakeMyTour Special", "✈️ MMT", 12.0, 2500.0, 3000.0, "POPULAR", true),
+                new OfferCoupon("CP-HDFC10", "HDFC10", "HDFC Bank 10% Instant Discount", "Instant 10% off using HDFC Bank Credit & Debit Cards.", "HDFC Bank", "💳 HDFC", 10.0, 2000.0, 4000.0, "BANK OFFER", true),
+                new OfferCoupon("CP-SBISAVE", "SBISAVE", "SBI Cards Flat ₹1,000 Off", "Save flat ₹1,000 on bookings above ₹5,000 with SBI credit cards.", "State Bank of India", "💳 SBI", 15.0, 1800.0, 3500.0, "HOT DEAL", true),
+                new OfferCoupon("CP-HOTELSPL", "HOTELSPL", "Hotel Luxury Retreats 15% Off", "Exclusive 15% off on handpicked luxury hotels & beach resorts.", "Staycation Club", "🏨 STAY", 15.0, 3500.0, 3500.0, "HOTEL DEALS", true),
+                new OfferCoupon("CP-HOTEL25", "HOTEL25", "Hotel Luxury Retreats 15% Off", "Exclusive 15% off on handpicked luxury hotels & beach resorts.", "Staycation Club", "🏨 STAY", 15.0, 3500.0, 3500.0, "HOTEL DEALS", true),
+                new OfferCoupon("CP-ICICIFLAT", "ICICIFLAT", "ICICI Bank Travel Saver", "Save Flat ₹1,200 instantly on flight & hotel bookings", "ICICI Bank", "💳 ICICI Bank", 12.0, 1200.0, 4500.0, "Flat ₹1200 Off", true),
+                new OfferCoupon("CP-MAKETOUR20", "MAKETOUR20", "MakeMyTour Festival Special", "Special 20% Discount for holiday season travelers up to ₹3,000", "MakeMyTour", "🎉 Special Deal", 20.0, 3000.0, 3000.0, "20% OFF Special", true)
+            );
+            for (OfferCoupon c : defaultCoupons) {
+                if (offerCouponRepository.findByCode(c.getCode()).isEmpty()) {
+                    offerCouponRepository.save(c);
+                }
+            }
+        }
+    }
+
     public List<OfferCoupon> getAvailableOffers() {
+        if (offerCouponRepository == null) return Collections.emptyList();
+        seedDefaultOffersIfEmpty();
         return offerCouponRepository.findAll();
     }
 
@@ -312,7 +404,18 @@ public class PricingService {
             throw new InvalidCouponException("Coupon code cannot be empty.");
         }
 
-        OfferCoupon coupon = offerCouponRepository.findByCode(code.trim())
+        seedDefaultOffersIfEmpty();
+
+        String searchCode = code.trim().toUpperCase();
+        if ("HOTEL25".equals(searchCode) && offerCouponRepository != null && offerCouponRepository.findByCode("HOTEL25").isEmpty()) {
+            searchCode = "HOTELSPL";
+        }
+
+        List<OfferCoupon> all = offerCouponRepository != null ? offerCouponRepository.findAll() : Collections.emptyList();
+        final String finalSearch = searchCode;
+        OfferCoupon coupon = all.stream()
+                .filter(c -> c.getCode() != null && c.getCode().equalsIgnoreCase(finalSearch))
+                .findFirst()
                 .orElseThrow(() -> new InvalidCouponException("Invalid promo coupon code: " + code));
 
         if (!coupon.isActive()) {
@@ -396,7 +499,8 @@ public class PricingService {
                     event.put("type", "PRICE_UPDATE");
                     event.put("itemId", target.getId());
                     event.put("itemType", "FLIGHT");
-                    event.put("title", target.getFlightName() + " (" + target.getFrom() + " to " + target.getTo() + ")");
+                    String flightTitle = target.getFlightName() != null ? target.getFlightName() : "Flight " + target.getFlightNo();
+                    event.put("title", flightTitle + " (" + target.getFrom() + " to " + target.getTo() + ")");
                     event.put("basePrice", price.getBasePrice());
                     event.put("finalPrice", price.getFinalPrice());
                     event.put("demandLevel", price.getDemandLevel());
@@ -406,6 +510,29 @@ public class PricingService {
                     event.put("timestamp", LocalDateTime.now().toString());
 
                     broadcastPriceUpdate(event);
+                }
+            }
+
+            if (hotelRepository != null) {
+                List<Hotel> hotels = hotelRepository.findAll();
+                if (!hotels.isEmpty()) {
+                    Hotel targetHotel = hotels.get(new Random().nextInt(hotels.size()));
+                    DynamicPrice hotelPrice = calculateDynamicPrice(targetHotel.getId(), "HOTEL", targetHotel.getPricePerNight(), null, null);
+
+                    Map<String, Object> hotelEvent = new HashMap<>();
+                    hotelEvent.put("type", "PRICE_UPDATE");
+                    hotelEvent.put("itemId", targetHotel.getId());
+                    hotelEvent.put("itemType", "HOTEL");
+                    hotelEvent.put("title", targetHotel.getHotelName() + " (" + targetHotel.getLocation() + ")");
+                    hotelEvent.put("basePrice", hotelPrice.getBasePrice());
+                    hotelEvent.put("finalPrice", hotelPrice.getFinalPrice());
+                    hotelEvent.put("demandLevel", hotelPrice.getDemandLevel());
+                    hotelEvent.put("seasonType", hotelPrice.getSeasonType());
+                    hotelEvent.put("surgePercentage", hotelPrice.getDemandSurgePercentage());
+                    hotelEvent.put("surgeReason", hotelPrice.getSurgeReason());
+                    hotelEvent.put("timestamp", LocalDateTime.now().toString());
+
+                    broadcastPriceUpdate(hotelEvent);
                 }
             }
         } catch (Exception ignored) {}

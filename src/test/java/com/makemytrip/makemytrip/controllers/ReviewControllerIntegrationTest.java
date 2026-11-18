@@ -3,7 +3,10 @@ package com.makemytrip.makemytrip.controllers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.makemytrip.makemytrip.exceptions.ReviewExceptionHandler;
 import com.makemytrip.makemytrip.models.Review;
+import com.makemytrip.makemytrip.models.Users;
+import com.makemytrip.makemytrip.services.ReviewSentimentAnalyzer;
 import com.makemytrip.makemytrip.services.ReviewService;
+import com.makemytrip.makemytrip.services.ReviewServiceTest.StubBookingRepository;
 import com.makemytrip.makemytrip.services.ReviewServiceTest.StubFlightRepository;
 import com.makemytrip.makemytrip.services.ReviewServiceTest.StubHotelRepository;
 import com.makemytrip.makemytrip.services.ReviewServiceTest.StubReviewRepository;
@@ -33,10 +36,20 @@ class ReviewControllerIntegrationTest {
         StubReviewRepository reviewRepo = new StubReviewRepository();
         StubHotelRepository hotelRepo = new StubHotelRepository();
         StubFlightRepository flightRepo = new StubFlightRepository();
+        StubBookingRepository bookingRepo = new StubBookingRepository();
+
+        Users.Booking booking = new Users.Booking();
+        booking.setBookingId("BK-HT-1");
+        booking.setTargetId("HT-101");
+        booking.setStatus("CONFIRMED");
+        booking.setType("Hotel");
+        bookingRepo.addBooking("USR-101", booking);
 
         ReflectionTestUtils.setField(reviewService, "reviewRepository", reviewRepo);
         ReflectionTestUtils.setField(reviewService, "hotelRepository", hotelRepo);
         ReflectionTestUtils.setField(reviewService, "flightRepository", flightRepo);
+        ReflectionTestUtils.setField(reviewService, "bookingRepository", bookingRepo);
+        ReflectionTestUtils.setField(reviewService, "reviewSentimentAnalyzer", new ReviewSentimentAnalyzer());
 
         ReviewController controller = new ReviewController();
         ReflectionTestUtils.setField(controller, "reviewService", reviewService);
@@ -64,6 +77,7 @@ class ReviewControllerIntegrationTest {
     void testCreateReviewSuccess() throws Exception {
         Review r = new Review();
         r.setTargetId("HT-101");
+        r.setUserId("USR-101");
         r.setTargetType("HOTEL");
         r.setRating(5);
         r.setTitle("Seamless Luxury");
@@ -77,7 +91,27 @@ class ReviewControllerIntegrationTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").isNotEmpty())
                 .andExpect(jsonPath("$.rating").value(5))
-                .andExpect(jsonPath("$.title").value("Seamless Luxury"));
+                .andExpect(jsonPath("$.title").value("Seamless Luxury"))
+                .andExpect(jsonPath("$.verifiedBooking").value(true))
+                .andExpect(jsonPath("$.sentimentCategory").isNotEmpty());
+    }
+
+    @Test
+    @DisplayName("POST /api/reviews - Unverified User (No Booking) returns 403 Forbidden")
+    void testCreateReviewUnverifiedUserForbidden() throws Exception {
+        Review r = new Review();
+        r.setTargetId("HT-101");
+        r.setUserId("UNVERIFIED-USER");
+        r.setRating(5);
+        r.setTitle("Unauthorized Review");
+        r.setComment("No booking exists for this user.");
+
+        mockMvc.perform(post("/api/reviews")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(r)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.status").value(403))
+                .andExpect(jsonPath("$.message").value("Reviews and ratings are restricted to verified customers with confirmed bookings."));
     }
 
     @Test
@@ -85,6 +119,7 @@ class ReviewControllerIntegrationTest {
     void testCreateReviewInvalidRatingBadRequest() throws Exception {
         Review r = new Review();
         r.setTargetId("HT-101");
+        r.setUserId("USR-101");
         r.setRating(6);
         r.setTitle("Invalid");
         r.setComment("Invalid rating score");
@@ -101,6 +136,7 @@ class ReviewControllerIntegrationTest {
     void testAddReplyEndpoint() throws Exception {
         Review r = new Review();
         r.setTargetId("HT-101");
+        r.setUserId("USR-101");
         r.setRating(4);
         r.setTitle("Great Room");
         r.setComment("Comfortable bed.");
@@ -124,6 +160,7 @@ class ReviewControllerIntegrationTest {
     void testToggleHelpfulEndpoint() throws Exception {
         Review r = new Review();
         r.setTargetId("HT-101");
+        r.setUserId("USR-101");
         r.setRating(5);
         r.setTitle("Top Class");
         r.setComment("Worth every rupee.");
@@ -140,6 +177,7 @@ class ReviewControllerIntegrationTest {
     void testFlagReviewEndpoint() throws Exception {
         Review r = new Review();
         r.setTargetId("HT-101");
+        r.setUserId("USR-101");
         r.setRating(1);
         r.setTitle("Inappropriate Post");
         r.setComment("Abusive text");
@@ -158,6 +196,7 @@ class ReviewControllerIntegrationTest {
     void testModerationEndpoints() throws Exception {
         Review r = new Review();
         r.setTargetId("HT-101");
+        r.setUserId("USR-101");
         r.setRating(1);
         r.setTitle("Bad Conduct");
         r.setComment("Misleading info");

@@ -220,7 +220,6 @@ public class RecommendationServiceTest {
     @Test
     @DisplayName("Self-Healing Empty Repository - Seeds Curated Recommendations Automatically")
     void testEmptyRepositorySelfHealingAndCuratedFallback() {
-        // Clear repository to simulate empty database / cold start
         recommendationRepository.deleteAll();
         assertEquals(0, recommendationRepository.count());
 
@@ -230,7 +229,6 @@ public class RecommendationServiceTest {
         assertFalse(recs.isEmpty(), "Self-healing must ensure recommendations are never empty");
         assertTrue(recs.size() >= 5, "Curated base catalog should contain at least 5 destinations");
 
-        // Verify all 5 categories are present
         Set<String> categories = recs.stream().map(r -> r.getCategory().toUpperCase()).collect(Collectors.toSet());
         assertTrue(categories.contains("BEACH"), "Should include Beach Escapes");
         assertTrue(categories.contains("LUXURY"), "Should include Luxury Stays");
@@ -245,13 +243,12 @@ public class RecommendationServiceTest {
         Recommendation rawMongoDoc = new Recommendation();
         rawMongoDoc.setId("REC-NULL-FIELDS");
         rawMongoDoc.setTitle("Raw Mongo Doc");
-        rawMongoDoc.setTags(null); // Simulate null tags loaded from MongoDB
-        rawMongoDoc.setReasonBreakdown(null); // Simulate null breakdown loaded from MongoDB
+        rawMongoDoc.setTags(null);
+        rawMongoDoc.setReasonBreakdown(null);
         rawMongoDoc.setActive(true);
         rawMongoDoc.setCategory("BEACH");
         recommendationRepository.save(rawMongoDoc);
 
-        // This must NOT throw NullPointerException
         assertDoesNotThrow(() -> {
             List<Recommendation> result = recommendationService.getRecommendations(null, "BEACH");
             assertNotNull(result);
@@ -265,10 +262,10 @@ public class RecommendationServiceTest {
         Users malformedUser = new Users();
         malformedUser.setId("USR-MALFORMED");
         List<Users.Booking> bookingsWithNulls = new ArrayList<>();
-        bookingsWithNulls.add(null); // Null booking element in list
+        bookingsWithNulls.add(null);
 
         Users.Booking bNullTarget = new Users.Booking();
-        bNullTarget.setTargetId(null); // Null targetId
+        bNullTarget.setTargetId(null);
         bookingsWithNulls.add(bNullTarget);
 
         malformedUser.setBookings(bookingsWithNulls);
@@ -494,6 +491,11 @@ public class RecommendationServiceTest {
         @Override
         public Optional<UserPreferences> findByUserId(String userId) {
             return storage.values().stream().filter(p -> userId.equals(p.getUserId())).findFirst();
+        }
+
+        @Override
+        public Optional<UserPreferences> findByUserEmail(String userEmail) {
+            return storage.values().stream().filter(p -> userEmail != null && userEmail.equals(p.getUserEmail())).findFirst();
         }
 
         @Override

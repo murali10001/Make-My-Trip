@@ -700,18 +700,29 @@ const BookHotelPage = () => {
             <div className="bg-slate-900 rounded-xl p-4 text-white space-y-3">
               {Array.isArray(dynamicPricingInfo?.priceHistory) && dynamicPricingInfo.priceHistory.length > 0 ? (
                 <div className="h-36 w-full flex items-end justify-between gap-2 pt-4">
-                  {dynamicPricingInfo.priceHistory.map((point: any, idx: number) => (
-                    <div key={idx} className="flex-1 flex flex-col items-center gap-1">
-                      <span className="text-[9px] text-slate-300 font-mono">₹{point.price}</span>
-                      <div className="w-full bg-slate-800 rounded-t h-24 flex items-end p-0.5">
-                        <div
-                          style={{ height: `${Math.max(20, Math.min(100, (point.price / 8000) * 100))}%` }}
-                          className={`w-full rounded-t ${point.isCurrent ? "bg-emerald-400" : "bg-indigo-500"}`}
-                        />
-                      </div>
-                      <span className="text-[9px] text-slate-400">{point.dayLabel}</span>
-                    </div>
-                  ))}
+                  {(() => {
+                    const prices = dynamicPricingInfo.priceHistory.map((p: any) => Number(p.price) || 0);
+                    const maxP = Math.max(...prices, 1);
+                    const minP = Math.min(...prices, 1);
+                    const divisor = (maxP - minP * 0.8) || 1;
+                    return dynamicPricingInfo.priceHistory.map((point: any, idx: number) => {
+                      const heightPercent = maxP === minP
+                        ? 60
+                        : Math.max(20, Math.min(100, Math.round(((point.price - minP * 0.8) / divisor) * 100)));
+                      return (
+                        <div key={idx} className="flex-1 flex flex-col items-center gap-1">
+                          <span className="text-[9px] text-slate-300 font-mono">₹{point.price}</span>
+                          <div className="w-full bg-slate-800 rounded-t h-24 flex items-end p-0.5">
+                            <div
+                              style={{ height: `${heightPercent}%` }}
+                              className={`w-full rounded-t transition-all duration-300 ${point.isCurrent ? "bg-emerald-400" : "bg-indigo-500"}`}
+                            />
+                          </div>
+                          <span className="text-[9px] text-slate-400">{point.dayLabel}</span>
+                        </div>
+                      );
+                    });
+                  })()}
                 </div>
               ) : (
                 <p className="text-xs text-slate-400 py-6 text-center">No trend history available.</p>
@@ -729,5 +740,9 @@ const BookHotelPage = () => {
     </div>
   );
 };
+
+export async function getServerSideProps(context: any) {
+  return { props: {} };
+}
 
 export default BookHotelPage;

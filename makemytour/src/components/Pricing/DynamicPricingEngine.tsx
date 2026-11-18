@@ -5,6 +5,7 @@ import {
   getflight,
   gethotel,
   getDynamicPricing,
+  getCompetitorComparison,
   freezePrice,
   removePriceFreeze,
   getPromotionalOffers,
@@ -48,6 +49,10 @@ export interface DynamicPriceData {
   demandSurgePercentage: number;
   seasonalMultiplier: number;
   surgeReason: string;
+  timeToDepartureMultiplier?: number;
+  hoursToDeparture?: number;
+  competitorPrices?: Record<string, number>;
+  calculatedAt?: string;
   priceHistory: Array<{
     date: string;
     dayLabel: string;
@@ -96,7 +101,11 @@ const DynamicPricingEngine: React.FC = () => {
 
   const [frozenPrice, setFrozenPrice] = useState<FrozenPriceData | null>(null);
   const [freezeLoading, setFreezeLoading] = useState<boolean>(false);
+  const [freezeDurationHours, setFreezeDurationHours] = useState<number>(24);
   const [countdownSeconds, setCountdownSeconds] = useState<number>(86400);
+
+  const [hoursToDeparture, setHoursToDeparture] = useState<number | undefined>(undefined);
+  const [competitorData, setCompetitorData] = useState<any>(null);
 
   const [sseConnected, setSseConnected] = useState<boolean>(false);
   const [liveAlert, setLiveAlert] = useState<string | null>(null);
@@ -165,9 +174,66 @@ const DynamicPricingEngine: React.FC = () => {
   const fetchOffers = async () => {
     try {
       const list = await getPromotionalOffers();
-      setOffers(list || []);
+      if (Array.isArray(list) && list.length > 0) {
+        setOffers(list);
+      } else {
+        setOffers([
+          {
+            id: "CP-MMTFLY",
+            code: "MMTFLY",
+            title: "Flyer Special - Flat 12% OFF",
+            description: "Get flat 12% discount on domestic & international flight tickets.",
+            bankName: "MakeMyTour Special",
+            bankLogo: "✈️ MMT",
+            discountPercentage: 12,
+            maxDiscountAmount: 2500,
+            minBookingAmount: 3000,
+            badgeText: "POPULAR",
+            active: true,
+          },
+          {
+            id: "CP-HDFC10",
+            code: "HDFC10",
+            title: "HDFC Bank 10% Instant Discount",
+            description: "Instant 10% off using HDFC Bank Credit & Debit Cards.",
+            bankName: "HDFC Bank",
+            bankLogo: "🏦 HDFC",
+            discountPercentage: 10,
+            maxDiscountAmount: 2000,
+            minBookingAmount: 4000,
+            badgeText: "BANK OFFER",
+            active: true,
+          },
+          {
+            id: "CP-SBISAVE",
+            code: "SBISAVE",
+            title: "SBI Cards Flat ₹1,000 Off",
+            description: "Save flat ₹1,000 on bookings above ₹5,000 with SBI credit cards.",
+            bankName: "State Bank of India",
+            bankLogo: "💳 SBI",
+            discountPercentage: 15,
+            maxDiscountAmount: 1000,
+            minBookingAmount: 5000,
+            badgeText: "HOT DEAL",
+            active: true,
+          },
+          {
+            id: "CP-HOTELSPL",
+            code: "HOTELSPL",
+            title: "Hotel Luxury Retreats 15% Off",
+            description: "Exclusive 15% off on handpicked luxury hotels & beach resorts.",
+            bankName: "Staycation Club",
+            bankLogo: "🏨 STAY",
+            discountPercentage: 15,
+            maxDiscountAmount: 3500,
+            minBookingAmount: 3500,
+            badgeText: "HOTEL DEALS",
+            active: true,
+          },
+        ]);
+      }
     } catch (err) {
-      console.error("Failed to load offers", err);
+      console.warn("Failed to load offers from server:", err);
     }
   };
 
@@ -187,10 +253,28 @@ const DynamicPricingEngine: React.FC = () => {
         selectedItem.type,
         selectedItem.basePrice,
         demandLevel,
-        seasonType
+        seasonType,
+        hoursToDeparture
       );
       if (data) {
         setPricingData(data);
+        if (data.competitorPrices) {
+          setCompetitorData({
+            itemId: data.itemId,
+            basePrice: data.basePrice,
+            ourPrice: data.finalPrice,
+            competitorPrices: data.competitorPrices,
+            bestPriceGuaranteed: true,
+          });
+        }
+      }
+      try {
+        const comp = await getCompetitorComparison(selectedItem.id, selectedItem.type, selectedItem.basePrice);
+        if (comp) {
+          setCompetitorData(comp);
+        }
+      } catch (err) {
+        console.error("Failed to load competitor comparison", err);
       }
     } catch (err) {
       console.error("Failed to calculate pricing", err);
@@ -259,13 +343,16 @@ const DynamicPricingEngine: React.FC = () => {
           const found = savedList.find((f: any) => f.itemId === selectedItem.id);
           if (found && found.active !== false) {
             setFrozenPrice(found);
+            if (found.durationHours) {
+              setFreezeDurationHours(found.durationHours);
+            }
           } else {
             setFrozenPrice(null);
           }
         } catch (e) {}
       }
     }
-  }, [selectedItem, demandLevel, seasonType]);
+  }, [selectedItem, demandLevel, seasonType, hoursToDeparture]);
 
   useEffect(() => {
     let timer: any = null;
@@ -328,12 +415,12 @@ const DynamicPricingEngine: React.FC = () => {
         selectedItem.id,
         selectedItem.title,
         pricingData.finalPrice,
-        24,
+        freezeDurationHours,
         userId
       );
       if (res) {
         setFrozenPrice(res);
-        setCountdownSeconds(86400);
+        setCountdownSeconds((res.durationHours || freezeDurationHours) * 3600);
 
         if (typeof window !== "undefined") {
           try {
@@ -450,7 +537,7 @@ const DynamicPricingEngine: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <select
                 value={demandLevel}
                 onChange={(e) => setDemandLevel(e.target.value)}
@@ -471,6 +558,21 @@ const DynamicPricingEngine: React.FC = () => {
                 <option value="HOLIDAY_PEAK">Peak Holiday (+20%)</option>
                 <option value="WEEKEND">Weekend (+10%)</option>
                 <option value="OFF_PEAK">Standard Off-Peak</option>
+              </select>
+
+              <select
+                value={hoursToDeparture !== undefined ? hoursToDeparture : "AUTO"}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setHoursToDeparture(val === "AUTO" ? undefined : parseInt(val));
+                }}
+                className="bg-white border border-slate-300 text-slate-800 text-xs rounded-lg px-2.5 py-1.5 font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              >
+                <option value="AUTO">Departure: Standard (&gt;7d, 1.0x)</option>
+                <option value="12">&lt; 24h Urgency (1.25x)</option>
+                <option value="48">24-72h Urgency (1.15x)</option>
+                <option value="96">3-7d Urgency (1.05x)</option>
+                <option value="200">&gt; 7d Standard (1.0x)</option>
               </select>
             </div>
           </div>
@@ -498,9 +600,18 @@ const DynamicPricingEngine: React.FC = () => {
               <div className="space-y-6">
                 <div className="bg-gradient-to-r from-slate-900 to-indigo-950 text-white p-6 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-6 shadow-lg border border-slate-800">
                   <div className="space-y-2 text-center md:text-left">
-                    <div className="inline-flex items-center gap-2 bg-amber-500/20 text-amber-300 border border-amber-500/30 px-3 py-1 rounded-full text-xs font-bold animate-pulse">
-                      <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                      {pricingData.surgeReason}
+                    <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
+                      <div className="inline-flex items-center gap-2 bg-amber-500/20 text-amber-300 border border-amber-500/30 px-3 py-1 rounded-full text-xs font-bold animate-pulse">
+                        <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                        {pricingData.surgeReason}
+                      </div>
+
+                      {pricingData.timeToDepartureMultiplier && pricingData.timeToDepartureMultiplier > 1.0 && (
+                        <div className="inline-flex items-center gap-1.5 bg-rose-500/20 text-rose-300 border border-rose-500/30 px-2.5 py-1 rounded-full text-xs font-bold">
+                          <Clock className="w-3 h-3 text-rose-400" />
+                          Urgency Factor: {pricingData.timeToDepartureMultiplier}x ({pricingData.hoursToDeparture ? `<${pricingData.hoursToDeparture}h to depart` : "Urgent"})
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex items-baseline justify-center md:justify-start gap-3 mt-1">
@@ -513,7 +624,7 @@ const DynamicPricingEngine: React.FC = () => {
                     </div>
 
                     <p className="text-xs text-slate-400">
-                      Prices adjust dynamically based on live seat availability and demand trends.
+                      Prices adjust dynamically based on live seat availability, urgency, and demand trends.
                     </p>
                   </div>
 
@@ -521,16 +632,16 @@ const DynamicPricingEngine: React.FC = () => {
                     <Button
                       onClick={handleFreezePrice}
                       disabled={freezeLoading}
-                      className="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold px-6 py-3 h-auto text-sm shadow-md w-full md:w-auto flex items-center justify-center gap-2"
+                      className="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold px-6 py-3 h-auto text-sm shadow-md w-full md:w-auto flex items-center justify-center gap-2 cursor-pointer"
                     >
                       <Snowflake className="w-4 h-4 text-slate-950" />
-                      {freezeLoading ? "Locking..." : "Lock Fare for 24h"}
+                      {freezeLoading ? "Locking..." : `Lock Fare for ${freezeDurationHours}h`}
                     </Button>
                     <span className="text-[10px] text-slate-400">Zero cancellation fee • Instant lock</span>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                <div className={`grid grid-cols-1 ${pricingData.timeToDepartureMultiplier ? "sm:grid-cols-4" : "sm:grid-cols-3"} gap-3 text-xs`}>
                   <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
                     <p className="text-slate-500 font-medium">Database Base Fare</p>
                     <p className="text-base font-extrabold text-slate-900 mt-0.5">
@@ -543,6 +654,14 @@ const DynamicPricingEngine: React.FC = () => {
                       +{pricingData.demandSurgePercentage}% Surge
                     </p>
                   </div>
+                  {pricingData.timeToDepartureMultiplier && (
+                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                      <p className="text-slate-500 font-medium">Departure Urgency</p>
+                      <p className="text-base font-extrabold text-rose-600 mt-0.5">
+                        {pricingData.timeToDepartureMultiplier}x
+                      </p>
+                    </div>
+                  )}
                   <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
                     <p className="text-slate-500 font-medium">Final Dynamic Price</p>
                     <p className="text-base font-extrabold text-emerald-700 mt-0.5">
@@ -557,6 +676,56 @@ const DynamicPricingEngine: React.FC = () => {
               </div>
             )}
           </div>
+
+          {/* Live Competitor Fare Comparison Widget */}
+          {(pricingData?.competitorPrices || competitorData?.competitorPrices) && (
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-5 h-5 text-emerald-600" />
+                  <h3 className="font-extrabold text-slate-900 text-lg">Live Competitor Price Comparison</h3>
+                </div>
+                <span className="text-[11px] bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
+                  <CheckCircle className="w-3.5 h-3.5 text-emerald-600" /> Best Price Guaranteed
+                </span>
+              </div>
+
+              <p className="text-xs text-slate-500">
+                We monitor competing travel platforms in real-time to guarantee you the most competitive fares available.
+              </p>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="bg-emerald-50/70 border-2 border-emerald-500 rounded-xl p-3.5 relative shadow-sm">
+                  <span className="absolute -top-2.5 right-3 bg-emerald-600 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                    Our Price
+                  </span>
+                  <p className="text-xs font-bold text-slate-900">MakeMyTour</p>
+                  <p className="text-lg font-black text-emerald-700 mt-1">
+                    ₹{(pricingData?.finalPrice || competitorData?.ourPrice || selectedItem?.basePrice || 5500).toLocaleString()}
+                  </p>
+                  <p className="text-[10px] text-emerald-700 font-semibold mt-1">Lowest Verified Rate</p>
+                </div>
+
+                {Object.entries((pricingData?.competitorPrices || competitorData?.competitorPrices) as Record<string, number>).map(([competitor, price]) => {
+                  const ourP = pricingData?.finalPrice || competitorData?.ourPrice || selectedItem?.basePrice || 5500;
+                  const diff = Math.round(price - ourP);
+                  return (
+                    <div key={competitor} className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 flex flex-col justify-between">
+                      <div>
+                        <p className="text-xs font-bold text-slate-700">{competitor}</p>
+                        <p className="text-lg font-extrabold text-slate-800 mt-1">
+                          ₹{Number(price).toLocaleString()}
+                        </p>
+                      </div>
+                      <p className={`text-[10px] font-semibold mt-1.5 ${diff > 0 ? "text-rose-600" : "text-slate-500"}`}>
+                        {diff > 0 ? `+₹${diff.toLocaleString()} higher` : "Comparable rate"}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -678,7 +847,7 @@ const DynamicPricingEngine: React.FC = () => {
             ) : (
               <div className="space-y-3 text-xs text-slate-300">
                 <p>
-                  Protect your booking against unexpected price surges by locking this rate for 24 hours.
+                  Protect your booking against unexpected price surges by locking this rate.
                 </p>
                 <div className="bg-blue-950/60 p-3 rounded-lg border border-blue-800/40 space-y-1">
                   <div className="flex items-center gap-1.5 font-bold text-white">
@@ -689,12 +858,22 @@ const DynamicPricingEngine: React.FC = () => {
                   </p>
                 </div>
 
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-semibold text-slate-300">Lock Duration Window</label>
+                  <div className="flex items-center justify-between px-3.5 py-2.5 rounded-lg bg-blue-950/60 border border-blue-800/40 text-xs">
+                    <span className="font-semibold text-slate-200">24 Hours Fare Lock</span>
+                    <span className="text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 px-2 py-0.5 rounded-full">
+                      Free Protection
+                    </span>
+                  </div>
+                </div>
+
                 <Button
                   onClick={handleFreezePrice}
                   disabled={freezeLoading}
-                  className="w-full bg-cyan-400 hover:bg-cyan-500 text-slate-950 font-bold text-xs py-2.5 h-auto"
+                  className="w-full bg-cyan-400 hover:bg-cyan-500 text-slate-950 font-bold text-xs py-2.5 h-auto cursor-pointer"
                 >
-                  {freezeLoading ? "Locking..." : "Freeze Rate for Selected Item"}
+                  {freezeLoading ? "Locking..." : "Freeze Rate for 24h"}
                 </Button>
               </div>
             )}

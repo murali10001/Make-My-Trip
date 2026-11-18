@@ -64,6 +64,11 @@ interface ReviewItem {
   flagReason?: string;
   createdAt: string;
   replies: ReviewReplyItem[];
+  sentimentScore?: number;
+  sentimentCategory?: string;
+  verifiedBooking?: boolean;
+  verifiedStay?: boolean;
+  aspectRatings?: Record<string, number>;
 }
 
 interface ReviewsSummaryData {
@@ -72,6 +77,10 @@ interface ReviewsSummaryData {
   averageRating: number;
   ratingDistribution: Record<number, number>;
   photoCount: number;
+  aspectBreakdown?: Record<string, number>;
+  averageSentimentScore?: number;
+  overallSentiment?: string;
+  sentimentCounts?: Record<string, number>;
 }
 
 interface ReviewsSectionProps {
@@ -374,7 +383,7 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
 
           <div className="flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-slate-200 pb-4 md:pb-0 pr-0 md:pr-4 text-center">
             <div className="text-4xl font-black text-slate-900 tracking-tight">
-              {data.averageRating > 0 ? data.averageRating.toFixed(1) : "5.0"}
+              {data.totalCount > 0 ? data.averageRating.toFixed(1) : "0.0"}
               <span className="text-lg font-medium text-slate-400">/5</span>
             </div>
             <div className="flex items-center gap-1 my-2 text-amber-400">
@@ -382,7 +391,7 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                 <Star
                   key={star}
                   className={`w-5 h-5 ${
-                    star <= Math.round(data.averageRating || 5)
+                    data.totalCount > 0 && star <= Math.round(data.averageRating)
                       ? "fill-amber-400 text-amber-400"
                       : "text-slate-300"
                   }`}
@@ -390,8 +399,20 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
               ))}
             </div>
             <p className="text-xs font-semibold text-slate-700">
-              Based on {data.totalCount} verified traveler {data.totalCount === 1 ? "review" : "reviews"}
+              {data.totalCount > 0
+                ? `Based on ${data.totalCount} verified traveler ${data.totalCount === 1 ? "review" : "reviews"}`
+                : "No reviews yet"}
             </p>
+            {data.totalCount > 0 && (
+              <div className="mt-2 flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>
+                  {data.averageSentimentScore != null
+                    ? `${Math.round(data.averageSentimentScore * 100)}% Positive Traveler Sentiment`
+                    : "Positive Traveler Sentiment"}
+                </span>
+              </div>
+            )}
             {data.photoCount > 0 && (
               <div className="mt-2 flex items-center gap-1 text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-full border border-indigo-200">
                 <Camera className="w-3.5 h-3.5" />
@@ -431,6 +452,36 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
               );
             })}
           </div>
+
+          {data.aspectBreakdown && Object.keys(data.aspectBreakdown).length > 0 && (
+            <div className="col-span-1 md:col-span-3 pt-4 mt-2 border-t border-slate-200/80">
+              <div className="text-xs font-bold text-slate-600 mb-2 uppercase tracking-wider">
+                Traveler Aspect Ratings
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {Object.entries(data.aspectBreakdown).map(([aspect, rating]) => {
+                  const ratingNum = typeof rating === "number" ? rating : 0;
+                  const pct = Math.min(100, Math.round((ratingNum / 5.0) * 100));
+                  return (
+                    <div key={aspect} className="bg-white/90 p-2.5 rounded-xl border border-slate-200/70 shadow-xs">
+                      <div className="flex justify-between items-center text-xs mb-1.5 font-semibold text-slate-700 capitalize">
+                        <span>{aspect}</span>
+                        <span className="font-extrabold text-slate-900 font-mono">
+                          {ratingNum.toFixed(1)} <span className="text-[10px] text-slate-400 font-normal">/ 5</span>
+                        </span>
+                      </div>
+                      <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                        <div
+                          style={{ width: `${pct}%` }}
+                          className="h-full bg-blue-600 rounded-full transition-all duration-500"
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -537,11 +588,31 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                       {rev.userName ? rev.userName.charAt(0).toUpperCase() : "U"}
                     </div>
                     <div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <span className="font-extrabold text-slate-900 text-sm">{rev.userName}</span>
-                        <span className="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-0.5">
-                          <CheckCircle className="w-3 h-3 text-emerald-600" /> Verified Traveler
-                        </span>
+                        {(rev.verifiedStay || rev.verifiedBooking) && (
+                          <span className="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-0.5">
+                            <CheckCircle className="w-3 h-3 text-emerald-600" /> Verified Stay
+                          </span>
+                        )}
+                        {rev.sentimentCategory && (
+                          <span
+                            className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border flex items-center gap-1 ${
+                              rev.sentimentCategory === "POSITIVE"
+                                ? "bg-emerald-100/70 text-emerald-800 border-emerald-300"
+                                : rev.sentimentCategory === "NEGATIVE"
+                                ? "bg-rose-100/70 text-rose-800 border-rose-300"
+                                : "bg-slate-100 text-slate-700 border-slate-300"
+                            }`}
+                          >
+                            {rev.sentimentCategory}
+                            {rev.sentimentScore != null && (
+                              <span className="font-mono text-[9px] opacity-80">
+                                ({Math.round(rev.sentimentScore * 100)}%)
+                              </span>
+                            )}
+                          </span>
+                        )}
                       </div>
                       <span className="text-[11px] text-slate-400">{rev.createdAt}</span>
                     </div>
@@ -585,6 +656,20 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({
                 <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line">
                   {rev.comment}
                 </p>
+
+                {rev.aspectRatings && Object.keys(rev.aspectRatings).length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {Object.entries(rev.aspectRatings).map(([aspect, score]) => (
+                      <span
+                        key={aspect}
+                        className="text-[10px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200 capitalize flex items-center gap-1"
+                      >
+                        <span>{aspect}:</span>
+                        <span className="font-bold text-slate-900 font-mono">{Number(score).toFixed(1)}★</span>
+                      </span>
+                    ))}
+                  </div>
+                )}
 
                 {rev.photoUrls && rev.photoUrls.length > 0 && (
                   <div className="pt-1">

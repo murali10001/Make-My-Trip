@@ -7,6 +7,7 @@ import com.makemytrip.makemytrip.services.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -58,6 +59,20 @@ public class FlightStatusController {
         emitters.removeAll(deadEmitters);
     }
 
+    @Scheduled(fixedRate = 25000)
+    public void sendHeartbeat() {
+        if (emitters.isEmpty()) return;
+        List<SseEmitter> deadEmitters = new ArrayList<>();
+        for (SseEmitter emitter : emitters) {
+            try {
+                emitter.send(SseEmitter.event().comment("keep-alive").name("ping").data("heartbeat"));
+            } catch (Exception e) {
+                deadEmitters.add(emitter);
+            }
+        }
+        emitters.removeAll(deadEmitters);
+    }
+
     @RequestMapping(value = "/validate-db", method = {RequestMethod.GET, RequestMethod.POST})
     public ResponseEntity<Map<String, Object>> validateAndSyncDatabase() {
         List<FlightStatus> changed = flightStatusService.validateAndSyncChangedFlights();
@@ -90,19 +105,19 @@ public class FlightStatusController {
                      .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @PostMapping("/tracked")
+    @PostMapping({"/tracked", "/watchlist"})
     public ResponseEntity<List<FlightStatus>> getTrackedFlights(@RequestBody List<String> flightNumbers) {
         List<FlightStatus> tracked = flightStatusService.getTrackedFlights(flightNumbers);
         return ResponseEntity.ok(tracked);
     }
 
-    @GetMapping("/user-tracked/{userId}")
+    @GetMapping({"/user-tracked/{userId}", "/watchlist/{userId}"})
     public ResponseEntity<List<String>> getUserTrackedFlights(@PathVariable String userId) {
         List<String> list = flightStatusService.getUserTrackedFlightNumbers(userId);
         return ResponseEntity.ok(list);
     }
 
-    @PostMapping("/user-tracked/{userId}")
+    @PostMapping({"/user-tracked/{userId}", "/watchlist/{userId}"})
     public ResponseEntity<Map<String, Object>> toggleUserTrackedFlight(
             @PathVariable String userId,
             @RequestBody Map<String, String> payload) {

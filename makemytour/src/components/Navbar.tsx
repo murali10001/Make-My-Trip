@@ -125,13 +125,7 @@ const Navbar = () => {
           (n: any) =>
             n &&
             n.type !== "freeze" &&
-            n.type !== "flight" &&
-            (!n.title || (
-              !n.title.includes("Fare Locked") &&
-              !n.title.startsWith("Flight ") &&
-              !n.title.startsWith("✈️ Flight ") &&
-              !n.title.startsWith("Radar ")
-            ))
+            (!n.title || !n.title.includes("Fare Locked"))
         );
         setNotifications(filtered);
       } catch (err) {
@@ -153,11 +147,7 @@ const Navbar = () => {
           if (!newNotif || !newNotif.id) return;
           if (
             newNotif.type === "freeze" ||
-            newNotif.type === "flight" ||
-            newNotif.title?.includes("Fare Locked") ||
-            newNotif.title?.startsWith("Flight ") ||
-            newNotif.title?.startsWith("✈️ Flight ") ||
-            newNotif.title?.startsWith("Radar ")
+            newNotif.title?.includes("Fare Locked")
           ) return;
 
           setNotifications((prev) => {

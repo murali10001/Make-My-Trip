@@ -8,98 +8,98 @@
       "testName": "Spring Boot & MongoDB Atlas Connectivity",
       "passed": true,
       "details": "Connected. Active flights in DB: 139",
-      "timestamp": "2026-11-14T14:36:47.080Z"
+      "timestamp": "2026-11-17T13:47:20.872Z"
     },
     {
       "feature": "Navigation",
       "testName": "Homepage Initial Render",
       "passed": true,
       "details": "Homepage and navbar loaded cleanly",
-      "timestamp": "2026-11-14T14:36:51.323Z"
+      "timestamp": "2026-11-17T13:47:25.388Z"
     },
     {
       "feature": "Authentication",
       "testName": "User Alpha Registration",
       "passed": true,
-      "details": "Registered User ID: 6af872030437dc334330d8b9 (alpha_007976@traveltest.com)",
-      "timestamp": "2026-11-14T14:36:52.415Z"
+      "details": "Registered User ID: 6afc5aed60169679dec9f5f8 (alpha_241945@traveltest.com)",
+      "timestamp": "2026-11-17T13:47:25.721Z"
     },
     {
       "feature": "Personalization UI",
       "testName": "Travel Preferences Tab Navigation",
       "passed": true,
       "details": "Tab opened and active",
-      "timestamp": "2026-11-14T14:36:56.545Z"
+      "timestamp": "2026-11-17T13:47:30.338Z"
     },
     {
       "feature": "Personalization Feature",
       "testName": "Save User Preferences in UI",
       "passed": true,
       "details": "UI displayed updated preferences state",
-      "timestamp": "2026-11-14T14:37:00.275Z"
+      "timestamp": "2026-11-17T13:47:34.177Z"
     },
     {
       "feature": "Personalization Feature",
       "testName": "Retrieve Saved Preferences from MongoDB",
       "passed": true,
       "details": "DB record: Seat=Extra Legroom, Room=Presidential Royal Suite, SeatNo=2C",
-      "timestamp": "2026-11-14T14:37:01.701Z"
+      "timestamp": "2026-11-17T13:47:34.750Z"
     },
     {
       "feature": "Personalization Feature",
       "testName": "Personalized Recommendations Tailored to Alpha",
       "passed": true,
-      "details": "Total recommendations: 20. Top recommendation: \"Taj Exotica Resort & Spa, Goa\" (99% Match)",
-      "timestamp": "2026-11-14T14:37:06.394Z"
+      "details": "Total recommendations: 163. Top recommendation: \"Taj Exotica Resort & Spa, Goa\" (99% Match)",
+      "timestamp": "2026-11-17T13:47:35.706Z"
     },
     {
       "feature": "Personalization Feature",
       "testName": "Preferences Persist After Logout & Login",
       "passed": true,
       "details": "User Alpha preferences accurately reloaded from MongoDB into profile UI across sessions",
-      "timestamp": "2026-11-14T14:37:11.881Z"
+      "timestamp": "2026-11-17T13:47:42.168Z"
     },
     {
       "feature": "Personalization Feature",
       "testName": "Strict User Data Separation (Beta vs Alpha)",
       "passed": true,
       "details": "User Beta seat is \"Default\", completely isolated from User Alpha \"2C\"",
-      "timestamp": "2026-11-14T14:37:24.892Z"
+      "timestamp": "2026-11-17T13:47:46.211Z"
     },
     {
       "feature": "Personalization Feature",
       "testName": "User Beta Distinct Preferences Stored",
       "passed": true,
       "details": "Beta Seat: Window (18A), Room: Deluxe Balcony Room",
-      "timestamp": "2026-11-14T14:37:25.162Z"
+      "timestamp": "2026-11-17T13:47:46.413Z"
     },
     {
       "feature": "UI Spacing Fix",
       "testName": "Flight Search Cards Uniform Spacing & Baseline Alignment",
       "passed": true,
       "details": "Rendered 139 cards with uniform height and bottom-anchored Book Now buttons",
-      "timestamp": "2026-11-14T14:37:29.742Z"
+      "timestamp": "2026-11-17T13:47:51.580Z"
     },
     {
       "feature": "Flight Tracker",
       "testName": "Real-Time Flight Tracker & Radar Engine",
       "passed": true,
       "details": "Radar feed connected, no broadcast spam floods",
-      "timestamp": "2026-11-14T14:37:35.061Z"
+      "timestamp": "2026-11-17T13:47:55.063Z"
     },
     {
       "feature": "Dynamic Pricing",
       "testName": "Price Freeze & Live Volatility Engine",
       "passed": true,
       "details": "Interactive graph, price freeze slider and breakdown active",
-      "timestamp": "2026-11-14T14:37:38.857Z"
+      "timestamp": "2026-11-17T13:48:00.269Z"
     },
     {
       "feature": "Hotel & Rooms",
       "testName": "3D Interactive Room Showcase Section",
       "passed": true,
       "details": "Rendered on Homepage",
-      "timestamp": "2026-11-14T14:37:41.441Z"
+      "timestamp": "2026-11-17T13:48:03.224Z"
     }
   ],
   "consoleErrors": []

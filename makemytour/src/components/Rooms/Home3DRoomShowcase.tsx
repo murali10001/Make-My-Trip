@@ -14,13 +14,9 @@ import {
   Layers,
   CheckCircle2,
   Calendar,
-  Wifi,
-  Coffee,
-  Bath,
-  Tv,
 } from "lucide-react";
 import { getFeatured3dRooms } from "@/api";
-import Room3DViewer from "./Room3DViewer";
+import Room3DViewer, { Room3DConfigData } from "./Room3DViewer";
 
 export const Home3DRoomShowcase: React.FC = () => {
   const router = useRouter();
@@ -50,120 +46,68 @@ export const Home3DRoomShowcase: React.FC = () => {
     };
   }, []);
 
-  const currentRoom = featuredRooms[activeRoomIndex] || (
-    activeRoomIndex === 0
-      ? {
-        roomTypeName: "Grand Hyatt Deluxe Queen",
-        hotelName: "Grand Hyatt Resort & Spa",
-        hotelId: "HT-SHOWCASE-1",
-        bedType: "Comfort Queen Bed",
-        roomSize: "340 sq.ft",
-        viewType: "Courtyard & City View",
-        priceUpgradeAddon: 0,
-        availableRooms: 6,
-        description: "Contemporary classic elegance featuring warm oak textures, ergonomic queen bedding, dedicated work vanity, and high-speed Wi-Fi.",
-        amenities: ["High-Speed Wi-Fi", "Air Conditioning", "En-suite Bathroom", "Smart 43\" LED TV", "Work Desk"],
-      }
-      : activeRoomIndex === 1
-        ? {
-          roomTypeName: "The Oberoi Balcony Retreat",
-          hotelName: "The Oberoi Beach Resort",
-          hotelId: "HT-SHOWCASE-2",
-          bedType: "King Size Bed",
-          roomSize: "480 sq.ft",
-          viewType: "Private Balcony Ocean View",
-          priceUpgradeAddon: 1200,
-          availableRooms: 4,
-          isPopularUpsell: true,
-          description: "Upscale luxury suite with furnished outdoor private balcony, tufted velvet king bed, designer loveseat, and espresso bar.",
-          amenities: ["Private Balcony", "Plush King Bed", "Teal Velvet Lounge", "Nespresso Machine", "Gourmet Breakfast"],
-        }
-        : activeRoomIndex === 2
-          ? {
-            roomTypeName: "Taj Palace Panoramic Suite",
-            hotelName: "Taj Palace Luxury Hotel",
-            hotelId: "HT-SHOWCASE-3",
-            bedType: "California King Bed",
-            roomSize: "720 sq.ft",
-            viewType: "High-Floor Panoramic Skyline",
-            priceUpgradeAddon: 2800,
-            availableRooms: 3,
-            description: "Bespoke multi-zone penthouse suite with wrap-around corner glass, California king bedroom, Italian leather sectional lounge, and freestanding soaking jacuzzi.",
-            amenities: ["Panoramic Wrap Windows", "Separate Living Lounge", "Soaking Jacuzzi Bath", "Executive Lounge Access", "Evening Cocktails"],
-          }
-          : {
-            roomTypeName: "The Leela Presidential Penthouse",
-            hotelName: "The Leela Palace Penthouse",
-            hotelId: "HT-SHOWCASE-4",
-            bedType: "Master King Bed + Daybed",
-            roomSize: "1,150 sq.ft",
-            viewType: "360-Degree Penthouse Panoramic View",
-            priceUpgradeAddon: 5500,
-            availableRooms: 2,
-            description: "The pinnacle of luxury hospitality. Opulent Carrara marble flooring, four-poster master canopy bed, private cocktail bar, 4-seater dining salon, and terrace.",
-            amenities: ["Dedicated 24/7 Butler", "Private Sun Terrace", "Chesterfield Parlor", "Dining Suite", "Carrara Marble Jacuzzi", "Limousine Transfer"],
-          }
-  );
-
-  const roomList = featuredRooms.length > 0 ? featuredRooms : [
-    { roomTypeName: "Grand Hyatt Deluxe Queen", priceUpgradeAddon: 0 },
-    { roomTypeName: "The Oberoi Balcony Retreat", priceUpgradeAddon: 1200, isPopularUpsell: true },
-    { roomTypeName: "Taj Palace Panoramic Suite", priceUpgradeAddon: 2800 },
-    { roomTypeName: "The Leela Presidential Penthouse", priceUpgradeAddon: 5500 },
-  ];
+  const currentRoom = featuredRooms[activeRoomIndex] || featuredRooms[0] || null;
 
   const handleBookSelectedRoom = (room: any) => {
     if (!room) return;
-    const hotelId = room.hotelId || "HT-SHOWCASE-2";
-    router.push({
-      pathname: `/book-hotel/${hotelId}`,
-      query: {
-        roomTypeName: room.roomTypeName,
-        roomUpgradeAddon: room.priceUpgradeAddon || 0,
-      },
-    });
+    const hotelId = room.hotelId || (featuredRooms.find((r) => r.hotelId)?.hotelId);
+    if (hotelId) {
+      router.push({
+        pathname: `/book-hotel/${hotelId}`,
+        query: {
+          roomTypeName: room.roomTypeName,
+          roomUpgradeAddon: room.priceUpgradeAddon || 0,
+        },
+      });
+    } else {
+      router.push("/hotels");
+    }
   };
 
   return (
     <section className="my-12 sm:my-16 w-full">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6 sm:mb-8">
         <div>
-
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/40 text-indigo-300 text-xs font-bold mb-2 backdrop-blur-md">
+            <Compass className="w-3.5 h-3.5 text-indigo-400 animate-spin-slow" />
+            <span>Interactive 3D Virtual Hotel Spaces</span>
+          </div>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-            Explore Luxury Rooms in Photorealistic 3D
+            Explore True-to-Scale 3D Hotel Rooms
           </h2>
           <p className="text-slate-300 text-xs sm:text-sm mt-1 max-w-2xl">
-            Tour genuine hotel rooms with real spatial photography. Inspect actual room dimensions, king bedding, private balconies, marble jacuzzis, and interactive amenities before you book.
+            Tour genuine 3D architectural representations of our luxury rooms and suites. Inspect actual furniture layouts, premium bedding, private balconies, and luxury spa jacuzzis in full 360°.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 bg-slate-900/90 border border-slate-800 rounded-2xl px-4 py-2.5 backdrop-blur-md shadow-xl">
+        <div className="flex items-center gap-2 bg-slate-900/90 border border-slate-800 rounded-2xl px-4 py-2 backdrop-blur-md">
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
           <span className="text-xs font-mono font-bold text-slate-200">
-            Live Verified Inventory • Instant Booking
+            Real-Time 3D Engine • Scale 1:1
           </span>
         </div>
       </div>
 
       <div className="bg-slate-900/95 rounded-3xl border border-slate-800 shadow-2xl p-4 sm:p-6 backdrop-blur-xl">
-        <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-5 scrollbar-none border-b border-slate-800">
-          {roomList.map((room, idx) => {
+        <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-4 scrollbar-none border-b border-slate-800">
+          {featuredRooms.map((room, idx) => {
             const isActive = idx === activeRoomIndex;
 
             return (
               <button
                 key={room.id || idx}
                 onClick={() => setActiveRoomIndex(idx)}
-                className={`flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-extrabold transition-all ${isActive
-                  ? "bg-gradient-to-r from-indigo-600 via-indigo-500 to-blue-600 text-white shadow-xl shadow-indigo-500/20 scale-[1.02]"
-                  : "bg-slate-950/80 text-slate-400 hover:text-white hover:bg-slate-800/90 border border-slate-800"
-                  }`}
+                className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold transition-all ${
+                  isActive
+                    ? "bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-lg shadow-indigo-500/20 scale-[1.02]"
+                    : "bg-slate-950/80 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800"
+                }`}
               >
                 <Bed className={`w-3.5 h-3.5 ${isActive ? "text-white" : "text-indigo-400"}`} />
                 <span>{room.roomTypeName}</span>
                 {room.isPopularUpsell && (
-                  <span className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[9px] px-2 py-0.5 rounded-full font-black shadow-sm">
-                    TOP CHOICE
+                  <span className="bg-amber-500/90 text-white text-[9px] px-1.5 py-0.2 rounded-full font-black">
+                    HOT
                   </span>
                 )}
                 {room.priceUpgradeAddon > 0 ? (
@@ -171,8 +115,8 @@ export const Home3DRoomShowcase: React.FC = () => {
                     +₹{room.priceUpgradeAddon.toLocaleString("en-IN")}
                   </span>
                 ) : (
-                  <span className="text-[10px] text-emerald-400 font-mono font-bold">
-                    Included
+                  <span className="text-[10px] text-emerald-400 font-mono">
+                    Standard
                   </span>
                 )}
               </button>
@@ -182,116 +126,126 @@ export const Home3DRoomShowcase: React.FC = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           <div className="lg:col-span-8 w-full">
-            <Room3DViewer
-              roomConfig={currentRoom.room3dConfig}
-              roomTypeName={currentRoom.roomTypeName}
-              bedType={currentRoom.bedType}
-              roomSize={currentRoom.roomSize}
-              viewType={currentRoom.viewType}
-              amenities={currentRoom.amenities}
-              hotelName={currentRoom.hotelName}
-              priceUpgradeAddon={currentRoom.priceUpgradeAddon}
-              onBookNow={() => handleBookSelectedRoom(currentRoom)}
-              heightClass="h-[430px] sm:h-[520px]"
-            />
+            {currentRoom ? (
+              <Room3DViewer
+                roomConfig={currentRoom.room3dConfig}
+                roomTypeName={currentRoom.roomTypeName}
+                bedType={currentRoom.bedType}
+                roomSize={currentRoom.roomSize}
+                viewType={currentRoom.viewType}
+                amenities={currentRoom.amenities}
+                hotelName={currentRoom.hotelName}
+                priceUpgradeAddon={currentRoom.priceUpgradeAddon}
+                onBookNow={() => handleBookSelectedRoom(currentRoom)}
+                heightClass="h-[420px] sm:h-[500px]"
+              />
+            ) : (
+              <div className="h-[420px] sm:h-[500px] rounded-3xl bg-slate-950 flex flex-col items-center justify-center text-slate-500">
+                <Compass className="w-10 h-10 animate-spin-slow text-indigo-400 mb-2" />
+                <p className="text-xs">Loading Authentic 3D Room Space...</p>
+              </div>
+            )}
           </div>
 
-          <div className="lg:col-span-4 space-y-4">
-            <div className="bg-slate-950/85 rounded-2xl p-4 sm:p-5 border border-slate-800/80 space-y-3.5 shadow-xl">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-mono tracking-wider text-indigo-400 uppercase font-black">
-                  {currentRoom.hotelName || "PREMIUM RESORT & SUITES"}
-                </span>
-                <span className="text-emerald-400 text-xs font-mono font-bold bg-emerald-950/70 px-2.5 py-0.5 rounded-full border border-emerald-500/30 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  {currentRoom.availableRooms || 4} Left
-                </span>
-              </div>
-
-              <h3 className="text-lg font-black text-white">{currentRoom.roomTypeName}</h3>
-              <p className="text-xs text-slate-300 leading-relaxed">
-                {currentRoom.description}
-              </p>
-
-              <div className="grid grid-cols-2 gap-2.5 pt-1 text-xs">
-                <div className="bg-slate-900/90 rounded-xl p-2.5 border border-slate-800 flex items-center gap-2.5">
-                  <Maximize className="w-4 h-4 text-indigo-400 flex-shrink-0" />
-                  <div className="min-w-0">
-                    <span className="text-[10px] text-slate-400 block font-medium">Floor Area</span>
-                    <strong className="text-white font-mono text-[11px] block">{currentRoom.roomSize}</strong>
-                  </div>
+          {currentRoom && (
+            <div className="lg:col-span-4 space-y-4">
+              <div className="bg-slate-950/80 rounded-2xl p-4 border border-slate-800/80 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-mono tracking-wider text-indigo-400 uppercase font-bold">
+                    {currentRoom.room3dConfig?.roomModelType?.replace(/_/g, " ") || "AUTHENTIC 3D ROOM"}
+                  </span>
+                  <span className="text-emerald-400 text-xs font-mono font-bold bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-500/30">
+                    {currentRoom.availableRooms} rooms available
+                  </span>
                 </div>
 
-                <div className="bg-slate-900/90 rounded-xl p-2.5 border border-slate-800 flex items-center gap-2.5">
-                  <Bed className="w-4 h-4 text-indigo-400 flex-shrink-0" />
-                  <div className="min-w-0">
-                    <span className="text-[10px] text-slate-400 block font-medium">Bedding Type</span>
-                    <strong className="text-white text-[11px] truncate block">{currentRoom.bedType}</strong>
-                  </div>
-                </div>
+                <h3 className="text-lg font-black text-white">{currentRoom.roomTypeName}</h3>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  {currentRoom.description}
+                </p>
 
-                <div className="bg-slate-900/90 rounded-xl p-2.5 border border-slate-800 flex items-center gap-2.5">
-                  <Eye className="w-4 h-4 text-indigo-400 flex-shrink-0" />
-                  <div className="min-w-0">
-                    <span className="text-[10px] text-slate-400 block font-medium">Orientation</span>
-                    <strong className="text-white text-[11px] truncate block">{currentRoom.viewType}</strong>
-                  </div>
-                </div>
-
-                <div className="bg-slate-900/90 rounded-xl p-2.5 border border-slate-800 flex items-center gap-2.5">
-                  <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                  <div className="min-w-0">
-                    <span className="text-[10px] text-slate-400 block font-medium">Sanitized</span>
-                    <strong className="text-white text-[11px] truncate block">Certified 100%</strong>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-slate-950/85 rounded-2xl p-4 sm:p-5 border border-slate-800/80 space-y-3 shadow-xl">
-              <h4 className="text-xs font-bold text-slate-200 flex items-center gap-2">
-                <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-                <span>Verified Room Amenities & Services:</span>
-              </h4>
-              <div className="grid grid-cols-1 gap-2">
-                {currentRoom.amenities?.map((amenity: string, i: number) => (
-                  <div
-                    key={i}
-                    className="bg-slate-900/90 rounded-xl p-2 px-3 border border-slate-800/80 flex items-center justify-between text-xs text-slate-200"
-                  >
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-                      <span className="font-semibold text-[11px]">{amenity}</span>
+                <div className="grid grid-cols-2 gap-2 pt-1 text-xs">
+                  <div className="bg-slate-900/90 rounded-xl p-2.5 border border-slate-800 flex items-center gap-2">
+                    <Maximize className="w-4 h-4 text-indigo-400" />
+                    <div>
+                      <span className="text-[10px] text-slate-400 block">Area</span>
+                      <strong className="text-white font-mono">{currentRoom.roomSize}</strong>
                     </div>
-                    <span className="text-[10px] font-mono text-indigo-400 font-bold">
-                      INCLUDED
-                    </span>
                   </div>
-                ))}
-              </div>
-            </div>
 
-            <div className="bg-gradient-to-br from-indigo-950/70 via-slate-950 to-slate-950 rounded-2xl p-4 sm:p-5 border border-indigo-500/30 flex items-center justify-between gap-3 shadow-2xl">
-              <div>
-                <span className="text-[10px] text-slate-400 block font-semibold">Tier Upgrade Price</span>
-                <div className="text-xl font-black text-white">
-                  {currentRoom.priceUpgradeAddon > 0 ? (
-                    <span>+₹{currentRoom.priceUpgradeAddon.toLocaleString("en-IN")}<span className="text-xs font-normal text-slate-400"> / night</span></span>
-                  ) : (
-                    <span className="text-emerald-400 text-sm font-bold">Included in Base Fare</span>
-                  )}
+                  <div className="bg-slate-900/90 rounded-xl p-2.5 border border-slate-800 flex items-center gap-2">
+                    <Bed className="w-4 h-4 text-indigo-400" />
+                    <div>
+                      <span className="text-[10px] text-slate-400 block">Bedding</span>
+                      <strong className="text-white text-[11px] truncate block">{currentRoom.bedType}</strong>
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-900/90 rounded-xl p-2.5 border border-slate-800 flex items-center gap-2">
+                    <Eye className="w-4 h-4 text-indigo-400" />
+                    <div>
+                      <span className="text-[10px] text-slate-400 block">Orientation</span>
+                      <strong className="text-white text-[11px] truncate block">{currentRoom.viewType}</strong>
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-900/90 rounded-xl p-2.5 border border-slate-800 flex items-center gap-2">
+                    <Layers className="w-4 h-4 text-indigo-400" />
+                    <div>
+                      <span className="text-[10px] text-slate-400 block">Flooring</span>
+                      <strong className="text-white text-[11px] truncate block">
+                        {currentRoom.room3dConfig?.floorMaterial?.replace(/_/g, " ") || "Hardwood"}
+                      </strong>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <button
-                onClick={() => handleBookSelectedRoom(currentRoom)}
-                className="bg-gradient-to-r from-indigo-600 via-indigo-500 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-extrabold text-xs px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 transition-all hover:scale-105 active:scale-95 border border-white/20"
-              >
-                <span>Reserve Room</span>
-                <ChevronRight className="w-4 h-4" />
-              </button>
+              <div className="bg-slate-950/80 rounded-2xl p-4 border border-slate-800/80 space-y-2.5">
+                <h4 className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+                  <span>Interactive 3D Furniture & Amenities:</span>
+                </h4>
+                <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1 scrollbar-thin">
+                  {currentRoom.room3dConfig?.furniture?.slice(0, 5).map((f: any, i: number) => (
+                    <div
+                      key={f.id || i}
+                      className="bg-slate-900/90 rounded-xl p-2 border border-slate-800/80 flex items-center justify-between text-xs text-slate-300"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
+                        <span className="font-semibold text-white text-[11px]">{f.name}</span>
+                      </div>
+                      <span className="text-[10px] font-mono text-slate-400">
+                        {f.material?.replace(/_/g, " ")}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-br from-indigo-950/60 to-slate-950 rounded-2xl p-4 border border-indigo-500/30 flex items-center justify-between gap-3">
+                <div>
+                  <span className="text-[10px] text-slate-400 block">Upgrade Addon</span>
+                  <div className="text-lg font-black text-white">
+                    {currentRoom.priceUpgradeAddon > 0 ? (
+                      <span>+₹{currentRoom.priceUpgradeAddon.toLocaleString("en-IN")}<span className="text-xs font-normal text-slate-400"> / night</span></span>
+                    ) : (
+                      <span className="text-emerald-400">Standard Stay Included</span>
+                    )}
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => handleBookSelectedRoom(currentRoom)}
+                  className="bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-lg flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95"
+                >
+                  <span>Book Now</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </section>
@@ -299,3 +253,4 @@ export const Home3DRoomShowcase: React.FC = () => {
 };
 
 export default Home3DRoomShowcase;
+

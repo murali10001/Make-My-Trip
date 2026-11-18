@@ -29,9 +29,21 @@ public class PricingController {
             @RequestParam(required = false, defaultValue = "FLIGHT") String itemType,
             @RequestParam(required = false, defaultValue = "5500.0") double basePrice,
             @RequestParam(required = false) String demand,
-            @RequestParam(required = false) String season) {
-        DynamicPrice price = pricingService.calculateDynamicPrice(itemId, itemType, basePrice, demand, season);
+            @RequestParam(required = false) String season,
+            @RequestParam(required = false) Double hoursToDeparture,
+            @RequestParam(required = false) Double hours) {
+        Double resolvedHours = hoursToDeparture != null ? hoursToDeparture : hours;
+        DynamicPrice price = pricingService.calculateDynamicPrice(itemId, itemType, basePrice, demand, season, resolvedHours);
         return ResponseEntity.ok(price);
+    }
+
+    @GetMapping({"/competitor-comparison", "/competitor-prices"})
+    public ResponseEntity<Map<String, Object>> getCompetitorComparison(
+            @RequestParam(required = false, defaultValue = "FL-101") String itemId,
+            @RequestParam(required = false, defaultValue = "FLIGHT") String itemType,
+            @RequestParam(required = false, defaultValue = "5500.0") double basePrice) {
+        Map<String, Object> comparison = pricingService.getCompetitorComparison(itemId, itemType, basePrice);
+        return ResponseEntity.ok(comparison);
     }
 
     @GetMapping({"/history/{itemId}", "/history"})
@@ -52,7 +64,8 @@ public class PricingController {
         String itemId = (String) request.getOrDefault("itemId", "FL-101");
         String itemTitle = (String) request.getOrDefault("itemTitle", "Air India Flight AI-101");
         double currentPrice = Double.parseDouble(request.getOrDefault("currentPrice", 5500.0).toString());
-        long hours = Long.parseLong(request.getOrDefault("hours", 24).toString());
+        Object durationObj = request.containsKey("durationHours") ? request.get("durationHours") : request.getOrDefault("hours", 24);
+        long hours = Long.parseLong(durationObj.toString());
         String userId = (String) request.get("userId");
 
         PriceFreeze freeze = pricingService.freezePrice(itemId, itemTitle, currentPrice, hours, userId);

@@ -270,9 +270,13 @@ export default function Home() {
   };
   return (
     <div
-      className="min-h-screen w-full max-w-full overflow-x-hidden bg-cover bg-center bg-no-repeat bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-950"
+      className="min-h-screen w-full max-w-full overflow-x-hidden bg-cover bg-center bg-fixed bg-no-repeat bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-950"
       style={{
-        backgroundImage: homeContent?.heroBgUrl ? `url("${homeContent.heroBgUrl}")` : undefined,
+        backgroundImage: `url("${
+          homeContent?.heroBgUrl && !homeContent.heroBgUrl.includes('photo-1464037866556')
+            ? homeContent.heroBgUrl
+            : '/airport-bg.jpg'
+        }")`,
       }}
     >
       <main className="w-full max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6 overflow-x-hidden">
@@ -437,8 +441,8 @@ export default function Home() {
                             </div>
                           </div>
 
-                          <div className="mt-auto pt-4 flex flex-col justify-end">
-                            <p className="text-2xl font-black text-slate-900 mb-3">
+                          <div className="mt-auto pt-4 flex flex-col justify-end gap-2">
+                            <p className="text-2xl font-black text-slate-900 mb-1">
                               ₹{result.price}
                             </p>
                             <Button
@@ -447,6 +451,14 @@ export default function Home() {
                             >
                               Book Now
                             </Button>
+                            <button
+                              type="button"
+                              onClick={() => router.push(`/flight-status?flightNumber=${result.flightNo || result.flightNumber || "AI-101"}`)}
+                              className="w-full text-center text-xs font-semibold text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition py-1.5 flex items-center justify-center gap-1.5 border border-emerald-200"
+                            >
+                              <Plane className="w-3.5 h-3.5 text-emerald-600" />
+                              <span>Live Radar Status &rarr;</span>
+                            </button>
                           </div>
                         </div>
                       ) : (

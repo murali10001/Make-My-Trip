@@ -1,5 +1,6 @@
 package com.makemytrip.makemytrip.exceptions;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
@@ -12,25 +13,26 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 public class RefundExceptionHandler {
 
     @ExceptionHandler(CancellationNotAllowedException.class)
-    public ResponseEntity<ApiErrorResponse> handleCancellationNotAllowed(CancellationNotAllowedException ex) {
+    public ResponseEntity<ApiErrorResponse> handleCancellationNotAllowed(CancellationNotAllowedException ex, HttpServletRequest request) {
+        String path = (request != null && request.getRequestURI() != null) ? request.getRequestURI() : "/refund/cancel-and-request";
         ApiErrorResponse error = new ApiErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
                 "Cancellation Request Failed",
                 ex.getMessage(),
-                "/refund/cancel-and-request"
+                path
         );
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(RefundNotFoundException.class)
-    public ResponseEntity<ApiErrorResponse> handleRefundNotFound(RefundNotFoundException ex) {
+    public ResponseEntity<ApiErrorResponse> handleRefundNotFound(RefundNotFoundException ex, HttpServletRequest request) {
+        String path = (request != null && request.getRequestURI() != null) ? request.getRequestURI() : "/refund/status";
         ApiErrorResponse error = new ApiErrorResponse(
                 HttpStatus.NOT_FOUND.value(),
                 "Refund Request Not Found",
                 ex.getMessage(),
-                "/refund/status"
+                path
         );
         return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
     }
 }
-

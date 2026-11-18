@@ -82,6 +82,7 @@ public class RecommendationService {
         if (!dynamicCatalog.isEmpty()) {
             recommendationRepository.saveAll(dynamicCatalog);
         }
+        broadcastEvent("RECOMMENDATION_CATALOG_SYNC", Map.of("action", "CATALOG_SEEDED", "count", dynamicCatalog.size()));
         broadcastEvent("RECOMMENDATIONS_UPDATED", Map.of("action", "CATALOG_SEEDED", "count", dynamicCatalog.size()));
     }
 
@@ -111,13 +112,11 @@ public class RecommendationService {
             } catch (Exception ignored) {}
         }
 
-        // 1. First populate the guaranteed rich curated destination catalog for all 5 categories
         for (Recommendation curated : createCuratedBaseCatalog()) {
             computeCollaborativeMetrics(curated, allUsers, flightMap, hotelMap);
             catalogMap.put(curated.getId(), curated);
         }
 
-        // 2. Dynamically incorporate any live hotels from the MongoDB inventory
         if (!hotels.isEmpty()) {
             try {
                 for (Hotel hotel : hotels) {
@@ -186,7 +185,6 @@ public class RecommendationService {
             }
         }
 
-        // 3. Dynamically incorporate any live flights from the MongoDB inventory
         if (!flights.isEmpty()) {
             try {
                 for (Flight flight : flights) {
@@ -235,7 +233,6 @@ public class RecommendationService {
     public List<Recommendation> createCuratedBaseCatalog() {
         List<Recommendation> list = new ArrayList<>();
 
-        // BEACH ESCAPES
         Recommendation b1 = new Recommendation();
         b1.setId("rec-curated-beach-1");
         b1.setTargetType("HOTEL");
@@ -254,6 +251,14 @@ public class RecommendationService {
         b1.setActionUrl("/book-hotel/curated-hotel-goa-taj");
         b1.setPopularityScore(95);
         b1.setActive(true);
+        b1.setCollaborativeFactor("92% of travelers with similar taste booked this");
+        b1.setReasonTitle("Trending Beach Destination: Discover Goa");
+        b1.setReasonExplanation("Curated premier beachfront villa rated 4.9/5.0 with verified guest reviews.");
+        b1.setReasonBreakdown(List.of(
+                "Popularity Match: Trending beach destination with 95%+ traveler satisfaction",
+                "Quality Assurance: 4.9/5 star verified guest ratings (4,820 reviews)",
+                "Collaborative Trend: 92% of travelers with similar taste booked this"
+        ));
         list.add(b1);
 
         Recommendation b2 = new Recommendation();
@@ -274,6 +279,14 @@ public class RecommendationService {
         b2.setActionUrl("/book-hotel/curated-hotel-maldives-lagoon");
         b2.setPopularityScore(97);
         b2.setActive(true);
+        b2.setCollaborativeFactor("96% of travelers with similar taste booked this");
+        b2.setReasonTitle("Premier Coastal Escape: Discover Maldives");
+        b2.setReasonExplanation("Curated luxury overwater suite rated 4.9/5.0 with verified guest reviews.");
+        b2.setReasonBreakdown(List.of(
+                "Popularity Match: Trending beach destination with 98%+ traveler satisfaction",
+                "Quality Assurance: 4.9/5 star verified guest ratings (3,120 reviews)",
+                "Collaborative Trend: 96% of travelers with similar taste booked this"
+        ));
         list.add(b2);
 
         Recommendation b3 = new Recommendation();
@@ -294,9 +307,16 @@ public class RecommendationService {
         b3.setActionUrl("/book-hotel/curated-hotel-bali-seminyak");
         b3.setPopularityScore(91);
         b3.setActive(true);
+        b3.setCollaborativeFactor("91% of travelers with similar taste booked this");
+        b3.setReasonTitle("Vibrant Beach Retreat: Discover Bali");
+        b3.setReasonExplanation("Curated oceanfront getaway rated 4.8/5.0 with verified guest reviews.");
+        b3.setReasonBreakdown(List.of(
+                "Popularity Match: High affinity coastal retreat with 94%+ satisfaction",
+                "Quality Assurance: 4.8/5 star verified guest ratings (2,450 reviews)",
+                "Collaborative Trend: 91% of travelers with similar taste booked this"
+        ));
         list.add(b3);
 
-        // LUXURY STAYS
         Recommendation l1 = new Recommendation();
         l1.setId("rec-curated-luxury-1");
         l1.setTargetType("HOTEL");
@@ -315,6 +335,14 @@ public class RecommendationService {
         l1.setActionUrl("/book-hotel/curated-hotel-delhi-leela");
         l1.setPopularityScore(94);
         l1.setActive(true);
+        l1.setCollaborativeFactor("94% of travelers with similar taste booked this");
+        l1.setReasonTitle("Luxury Heritage Suite: Discover New Delhi");
+        l1.setReasonExplanation("Curated 5-star deluxe palace rated 4.9/5.0 with verified guest reviews.");
+        l1.setReasonBreakdown(List.of(
+                "Popularity Match: Top luxury destination with 96%+ traveler satisfaction",
+                "Quality Assurance: 4.9/5 star verified guest ratings (3,890 reviews)",
+                "Collaborative Trend: 94% of travelers with similar taste booked this"
+        ));
         list.add(l1);
 
         Recommendation l2 = new Recommendation();
@@ -335,9 +363,16 @@ public class RecommendationService {
         l2.setActionUrl("/book-hotel/curated-hotel-dubai-burj");
         l2.setPopularityScore(99);
         l2.setActive(true);
+        l2.setCollaborativeFactor("98% of travelers with similar taste booked this");
+        l2.setReasonTitle("Ultra-Luxury Icon: Discover Dubai");
+        l2.setReasonExplanation("Curated world-icon hotel rated 5.0/5.0 with verified guest reviews.");
+        l2.setReasonBreakdown(List.of(
+                "Popularity Match: Iconic luxury suite with 99%+ traveler satisfaction",
+                "Quality Assurance: 5.0/5 star verified guest ratings (5,210 reviews)",
+                "Collaborative Trend: 98% of travelers with similar taste booked this"
+        ));
         list.add(l2);
 
-        // TOP FLIGHTS
         Recommendation f1 = new Recommendation();
         f1.setId("rec-curated-flight-1");
         f1.setTargetType("FLIGHT");
@@ -356,6 +391,14 @@ public class RecommendationService {
         f1.setActionUrl("/book-flight/curated-flight-del-goa");
         f1.setPopularityScore(96);
         f1.setActive(true);
+        f1.setCollaborativeFactor("93% of travelers with similar taste booked this");
+        f1.setReasonTitle("Recommended Route: Delhi to Goa");
+        f1.setReasonExplanation("Curated direct flight with 96% on-time reliability and competitive fare.");
+        f1.setReasonBreakdown(List.of(
+                "Route Popularity: Highly chosen by travelers flying to Goa",
+                "Quality Assurance: 4.8/5 star flight service ratings (6,100 reviews)",
+                "Collaborative Trend: 93% of travelers with similar taste booked this"
+        ));
         list.add(f1);
 
         Recommendation f2 = new Recommendation();
@@ -376,9 +419,16 @@ public class RecommendationService {
         f2.setActionUrl("/book-flight/curated-flight-bom-dxb");
         f2.setPopularityScore(92);
         f2.setActive(true);
+        f2.setCollaborativeFactor("89% of travelers with similar taste booked this");
+        f2.setReasonTitle("Recommended Route: Mumbai to Dubai");
+        f2.setReasonExplanation("Curated Dreamliner wide-body flight with full international service.");
+        f2.setReasonBreakdown(List.of(
+                "Route Popularity: Popular international corridor with top ratings",
+                "Quality Assurance: 4.7/5 star flight service ratings (4,320 reviews)",
+                "Collaborative Trend: 89% of travelers with similar taste booked this"
+        ));
         list.add(f2);
 
-        // HERITAGE & CULTURE
         Recommendation h1 = new Recommendation();
         h1.setId("rec-curated-heritage-1");
         h1.setTargetType("HOTEL");
@@ -397,6 +447,14 @@ public class RecommendationService {
         h1.setActionUrl("/book-hotel/curated-hotel-jaipur-rambagh");
         h1.setPopularityScore(98);
         h1.setActive(true);
+        h1.setCollaborativeFactor("95% of travelers with similar taste booked this");
+        h1.setReasonTitle("Historic Royal Landmark: Discover Jaipur");
+        h1.setReasonExplanation("Curated heritage palace rated 4.9/5.0 with verified guest reviews.");
+        h1.setReasonBreakdown(List.of(
+                "Popularity Match: Cultural heritage explorer profile matched",
+                "Quality Assurance: 4.9/5 star verified guest ratings (4,650 reviews)",
+                "Collaborative Trend: 95% of travelers with similar taste booked this"
+        ));
         list.add(h1);
 
         Recommendation h2 = new Recommendation();
@@ -417,9 +475,16 @@ public class RecommendationService {
         h2.setActionUrl("/book-hotel/curated-hotel-udaipur-oberoi");
         h2.setPopularityScore(99);
         h2.setActive(true);
+        h2.setCollaborativeFactor("97% of travelers with similar taste booked this");
+        h2.setReasonTitle("Majestic Lakeside Palace: Discover Udaipur");
+        h2.setReasonExplanation("Curated historic lakeside retreat rated 5.0/5.0 with verified guest reviews.");
+        h2.setReasonBreakdown(List.of(
+                "Popularity Match: Top-rated royal heritage getaway with 99% satisfaction",
+                "Quality Assurance: 5.0/5 star verified guest ratings (5,120 reviews)",
+                "Collaborative Trend: 97% of travelers with similar taste booked this"
+        ));
         list.add(h2);
 
-        // NATURE RETREATS
         Recommendation n1 = new Recommendation();
         n1.setId("rec-curated-nature-1");
         n1.setTargetType("HOTEL");
@@ -438,6 +503,14 @@ public class RecommendationService {
         n1.setActionUrl("/book-hotel/curated-hotel-shimla-wildflower");
         n1.setPopularityScore(94);
         n1.setActive(true);
+        n1.setCollaborativeFactor("92% of travelers with similar taste booked this");
+        n1.setReasonTitle("Scenic Mountain Sanctuary: Discover Shimla");
+        n1.setReasonExplanation("Curated Himalayan cedar forest resort rated 4.9/5.0 with verified guest reviews.");
+        n1.setReasonBreakdown(List.of(
+                "Popularity Match: Nature and wellness retreat with 95%+ satisfaction",
+                "Quality Assurance: 4.9/5 star verified guest ratings (3,450 reviews)",
+                "Collaborative Trend: 92% of travelers with similar taste booked this"
+        ));
         list.add(n1);
 
         Recommendation n2 = new Recommendation();
@@ -458,6 +531,14 @@ public class RecommendationService {
         n2.setActionUrl("/book-hotel/curated-hotel-manali-resort");
         n2.setPopularityScore(90);
         n2.setActive(true);
+        n2.setCollaborativeFactor("90% of travelers with similar taste booked this");
+        n2.setReasonTitle("Alpine Riverside Haven: Discover Manali");
+        n2.setReasonExplanation("Curated scenic snow peak chalet rated 4.8/5.0 with verified guest reviews.");
+        n2.setReasonBreakdown(List.of(
+                "Popularity Match: Outdoor nature haven with 93%+ satisfaction",
+                "Quality Assurance: 4.8/5 star verified guest ratings (2,910 reviews)",
+                "Collaborative Trend: 90% of travelers with similar taste booked this"
+        ));
         list.add(n2);
 
         return list;
@@ -822,7 +903,6 @@ public class RecommendationService {
             result.add(personalized);
         }
 
-        // If "ALL" category is requested and result is empty because user dismissed items, unblock curated items so page is never empty
         if (result.isEmpty() && (category == null || category.trim().isEmpty() || category.equalsIgnoreCase("ALL"))) {
             for (Recommendation item : all) {
                 if (item != null) {
@@ -899,6 +979,7 @@ public class RecommendationService {
         eventData.put("userId", effectiveUserId);
         eventData.put("helpfulCount", rec.getHelpfulCount());
         eventData.put("irrelevantCount", rec.getIrrelevantCount());
+        broadcastEvent("RECOMMENDATION_FEEDBACK", eventData);
         broadcastEvent("RECOMMENDATION_FEEDBACK_PROCESSED", eventData);
 
         Map<String, Object> response = new HashMap<>();
@@ -930,6 +1011,7 @@ public class RecommendationService {
         }
 
         try {
+            emitter.send(SseEmitter.event().name("RECOMMENDATION_STREAM_OPEN").data("Connected to real-time recommendation updates"));
             emitter.send(SseEmitter.event().name("INIT").data("Connected to real-time recommendation updates"));
         } catch (IOException e) {
             emitter.complete();

@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -18,8 +19,10 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
+import com.makemytrip.makemytrip.models.Flight;
 import com.makemytrip.makemytrip.models.FlightStatus;
 import com.makemytrip.makemytrip.models.Users;
+import com.makemytrip.makemytrip.repositories.FlightRepository;
 import com.makemytrip.makemytrip.repositories.FlightStatusRepository;
 import com.makemytrip.makemytrip.repositories.UserRepository;
 
@@ -34,7 +37,13 @@ public class FlightStatusService {
     private FlightStatusRepository flightStatusRepository;
 
     @Autowired(required = false)
+    private FlightRepository flightRepository;
+
+    @Autowired(required = false)
     private UserRepository userRepository;
+
+    @Autowired(required = false)
+    private NotificationService notificationService;
 
     private final Random random = new Random();
 
@@ -42,9 +51,57 @@ public class FlightStatusService {
     public void onStartup() {
         try {
             System.out.println("[REAL-TIME RADAR] Application ready. Performing initial flight status database validation & alignment...");
+            seedFromFlightCatalog();
             validateAndSyncAllFlights();
         } catch (Exception e) {
             System.err.println("[REAL-TIME RADAR] Initial flight status validation error: " + e.getMessage());
+        }
+    }
+
+    public void seedFromFlightCatalog() {
+        if (flightStatusRepository != null && flightStatusRepository.count() == 0 && flightRepository != null) {
+            List<Flight> catalog = flightRepository.findAll();
+            if (!catalog.isEmpty()) {
+                List<FlightStatus> seeded = new ArrayList<>();
+                for (Flight flight : catalog) {
+                    String fn = flight.getFlightNo() != null && !flight.getFlightNo().trim().isEmpty()
+                            ? flight.getFlightNo()
+                            : "FL-" + flight.getId();
+                    String airline = flight.getAirline() != null && !flight.getAirline().trim().isEmpty()
+                            ? flight.getAirline()
+                            : (flight.getFlightName() != null ? flight.getFlightName() : "MakeMyTrip Airways");
+                    String origin = flight.getFrom() != null ? flight.getFrom() : "DEL";
+                    String dest = flight.getTo() != null ? flight.getTo() : "BOM";
+                    String dep = flight.getDepartureTime() != null ? flight.getDepartureTime() : "10:00 AM";
+                    String arr = flight.getArrivalTime() != null ? flight.getArrivalTime() : "12:30 PM";
+                    String gate = "Gate " + (random.nextInt(15) + 1);
+                    String terminal = flight.getDepartureTerminal() != null ? flight.getDepartureTerminal() : "T3";
+
+                    Integer depMins = parseTimeToMinutes(dep);
+                    Integer arrMins = parseTimeToMinutes(arr);
+                    int duration = (arrMins != null && depMins != null) ? (arrMins >= depMins ? arrMins - depMins : arrMins + 1440 - depMins) : 120;
+
+                    FlightStatus status = new FlightStatus(
+                            UUID.randomUUID().toString(),
+                            fn,
+                            airline,
+                            origin,
+                            dest,
+                            dep,
+                            arr,
+                            dep,
+                            arr,
+                            "ON_TIME",
+                            "Operating on schedule - Check-in open",
+                            gate,
+                            terminal,
+                            duration
+                    );
+                    seeded.add(status);
+                }
+                flightStatusRepository.saveAll(seeded);
+                System.out.println("[REAL-TIME RADAR] Auto-seeded " + seeded.size() + " flight status records from flight catalog.");
+            }
         }
     }
 
@@ -143,10 +200,22 @@ public class FlightStatusService {
         String newReason;
         int newEstMins;
 
+        boolean isDelayed = "DELAYED".equals(currentStatus)
+                || (f.getRevisedDeparture() != null && !f.getRevisedDeparture().trim().isEmpty() && !f.getRevisedDeparture().equalsIgnoreCase(f.getScheduledDeparture()))
+                || (f.getRevisedArrival() != null && !f.getRevisedArrival().trim().isEmpty() && !f.getRevisedArrival().equalsIgnoreCase(f.getScheduledArrival()));
+
         if (effectiveCurrent >= effectiveArr) {
             newStatus = "LANDED";
-            newReason = "Landed safely at " + arrStr + " - Taxiing to gate";
+            newReason = isDelayed
+                    ? "Landed at " + arrStr + " (Delayed arrival) - Taxiing to gate"
+                    : "Landed safely at " + arrStr + " - Taxiing to gate";
             newEstMins = 0;
+        } else if (isDelayed) {
+            newStatus = "DELAYED";
+            newReason = (f.getDelayReason() != null && !f.getDelayReason().trim().isEmpty() && !f.getDelayReason().contains("Check-in"))
+                    ? f.getDelayReason()
+                    : (effectiveCurrent >= depMins ? "En route - Operating behind schedule" : "Delayed departure");
+            newEstMins = Math.max(1, effectiveArr - effectiveCurrent);
         } else if (effectiveCurrent >= depMins) {
             newStatus = "IN_FLIGHT";
             newReason = (f.getDelayReason() != null && !f.getDelayReason().isEmpty() && !f.getDelayReason().contains("Check-in"))
@@ -159,13 +228,8 @@ public class FlightStatusService {
             newReason = "Boarding underway at " + gate;
             newEstMins = Math.max(1, effectiveArr - effectiveCurrent);
         } else {
-            if ("DELAYED".equals(currentStatus)) {
-                newStatus = "DELAYED";
-                newReason = (f.getDelayReason() != null && !f.getDelayReason().isEmpty()) ? f.getDelayReason() : "Delayed departure";
-            } else {
-                newStatus = "ON_TIME";
-                newReason = "Operating on schedule - Check-in open";
-            }
+            newStatus = "ON_TIME";
+            newReason = "Operating on schedule - Check-in open";
             int diff = effectiveArr - effectiveCurrent;
             if (diff < 0) diff += 1440;
             newEstMins = Math.max(1, diff);
@@ -217,14 +281,80 @@ public class FlightStatusService {
             boolean modified = alignFlightWithRealTime(f, now);
             if (modified) {
                 f.setLastUpdated(updatedTimestamp);
-                changedList.add(flightStatusRepository.save(f));
+                FlightStatus saved = flightStatusRepository.save(f);
+                changedList.add(saved);
+                notifyInterestedUsers(saved);
             }
         }
         return changedList;
     }
 
+    public void notifyInterestedUsers(FlightStatus flight) {
+        if (flight == null || flight.getFlightNumber() == null || notificationService == null) {
+            return;
+        }
+        String fn = flight.getFlightNumber().trim().toUpperCase();
+        String status = flight.getStatus() != null ? flight.getStatus().toUpperCase() : "ON_TIME";
+
+        String title;
+        if ("DELAYED".equals(status)) {
+            title = "Delay Alert: Flight " + fn;
+        } else if ("BOARDING".equals(status)) {
+            title = "Boarding Alert: Flight " + fn;
+        } else if ("CANCELLED".equals(status)) {
+            title = "Cancellation Alert: Flight " + fn;
+        } else if ("LANDED".equals(status)) {
+            title = "Landed: Flight " + fn;
+        } else if ("IN_FLIGHT".equals(status)) {
+            title = "Departure Alert: Flight " + fn;
+        } else {
+            title = "Flight Status Update: " + fn;
+        }
+
+        String details = (flight.getDelayReason() != null && !flight.getDelayReason().trim().isEmpty())
+                ? flight.getDelayReason()
+                : ("Status updated to " + status);
+        String desc = flight.getAirline() + " (" + flight.getOrigin() + " -> " + flight.getDestination() + "): " + details;
+
+        String fnClean = fn.replaceAll("[\\s-]+", "");
+        if (userRepository != null) {
+            try {
+                List<Users> allUsers = userRepository.findAll();
+                for (Users u : allUsers) {
+                    if (u == null || u.getId() == null) continue;
+                    boolean interested = false;
+                    if (u.getTrackedFlights() != null) {
+                        for (String tf : u.getTrackedFlights()) {
+                            if (tf != null && tf.trim().toUpperCase().replaceAll("[\\s-]+", "").equals(fnClean)) {
+                                interested = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (!interested && u.getBookings() != null) {
+                        for (Users.Booking b : u.getBookings()) {
+                            String target = b.getTargetId();
+                            if (target != null && target.trim().toUpperCase().replaceAll("[\\s-]+", "").equals(fnClean)) {
+                                interested = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (interested) {
+                        notificationService.createNotification(u.getId(), title, desc, "flight");
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("Error notifying interested users for flight " + fn + ": " + e.getMessage());
+            }
+        }
+    }
+
     public List<FlightStatus> getAllFlights(String query, String status) {
-        List<FlightStatus> allFlights = flightStatusRepository.findAll();
+        if (flightStatusRepository != null && flightStatusRepository.count() == 0) {
+            seedFromFlightCatalog();
+        }
+        List<FlightStatus> allFlights = flightStatusRepository != null ? flightStatusRepository.findAll() : Collections.emptyList();
         return allFlights.stream()
             .filter(f -> {
                 if (query != null && !query.trim().isEmpty()) {
@@ -268,8 +398,16 @@ public class FlightStatusService {
         double roll = random.nextDouble();
 
         if ("ON_TIME".equals(currentStatus)) {
-            if (roll < 0.40) {
-
+            if (roll < 0.15) {
+                f.setStatus("CANCELLED");
+                String[] cancelReasons = new String[] {
+                    "Air traffic congestion at departure runway",
+                    "Adverse weather conditions & runway closure",
+                    "Technical maintenance inspection required"
+                };
+                f.setDelayReason(cancelReasons[random.nextInt(cancelReasons.length)]);
+                f.setEstimatedArrivalMinutes(0);
+            } else if (roll < 0.45) {
                 int delayMinutes = random.nextBoolean() ? 60 : (random.nextBoolean() ? 45 : 30);
                 String delayLabel = delayMinutes >= 60 ? "Delayed by " + (delayMinutes / 60) + "h" : "Delayed by " + delayMinutes + "m";
                 f.setStatus("DELAYED");
@@ -293,9 +431,19 @@ public class FlightStatusService {
                 f.setDelayReason("Boarding underway at " + (f.getGate() != null ? f.getGate() : "Gate"));
             }
         } else if ("DELAYED".equals(currentStatus)) {
-
-            f.setStatus("BOARDING");
-            f.setDelayReason("Boarding underway at " + (f.getGate() != null ? f.getGate() : "Gate") + " (Revised departure)");
+            if (roll < 0.15) {
+                f.setStatus("CANCELLED");
+                String[] cancelReasons = new String[] {
+                    "Adverse weather conditions & runway closure",
+                    "Air traffic congestion at departure runway",
+                    "Technical maintenance inspection required"
+                };
+                f.setDelayReason(cancelReasons[random.nextInt(cancelReasons.length)]);
+                f.setEstimatedArrivalMinutes(0);
+            } else {
+                f.setStatus("BOARDING");
+                f.setDelayReason("Boarding underway at " + (f.getGate() != null ? f.getGate() : "Gate") + " (Revised departure)");
+            }
         } else if ("BOARDING".equals(currentStatus)) {
             f.setStatus("IN_FLIGHT");
             f.setDelayReason("En route at cruising altitude");
@@ -318,7 +466,9 @@ public class FlightStatusService {
             f.setEstimatedArrivalMinutes(flightDuration);
         }
 
-        return flightStatusRepository.save(f);
+        FlightStatus saved = flightStatusRepository.save(f);
+        notifyInterestedUsers(saved);
+        return saved;
     }
 
     public Optional<FlightStatus> getFlightByNumber(String flightNumber) {
@@ -420,7 +570,9 @@ public class FlightStatusService {
                 f.setRevisedArrival(f.getScheduledArrival());
                 f.setEstimatedArrivalMinutes(120);
             }
-            updatedList.add(flightStatusRepository.save(f));
+            FlightStatus saved = flightStatusRepository.save(f);
+            notifyInterestedUsers(saved);
+            updatedList.add(saved);
         }
         return updatedList;
     }
@@ -474,6 +626,13 @@ public class FlightStatusService {
                 if (estMins == null) {
                     flight.setEstimatedArrivalMinutes(110);
                 }
+            } else if ("CANCELLED".equals(newStatus)) {
+                if (delayReason == null) {
+                    flight.setDelayReason("Adverse weather conditions & runway closure");
+                }
+                if (estMins == null) {
+                    flight.setEstimatedArrivalMinutes(0);
+                }
             } else if ("ON_TIME".equals(newStatus)) {
                 if (delayReason == null) {
                     flight.setDelayReason("Operating on schedule - Check-in open");
@@ -509,7 +668,9 @@ public class FlightStatusService {
         }
         flight.setLastUpdated(LocalTime.now(IST_ZONE).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
 
-        return flightStatusRepository.save(flight);
+        FlightStatus saved = flightStatusRepository.save(flight);
+        notifyInterestedUsers(saved);
+        return saved;
     }
 }
 

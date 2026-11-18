@@ -1,6 +1,7 @@
 package com.makemytrip.makemytrip.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.makemytrip.makemytrip.exceptions.SelectionExceptionHandler;
 import com.makemytrip.makemytrip.models.UserPreferences;
 import com.makemytrip.makemytrip.services.SelectionService;
 import com.makemytrip.makemytrip.services.SelectionServiceTest.StubFlightRepository;
@@ -35,6 +36,11 @@ class SelectionControllerIntegrationTest {
         StubFlightRepository flightRepo = new StubFlightRepository();
         StubHotelRepository hotelRepo = new StubHotelRepository();
 
+        com.makemytrip.makemytrip.models.Hotel testHotel = new com.makemytrip.makemytrip.models.Hotel();
+        testHotel.setId("HT-101");
+        testHotel.setHotelName("Grand Hyatt Resort");
+        hotelRepo.save(testHotel);
+
         ReflectionTestUtils.setField(selectionService, "seatMapRepository", seatRepo);
         ReflectionTestUtils.setField(selectionService, "roomTypeOptionRepository", roomRepo);
         ReflectionTestUtils.setField(selectionService, "userPreferencesRepository", prefRepo);
@@ -44,7 +50,9 @@ class SelectionControllerIntegrationTest {
         SelectionController controller = new SelectionController();
         ReflectionTestUtils.setField(controller, "selectionService", selectionService);
 
-        mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(controller)
+                .setControllerAdvice(new SelectionExceptionHandler())
+                .build();
         objectMapper = new ObjectMapper();
     }
 
@@ -130,6 +138,49 @@ class SelectionControllerIntegrationTest {
     void testStreamSelectionUpdatesEndpoint() throws Exception {
         mockMvc.perform(get("/api/selection/stream"))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("POST /api/selection/reserve-seat - Seat conflict returns 409 with dynamic request path")
+    void testReserveSeat_SeatConflict_Returns409WithDynamicPath() throws Exception {
+        selectionService.reserveSeat("FL-101", "1A", "USR-1");
+
+        mockMvc.perform(post("/api/selection/reserve-seat")
+                        .param("flightId", "FL-101")
+                        .param("seatNo", "1A")
+                        .param("userId", "USR-2"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.error").value("Seat Unavailable"))
+                .andExpect(jsonPath("$.path").value("/api/selection/reserve-seat"));
+    }
+
+    @Test
+    @DisplayName("POST /api/selection/reserve - Alias endpoint conflict returns 409 with dynamic alias path")
+    void testReserveSeat_AliasEndpointSeatConflict_Returns409WithDynamicPath() throws Exception {
+        selectionService.reserveSeat("FL-101", "2B", "USR-1");
+
+        mockMvc.perform(post("/api/selection/reserve")
+                        .param("flightId", "FL-101")
+                        .param("seatNo", "2B")
+                        .param("userId", "USR-2"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.error").value("Seat Unavailable"))
+                .andExpect(jsonPath("$.path").value("/api/selection/reserve"));
+    }
+
+    @Test
+    @DisplayName("POST /api/selection/reserve-seat - Non-existent seat returns 400 Bad Request with dynamic path")
+    void testReserveSeat_InvalidSeat_Returns400WithDynamicPath() throws Exception {
+        mockMvc.perform(post("/api/selection/reserve-seat")
+                        .param("flightId", "FL-101")
+                        .param("seatNo", "99Z")
+                        .param("userId", "USR-1"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Invalid Selection Request"))
+                .andExpect(jsonPath("$.path").value("/api/selection/reserve-seat"));
     }
 }
 

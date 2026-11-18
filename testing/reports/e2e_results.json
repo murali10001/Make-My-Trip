@@ -1,0 +1,3244 @@
+{
+  "timestamp": "2026-11-18T05:58:47.420Z",
+  "durationMs": 18681,
+  "totalTests": 380,
+  "passedTests": 380,
+  "failedTests": 0,
+  "allPassed": true,
+  "tierMap": {
+    "1": {
+      "total": 170,
+      "passed": 170,
+      "failed": 0
+    },
+    "2": {
+      "total": 170,
+      "passed": 170,
+      "failed": 0
+    },
+    "3": {
+      "total": 34,
+      "passed": 34,
+      "failed": 0
+    },
+    "4": {
+      "total": 6,
+      "passed": 6,
+      "failed": 0
+    }
+  },
+  "featureMap": {
+    "1": {
+      "total": 10,
+      "passed": 10,
+      "failed": 0
+    },
+    "2": {
+      "total": 10,
+      "passed": 10,
+      "failed": 0
+    },
+    "3": {
+      "total": 11,
+      "passed": 11,
+      "failed": 0
+    },
+    "4": {
+      "total": 11,
+      "passed": 11,
+      "failed": 0
+    },
+    "5": {
+      "total": 10,
+      "passed": 10,
+      "failed": 0
+    },
+    "6": {
+      "total": 11,
+      "passed": 11,
+      "failed": 0
+    },
+    "7": {
+      "total": 11,
+      "passed": 11,
+      "failed": 0
+    },
+    "8": {
+      "total": 11,
+      "passed": 11,
+      "failed": 0
+    },
+    "9": {
+      "total": 12,
+      "passed": 12,
+      "failed": 0
+    },
+    "10": {
+      "total": 13,
+      "passed": 13,
+      "failed": 0
+    },
+    "11": {
+      "total": 11,
+      "passed": 11,
+      "failed": 0
+    },
+    "12": {
+      "total": 10,
+      "passed": 10,
+      "failed": 0
+    },
+    "13": {
+      "total": 12,
+      "passed": 12,
+      "failed": 0
+    },
+    "14": {
+      "total": 11,
+      "passed": 11,
+      "failed": 0
+    },
+    "15": {
+      "total": 12,
+      "passed": 12,
+      "failed": 0
+    },
+    "16": {
+      "total": 11,
+      "passed": 11,
+      "failed": 0
+    },
+    "17": {
+      "total": 10,
+      "passed": 10,
+      "failed": 0
+    },
+    "18": {
+      "total": 12,
+      "passed": 12,
+      "failed": 0
+    },
+    "19": {
+      "total": 12,
+      "passed": 12,
+      "failed": 0
+    },
+    "20": {
+      "total": 11,
+      "passed": 11,
+      "failed": 0
+    },
+    "21": {
+      "total": 11,
+      "passed": 11,
+      "failed": 0
+    },
+    "22": {
+      "total": 10,
+      "passed": 10,
+      "failed": 0
+    },
+    "23": {
+      "total": 12,
+      "passed": 12,
+      "failed": 0
+    },
+    "24": {
+      "total": 11,
+      "passed": 11,
+      "failed": 0
+    },
+    "25": {
+      "total": 11,
+      "passed": 11,
+      "failed": 0
+    },
+    "26": {
+      "total": 12,
+      "passed": 12,
+      "failed": 0
+    },
+    "27": {
+      "total": 13,
+      "passed": 13,
+      "failed": 0
+    },
+    "28": {
+      "total": 12,
+      "passed": 12,
+      "failed": 0
+    },
+    "29": {
+      "total": 13,
+      "passed": 13,
+      "failed": 0
+    },
+    "30": {
+      "total": 11,
+      "passed": 11,
+      "failed": 0
+    },
+    "31": {
+      "total": 11,
+      "passed": 11,
+      "failed": 0
+    },
+    "32": {
+      "total": 10,
+      "passed": 10,
+      "failed": 0
+    },
+    "33": {
+      "total": 11,
+      "passed": 11,
+      "failed": 0
+    },
+    "34": {
+      "total": 10,
+      "passed": 10,
+      "failed": 0
+    }
+  },
+  "results": [
+    {
+      "tier": 1,
+      "feature": 1,
+      "name": "T1_F01_01_GetAllFlights: GET /api/flight-status returns all flights with 200 OK",
+      "status": "PASSED",
+      "durationMs": 16,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 1,
+      "name": "T1_F01_02_GetFlightByNumber: GET /api/flight-status/{flightNumber} returns matching flight",
+      "status": "PASSED",
+      "durationMs": 17,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 1,
+      "name": "T1_F01_03_FilterBySearchQuery: GET /api/flight-status?query= searches flights",
+      "status": "PASSED",
+      "durationMs": 17,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 1,
+      "name": "T1_F01_04_FilterByStatus: GET /api/flight-status?status= filters by flight status",
+      "status": "PASSED",
+      "durationMs": 16,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 1,
+      "name": "T1_F01_05_ValidateDbSync: GET /api/flight-status/validate-db synchronizes flights with IST",
+      "status": "PASSED",
+      "durationMs": 10,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 2,
+      "name": "T1_F02_01_SimulateRandomFlight: GET /api/flight-status/simulate-random updates a flight",
+      "status": "PASSED",
+      "durationMs": 12,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 2,
+      "name": "T1_F02_02_SimulateDelayedStatus: POST /api/flight-status/simulate sets DELAYED status",
+      "status": "PASSED",
+      "durationMs": 21,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 2,
+      "name": "T1_F02_03_SimulateLandedStatus: POST /api/flight-status/simulate sets LANDED status",
+      "status": "PASSED",
+      "durationMs": 16,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 2,
+      "name": "T1_F02_04_SimulateBoardingStatus: POST /api/flight-status/simulate sets BOARDING status",
+      "status": "PASSED",
+      "durationMs": 17,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 2,
+      "name": "T1_F02_05_SimulateAllFlights: POST /api/flight-status/simulate-all progresses flights",
+      "status": "PASSED",
+      "durationMs": 37,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 3,
+      "name": "T1_F03_01_GetTrackedFlightsMultiple: POST /api/flight-status/tracked returns list of records",
+      "status": "PASSED",
+      "durationMs": 11,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 3,
+      "name": "T1_F03_02_GetUserTrackedFlights: GET /api/flight-status/user-tracked/{userId} returns watchlist",
+      "status": "PASSED",
+      "durationMs": 4,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 3,
+      "name": "T1_F03_03_ToggleTrackAdd: POST /api/flight-status/user-tracked/{userId} adds to watchlist",
+      "status": "PASSED",
+      "durationMs": 20,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 3,
+      "name": "T1_F03_04_ToggleTrackRemove: Second POST /api/flight-status/user-tracked/{userId} removes from watchlist",
+      "status": "PASSED",
+      "durationMs": 31,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 3,
+      "name": "T1_F03_05_GetTrackedFlightsSingle: POST /api/flight-status/tracked with single flight returns array",
+      "status": "PASSED",
+      "durationMs": 12,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 4,
+      "name": "T1_F04_01_SseInitialConnect: Connecting to /api/flight-status/stream receives connect event",
+      "status": "PASSED",
+      "durationMs": 7,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 4,
+      "name": "T1_F04_02_SseFlightUpdateEvent: Simulation triggers flight-update event on SSE stream",
+      "status": "PASSED",
+      "durationMs": 127,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 4,
+      "name": "T1_F04_03_SseFlightUpdatePayload: SSE flight-update payload has required fields",
+      "status": "PASSED",
+      "durationMs": 136,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 4,
+      "name": "T1_F04_04_SseKeepAlivePing: SSE stream accepts connections without immediate drop",
+      "status": "PASSED",
+      "durationMs": 1582,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 4,
+      "name": "T1_F04_05_SseContentType: GET /api/flight-status/stream responds with text/event-stream",
+      "status": "PASSED",
+      "durationMs": 5,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 5,
+      "name": "T1_F05_01_ControllerDelegation: Controller retrieves persistent records from repository",
+      "status": "PASSED",
+      "durationMs": 7,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 5,
+      "name": "T1_F05_02_RepositoryPersistence: Simulation update persists across subsequent GET requests",
+      "status": "PASSED",
+      "durationMs": 36,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 5,
+      "name": "T1_F05_03_IstTimezoneConsistency: Flight records include lastUpdated formatted timestamp",
+      "status": "PASSED",
+      "durationMs": 9,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 5,
+      "name": "T1_F05_04_ScheduledDepartureFormat: Departure and arrival times formatted consistently",
+      "status": "PASSED",
+      "durationMs": 19,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 5,
+      "name": "T1_F05_05_FlightCatalogCorrelation: Flight numbers correlate with valid airline codes",
+      "status": "PASSED",
+      "durationMs": 19,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 6,
+      "name": "T1_F06_01_CalculateDefaultPrice: GET /api/pricing/calculate returns valid DynamicPrice",
+      "status": "PASSED",
+      "durationMs": 31,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 6,
+      "name": "T1_F06_02_HighDemandSurge: demand=HIGH applies 15% surge factor",
+      "status": "PASSED",
+      "durationMs": 16,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 6,
+      "name": "T1_F06_03_MediumDemandSurge: demand=MEDIUM applies 5% surge factor",
+      "status": "PASSED",
+      "durationMs": 7,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 6,
+      "name": "T1_F06_04_AutoFlightHighDemand: Flight auto-demand sets surgeReason",
+      "status": "PASSED",
+      "durationMs": 8,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 6,
+      "name": "T1_F06_05_AutoHotelDemand: Hotel demand calculation produces valid pricing response",
+      "status": "PASSED",
+      "durationMs": 8,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 7,
+      "name": "T1_F07_01_UrgencyLessThan24h: Response includes time-to-departure multiplier",
+      "status": "PASSED",
+      "durationMs": 8,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 7,
+      "name": "T1_F07_02_UrgencyHoursReported: Response reports valid multiplier and pricing metadata",
+      "status": "PASSED",
+      "durationMs": 7,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 7,
+      "name": "T1_F07_03_UrgencyCompounding: finalPrice compounds base price, surge, and urgency",
+      "status": "PASSED",
+      "durationMs": 7,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 7,
+      "name": "T1_F07_04_UrgencyBaseline: Regular season baseline has seasonalMultiplier >= 1.0",
+      "status": "PASSED",
+      "durationMs": 7,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 7,
+      "name": "T1_F07_05_HolidayPeakMultiplier: season=HOLIDAY_PEAK applies 1.20 seasonal multiplier",
+      "status": "PASSED",
+      "durationMs": 7,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 8,
+      "name": "T1_F08_01_CompetitorPricesMapPresent: DynamicPrice contains competitorPrices map",
+      "status": "PASSED",
+      "durationMs": 6,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 8,
+      "name": "T1_F08_02_CompetitorPricesPositive: All competitor prices are positive values",
+      "status": "PASSED",
+      "durationMs": 6,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 8,
+      "name": "T1_F08_03_MarketBenchmarking: Competitor map contains primary market rivals",
+      "status": "PASSED",
+      "durationMs": 7,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 8,
+      "name": "T1_F08_04_HotelCompetitorPricing: Competitor prices generated for hotel queries",
+      "status": "PASSED",
+      "durationMs": 7,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 8,
+      "name": "T1_F08_05_FlightCompetitorPricing: Competitor prices scale relative to base price",
+      "status": "PASSED",
+      "durationMs": 12,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 9,
+      "name": "T1_F09_01_CreateFreeze24h: POST /api/pricing/freeze locks price for 24h",
+      "status": "PASSED",
+      "durationMs": 11,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 9,
+      "name": "T1_F09_02_CreateFreeze48h: POST /api/pricing/freeze locks price for 48h",
+      "status": "PASSED",
+      "durationMs": 9,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 9,
+      "name": "T1_F09_03_GetActiveFreezeStatus: GET /api/pricing/freeze/{freezeId} retrieves active lock",
+      "status": "PASSED",
+      "durationMs": 12,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 9,
+      "name": "T1_F09_04_UserFreezesListing: GET /api/pricing/user-freezes retrieves user locks",
+      "status": "PASSED",
+      "durationMs": 14,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 9,
+      "name": "T1_F09_05_DeletePriceFreeze: DELETE /api/pricing/freeze/{freezeId} deletes lock",
+      "status": "PASSED",
+      "durationMs": 13,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 10,
+      "name": "T1_F10_01_GetAvailableOffers: GET /api/pricing/offers returns active coupon list",
+      "status": "PASSED",
+      "durationMs": 4,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 10,
+      "name": "T1_F10_02_ApplyValidCoupon: POST /api/pricing/apply-coupon applies discount",
+      "status": "PASSED",
+      "durationMs": 9,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 10,
+      "name": "T1_F10_03_DiscountPercentageCalculation: Discount conforms to coupon percentage",
+      "status": "PASSED",
+      "durationMs": 9,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 10,
+      "name": "T1_F10_04_FinalAmountMath: finalAmount equals originalAmount minus discountAmount",
+      "status": "PASSED",
+      "durationMs": 11,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 10,
+      "name": "T1_F10_05_CouponMetadataReturned: Response includes title, badgeText, and message",
+      "status": "PASSED",
+      "durationMs": 11,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 11,
+      "name": "T1_F11_01_PriceSseConnectEvent: GET /api/pricing/stream connects and receives event",
+      "status": "PASSED",
+      "durationMs": 3,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 11,
+      "name": "T1_F11_02_PriceSseBroadcastEndpoint: POST /api/pricing/broadcast-update succeeds",
+      "status": "PASSED",
+      "durationMs": 4,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 11,
+      "name": "T1_F11_03_PriceSseEventReceipt: Broadcast triggers price-update event on SSE stream",
+      "status": "PASSED",
+      "durationMs": 117,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 11,
+      "name": "T1_F11_04_PriceSseKeepAlivePing: Stream stays connected without premature closure",
+      "status": "PASSED",
+      "durationMs": 2502,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 11,
+      "name": "T1_F11_05_PriceSseContentType: GET /api/pricing/stream responds with text/event-stream",
+      "status": "PASSED",
+      "durationMs": 5,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 12,
+      "name": "T1_F12_01_ControllerDelegation: PricingController routes price calculation to service",
+      "status": "PASSED",
+      "durationMs": 9,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 12,
+      "name": "T1_F12_02_DynamicPricePersistence: Calculations stored with timestamp metadata",
+      "status": "PASSED",
+      "durationMs": 8,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 12,
+      "name": "T1_F12_03_OfferCouponPersistence: Coupons stored in persistent offer_coupons collection",
+      "status": "PASSED",
+      "durationMs": 4,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 12,
+      "name": "T1_F12_04_PriceHistoryPersistence: Response contains 7-day priceHistory array",
+      "status": "PASSED",
+      "durationMs": 8,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 12,
+      "name": "T1_F12_05_PriceFreezePersistence: Price freezes stored in price_freezes collection",
+      "status": "PASSED",
+      "durationMs": 15,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 13,
+      "name": "T1_F13_01_CancelBookingEndpoint: POST /refund/cancel-and-request accepts valid cancellation",
+      "status": "PASSED",
+      "durationMs": 6,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 13,
+      "name": "T1_F13_02_BookingStatusCancelled: Cancelled refunds reflect CANCELLED status on booking",
+      "status": "PASSED",
+      "durationMs": 10,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 13,
+      "name": "T1_F13_03_CancellationReasonPersisted: RefundRequest stores cancellationReason",
+      "status": "PASSED",
+      "durationMs": 6,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 13,
+      "name": "T1_F13_04_RestoreFlightSeats: Flight status available seats exist in catalog",
+      "status": "PASSED",
+      "durationMs": 7,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 13,
+      "name": "T1_F13_05_RestoreHotelRooms: Hotel room inventory exists in selection service",
+      "status": "PASSED",
+      "durationMs": 35,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 14,
+      "name": "T1_F14_01_RefundPreviewMoreThan72h: Preview endpoint returns 200 or calculation schema",
+      "status": "PASSED",
+      "durationMs": 16,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 14,
+      "name": "T1_F14_02_RefundPreviewStructure: Refund calculation contains deduction & refund amounts",
+      "status": "PASSED",
+      "durationMs": 6,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 14,
+      "name": "T1_F14_03_RefundMathIntegrity: refundAmount <= originalAmount",
+      "status": "PASSED",
+      "durationMs": 9,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 14,
+      "name": "T1_F14_04_DeductionAmountPositive: Deduction amount is non-negative",
+      "status": "PASSED",
+      "durationMs": 6,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 14,
+      "name": "T1_F14_05_RefundPercentageRange: Refund percentage falls within valid tiers [50, 75, 90, 100]",
+      "status": "PASSED",
+      "durationMs": 5,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 15,
+      "name": "T1_F15_01_InitialRefundStatus: Initial or stored refunds have valid step numbers (0-3)",
+      "status": "PASSED",
+      "durationMs": 6,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 15,
+      "name": "T1_F15_02_AdminUpdateStatusCompleted: Admin status update to COMPLETED sets step 3",
+      "status": "PASSED",
+      "durationMs": 14,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 15,
+      "name": "T1_F15_03_AdminUpdateStatusRejected: Admin status update to REJECTED sets terminal state",
+      "status": "PASSED",
+      "durationMs": 13,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 15,
+      "name": "T1_F15_04_AdminUpdateStatusProcessed: Admin status update to PROCESSED sets step 2",
+      "status": "PASSED",
+      "durationMs": 13,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 15,
+      "name": "T1_F15_05_RefundTransactionRef: Completed refund includes transaction reference",
+      "status": "PASSED",
+      "durationMs": 13,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 16,
+      "name": "T1_F16_01_GetRefundStatus: GET /refund/status/{refundId} returns full tracking model",
+      "status": "PASSED",
+      "durationMs": 10,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 16,
+      "name": "T1_F16_02_GetUserRefunds: GET /refund/user/{userId} returns user refunds array",
+      "status": "PASSED",
+      "durationMs": 10,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 16,
+      "name": "T1_F16_03_GetAllRefunds: GET /refund/all returns complete repository listing",
+      "status": "PASSED",
+      "durationMs": 5,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 16,
+      "name": "T1_F16_04_TimelineStepProgression: Timeline steps conform strictly to 0, 1, 2, or 3",
+      "status": "PASSED",
+      "durationMs": 6,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 16,
+      "name": "T1_F16_05_EstimatedCompletionDate: Refund includes request date timestamp",
+      "status": "PASSED",
+      "durationMs": 5,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 17,
+      "name": "T1_F17_01_ControllerDelegatesToService: RefundController routes through RefundService",
+      "status": "PASSED",
+      "durationMs": 5,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 17,
+      "name": "T1_F17_02_RefundPersistenceInMongoDB: Refunds persist across server requests",
+      "status": "PASSED",
+      "durationMs": 11,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 17,
+      "name": "T1_F17_03_UserBookingSync: Refund references valid userId and bookingId",
+      "status": "PASSED",
+      "durationMs": 5,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 17,
+      "name": "T1_F17_04_RefundStreamEndpoint: GET /refund/stream connects and receives SSE event",
+      "status": "PASSED",
+      "durationMs": 4,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 17,
+      "name": "T1_F17_05_RefundStreamContentType: GET /refund/stream responds with text/event-stream",
+      "status": "PASSED",
+      "durationMs": 3,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 18,
+      "name": "T1_F18_01_GetSeatMap: GET /api/selection/seatmap/{flightId} returns 12x6 cabin map",
+      "status": "PASSED",
+      "durationMs": 8,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 18,
+      "name": "T1_F18_02_SeatMapSeatStructure: Seats contain row, column, tier, priceAddon, status",
+      "status": "PASSED",
+      "durationMs": 8,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 18,
+      "name": "T1_F18_03_ReserveSeat: POST /api/selection/reserve-seat reserves an available seat",
+      "status": "PASSED",
+      "durationMs": 30,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 18,
+      "name": "T1_F18_04_ReleaseSeat: POST /api/selection/release-seat frees reserved seat",
+      "status": "PASSED",
+      "durationMs": 12,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 18,
+      "name": "T1_F18_05_SeatTiersCheck: Front row window seat is WINDOW_EXTRA_LEGROOM",
+      "status": "PASSED",
+      "durationMs": 8,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 19,
+      "name": "T1_F19_01_FeaturedRoomsShowcase: GET /api/selection/featured-rooms returns 4 room tiers",
+      "status": "PASSED",
+      "durationMs": 37,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 19,
+      "name": "T1_F19_02_Showcase3DConfigPresent: Showcase rooms contain room3dConfig",
+      "status": "PASSED",
+      "durationMs": 34,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 19,
+      "name": "T1_F19_03_ShowcaseDimensions: 3D configs specify architectural dimensions",
+      "status": "PASSED",
+      "durationMs": 39,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 19,
+      "name": "T1_F19_04_ShowcaseLightingProfile: 3D configs provide lightingProfile details",
+      "status": "PASSED",
+      "durationMs": 39,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 19,
+      "name": "T1_F19_05_HotelRoomsEndpoint: GET /api/selection/hotel-rooms/{hotelId} returns room options",
+      "status": "PASSED",
+      "durationMs": 14,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 20,
+      "name": "T1_F20_01_SaveUserPreferences: POST /api/selection/preferences saves travel choices",
+      "status": "PASSED",
+      "durationMs": 7,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 20,
+      "name": "T1_F20_02_GetUserPreferences: GET /api/selection/preferences/{userId} retrieves saved preferences",
+      "status": "PASSED",
+      "durationMs": 12,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 20,
+      "name": "T1_F20_03_UpdateUserPreferences: Updating preferences overwrites prior settings",
+      "status": "PASSED",
+      "durationMs": 14,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 20,
+      "name": "T1_F20_04_DefaultPreferencesOnUnknownUser: Unknown user receives default preferences model",
+      "status": "PASSED",
+      "durationMs": 5,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 20,
+      "name": "T1_F20_05_PreferenceFieldsIntegrity: Model supports category affinities and room preferences",
+      "status": "PASSED",
+      "durationMs": 7,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 21,
+      "name": "T1_F21_01_SeatLockSSEStream: GET /api/selection/stream connects and receives SSE event",
+      "status": "PASSED",
+      "durationMs": 3,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 21,
+      "name": "T1_F21_02_SeatLockSSEBroadcast: Seat reservation broadcasts seat-update event",
+      "status": "PASSED",
+      "durationMs": 139,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 21,
+      "name": "T1_F21_03_ConcurrentSeatConflict: Double-reserving an occupied seat returns HTTP 409 Conflict",
+      "status": "PASSED",
+      "durationMs": 16,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 21,
+      "name": "T1_F21_04_ConflictErrorMessage: 409 response explains seat is unavailable",
+      "status": "PASSED",
+      "durationMs": 16,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 21,
+      "name": "T1_F21_05_SequentialLockReleaseCycle: Lock followed by release leaves seat AVAILABLE",
+      "status": "PASSED",
+      "durationMs": 34,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 22,
+      "name": "T1_F22_01_ControllerDelegatesToService: SelectionController routes calls to SelectionService",
+      "status": "PASSED",
+      "durationMs": 45,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 22,
+      "name": "T1_F22_02_SeatMapPersistence: SeatMap changes persist in MongoDB across queries",
+      "status": "PASSED",
+      "durationMs": 34,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 22,
+      "name": "T1_F22_03_RoomOptionsPersistence: Hotel room tiers persist in room_type_options",
+      "status": "PASSED",
+      "durationMs": 26,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 22,
+      "name": "T1_F22_04_UserPreferencesPersistence: User travel preferences persist in user_preferences",
+      "status": "PASSED",
+      "durationMs": 14,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 22,
+      "name": "T1_F22_05_SelectionStreamContentType: /api/selection/stream responds with text/event-stream",
+      "status": "PASSED",
+      "durationMs": 5,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 23,
+      "name": "T1_F23_01_VerifiedReviewCreation: POST /api/reviews creates review for confirmed booking",
+      "status": "PASSED",
+      "durationMs": 60,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 23,
+      "name": "T1_F23_02_ReviewGateEnforcement: Unbooked user review is rejected with 403 Forbidden",
+      "status": "PASSED",
+      "durationMs": 6,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 23,
+      "name": "T1_F23_03_ReviewAssociatedWithBooking: Review stores targetId and userId",
+      "status": "PASSED",
+      "durationMs": 45,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 23,
+      "name": "T1_F23_04_ReviewHotelTargetType: TargetType HOTEL supported on reviews",
+      "status": "PASSED",
+      "durationMs": 53,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 23,
+      "name": "T1_F23_05_ReviewSummaryIntegrity: Review endpoint returns totalCount and averageRating",
+      "status": "PASSED",
+      "durationMs": 45,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 24,
+      "name": "T1_F24_01_ReviewCreationReturnsReview: POST /api/reviews returns full review model with sentiment",
+      "status": "PASSED",
+      "durationMs": 40,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 24,
+      "name": "T1_F24_02_ReviewRatingRecorded: Rating stored accurately (1-5 range)",
+      "status": "PASSED",
+      "durationMs": 36,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 24,
+      "name": "T1_F24_03_PositiveCommentReview: Review comment preserved faithfully",
+      "status": "PASSED",
+      "durationMs": 37,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 24,
+      "name": "T1_F24_04_DetailedCommentStored: Reviews support detailed text",
+      "status": "PASSED",
+      "durationMs": 37,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 24,
+      "name": "T1_F24_05_RatingDistributionCalculated: Summary includes 1-5 rating distribution map",
+      "status": "PASSED",
+      "durationMs": 39,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 25,
+      "name": "T1_F25_01_ReviewSummaryDtoReturned: GET /api/reviews returns ReviewSummaryDTO structure",
+      "status": "PASSED",
+      "durationMs": 38,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 25,
+      "name": "T1_F25_02_HelpfulVoteToggle: POST /api/reviews/{id}/helpful toggles helpfulCount",
+      "status": "PASSED",
+      "durationMs": 49,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 25,
+      "name": "T1_F25_03_HelpfulUserTracked: helpfulUserIds contains voter userId",
+      "status": "PASSED",
+      "durationMs": 53,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 25,
+      "name": "T1_F25_04_HelpfulVoteUntoggle: Second vote by same user removes vote and decrements count",
+      "status": "PASSED",
+      "durationMs": 58,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 25,
+      "name": "T1_F25_05_ReviewPhotoUrlsSupported: Reviews preserve photoUrls array",
+      "status": "PASSED",
+      "durationMs": 33,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 26,
+      "name": "T1_F26_01_AddHotelierReply: POST /api/reviews/{id}/reply adds hotelier reply",
+      "status": "PASSED",
+      "durationMs": 53,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 26,
+      "name": "T1_F26_02_ReplyContentRecorded: Reply contains replyId, userName, comment, createdAt",
+      "status": "PASSED",
+      "durationMs": 42,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 26,
+      "name": "T1_F26_03_FlagReview: POST /api/reviews/{id}/flag marks review as flagged",
+      "status": "PASSED",
+      "durationMs": 108,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 26,
+      "name": "T1_F26_04_FlaggedReviewExcludedFromPublic: Flagged reviews do not appear in public GET /api/reviews",
+      "status": "PASSED",
+      "durationMs": 53,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 26,
+      "name": "T1_F26_05_MultipleRepliesSupported: Hotelier and community can add multiple responses",
+      "status": "PASSED",
+      "durationMs": 169,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 27,
+      "name": "T1_F27_01_GetFlaggedReviews: GET /api/reviews/moderation/flagged returns flagged list",
+      "status": "PASSED",
+      "durationMs": 14,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 27,
+      "name": "T1_F27_02_FlaggedAppearsInQueue: Flagged review appears in moderation queue",
+      "status": "PASSED",
+      "durationMs": 117,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 27,
+      "name": "T1_F27_03_AdminDismissFlag: POST /api/reviews/moderation/{id}/action?action=DISMISS unflags review",
+      "status": "PASSED",
+      "durationMs": 147,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 27,
+      "name": "T1_F27_04_DismissedReviewPublicAgain: Dismissed review returns to public listing",
+      "status": "PASSED",
+      "durationMs": 172,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 27,
+      "name": "T1_F27_05_AdminRemoveAction: POST /api/reviews/moderation/{id}/action?action=REMOVE deletes review",
+      "status": "PASSED",
+      "durationMs": 143,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 28,
+      "name": "T1_F28_01_ControllerDelegatesToService: ReviewController routes queries to ReviewService",
+      "status": "PASSED",
+      "durationMs": 41,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 28,
+      "name": "T1_F28_02_ReviewPersistenceInMongoDB: Reviews persist across separate client requests",
+      "status": "PASSED",
+      "durationMs": 83,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 28,
+      "name": "T1_F28_03_AverageRatingRecalculation: averageRating matches average of active reviews",
+      "status": "PASSED",
+      "durationMs": 42,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 28,
+      "name": "T1_F28_04_ReviewSSEStream: GET /api/reviews/stream connects to live review stream",
+      "status": "PASSED",
+      "durationMs": 4,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 28,
+      "name": "T1_F28_05_ModerationSSEStream: GET /api/reviews/moderation/stream connects to moderation queue stream",
+      "status": "PASSED",
+      "durationMs": 3,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 29,
+      "name": "T1_F29_01_GetAllRecommendations: GET /api/recommendations returns 200 OK with list",
+      "status": "PASSED",
+      "durationMs": 20,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 29,
+      "name": "T1_F29_02_RecommendationModelStructure: Recommendations contain core discovery fields",
+      "status": "PASSED",
+      "durationMs": 18,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 29,
+      "name": "T1_F29_03_CategoryFilterBeach: GET /api/recommendations?category=BEACH filters beach destinations",
+      "status": "PASSED",
+      "durationMs": 14,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 29,
+      "name": "T1_F29_04_CategoryFilterHeritage: GET /api/recommendations?category=HERITAGE filters heritage destinations",
+      "status": "PASSED",
+      "durationMs": 21,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 29,
+      "name": "T1_F29_05_UserSpecificRecommendations: Passing userId returns tailored recommendations",
+      "status": "PASSED",
+      "durationMs": 27,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 30,
+      "name": "T1_F30_01_ReasonTitlePresent: Recommendations contain reasonTitle",
+      "status": "PASSED",
+      "durationMs": 20,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 30,
+      "name": "T1_F30_02_ReasonExplanationPresent: Recommendations contain reasonExplanation description",
+      "status": "PASSED",
+      "durationMs": 24,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 30,
+      "name": "T1_F30_03_ReasonBreakdownList: Recommendations contain reasonBreakdown bullet points",
+      "status": "PASSED",
+      "durationMs": 21,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 30,
+      "name": "T1_F30_04_CollaborativeFactor: Recommendations include collaborativeFactor narrative",
+      "status": "PASSED",
+      "durationMs": 19,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 30,
+      "name": "T1_F30_05_MatchScoreRange: Match scores are realistic percentages (70-99)",
+      "status": "PASSED",
+      "durationMs": 19,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 31,
+      "name": "T1_F31_01_SubmitHelpfulFeedback: POST /api/recommendations/{id}/feedback HELPFUL increments helpfulCount",
+      "status": "PASSED",
+      "durationMs": 31,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 31,
+      "name": "T1_F31_02_SubmitIrrelevantFeedback: POST /api/recommendations/{id}/feedback IRRELEVANT increments irrelevantCount",
+      "status": "PASSED",
+      "durationMs": 29,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 31,
+      "name": "T1_F31_03_HelpfulNotesPreserved: Feedback notes accepted without truncation",
+      "status": "PASSED",
+      "durationMs": 31,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 31,
+      "name": "T1_F31_04_FeedbackResponseStructure: Response includes confirmation message",
+      "status": "PASSED",
+      "durationMs": 34,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 31,
+      "name": "T1_F31_05_AffinityShiftOnHelpful: Submitting HELPFUL feedback refines user recommendations",
+      "status": "PASSED",
+      "durationMs": 49,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 32,
+      "name": "T1_F32_01_CuratedBaseCatalogNotEmpty: Recommendations catalog guarantees zero empty-state collapse",
+      "status": "PASSED",
+      "durationMs": 19,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 32,
+      "name": "T1_F32_02_CuratedDestinationsIncludeGoa: Catalog contains Goa beach destination",
+      "status": "PASSED",
+      "durationMs": 18,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 32,
+      "name": "T1_F32_03_CuratedDestinationsIncludeJaipur: Catalog contains Jaipur heritage destination",
+      "status": "PASSED",
+      "durationMs": 16,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 32,
+      "name": "T1_F32_04_CuratedDestinationsIncludeDubai: Catalog contains Dubai international destination",
+      "status": "PASSED",
+      "durationMs": 18,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 32,
+      "name": "T1_F32_05_ZeroEmptyStateCollapse: Random unseeded user receives full catalog",
+      "status": "PASSED",
+      "durationMs": 21,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 33,
+      "name": "T1_F33_01_StreamConnection: GET /api/recommendations/stream connects and receives SSE event",
+      "status": "PASSED",
+      "durationMs": 3,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 33,
+      "name": "T1_F33_02_StreamContentType: GET /api/recommendations/stream responds with text/event-stream",
+      "status": "PASSED",
+      "durationMs": 2,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 33,
+      "name": "T1_F33_03_CatalogSeedEndpoint: POST /api/recommendations/seed syncs catalog with database entities",
+      "status": "PASSED",
+      "durationMs": 70,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 33,
+      "name": "T1_F33_04_SeedTriggersStreamEvent: Seed action broadcasts catalog update over SSE",
+      "status": "PASSED",
+      "durationMs": 6,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 33,
+      "name": "T1_F33_05_StreamKeepAlivePing: Stream accepts connections without sudden disconnection",
+      "status": "PASSED",
+      "durationMs": 2509,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 34,
+      "name": "T1_F34_01_ControllerDelegatesToService: RecommendationController routes calls to service",
+      "status": "PASSED",
+      "durationMs": 21,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 34,
+      "name": "T1_F34_02_RecommendationPersistence: Recommendations persist in MongoDB recommendations collection",
+      "status": "PASSED",
+      "durationMs": 37,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 34,
+      "name": "T1_F34_03_FeedbackPersistence: Feedback updates are reflected in subsequent queries",
+      "status": "PASSED",
+      "durationMs": 36,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 34,
+      "name": "T1_F34_04_PreferenceSync: Category affinities persist in user_preferences",
+      "status": "PASSED",
+      "durationMs": 37,
+      "error": null
+    },
+    {
+      "tier": 1,
+      "feature": 34,
+      "name": "T1_F34_05_IndividualRecommendationGet: GET /api/recommendations/{id} retrieves specific entity",
+      "status": "PASSED",
+      "durationMs": 24,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 1,
+      "name": "T2_F01_01_FlightNotFound_404: Non-existent flight number returns 404 Not Found",
+      "status": "PASSED",
+      "durationMs": 7,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 1,
+      "name": "T2_F01_02_CaseInsensitiveQuery: Lowercase flight number query matches correctly",
+      "status": "PASSED",
+      "durationMs": 15,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 1,
+      "name": "T2_F01_03_WhitespaceQuery: Whitespace search returns all flights without error",
+      "status": "PASSED",
+      "durationMs": 7,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 1,
+      "name": "T2_F01_04_UnknownStatusFilter: Unknown status filter returns empty array",
+      "status": "PASSED",
+      "durationMs": 7,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 1,
+      "name": "T2_F01_05_ValidateParamTrue: validate=true parameter triggers IST alignment",
+      "status": "PASSED",
+      "durationMs": 9,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 2,
+      "name": "T2_F02_01_SimulateUnknownFlight_404: Simulating non-existent flight returns 404",
+      "status": "PASSED",
+      "durationMs": 6,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 2,
+      "name": "T2_F02_02_SimulateEmptyBodyFallback: Empty body simulates random flight",
+      "status": "PASSED",
+      "durationMs": 10,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 2,
+      "name": "T2_F02_03_SimulateCancelledStatus: Simulating CANCELLED sets 0 estimated minutes",
+      "status": "PASSED",
+      "durationMs": 20,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 2,
+      "name": "T2_F02_04_NegativeEstimatedMinutesClamp: Negative estimatedArrivalMinutes clamps to 0",
+      "status": "PASSED",
+      "durationMs": 22,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 2,
+      "name": "T2_F02_05_StringEstimatedMinutesParsing: String numeric value parses cleanly",
+      "status": "PASSED",
+      "durationMs": 20,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 3,
+      "name": "T2_F03_01_MissingFlightNumber_400: Missing flightNumber returns 400 Bad Request",
+      "status": "PASSED",
+      "durationMs": 4,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 3,
+      "name": "T2_F03_02_BlankFlightNumber_400: Blank/whitespace flightNumber returns 400 Bad Request",
+      "status": "PASSED",
+      "durationMs": 3,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 3,
+      "name": "T2_F03_03_EmptyTrackedList: POST /api/flight-status/tracked with [] returns empty list",
+      "status": "PASSED",
+      "durationMs": 6,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 3,
+      "name": "T2_F03_04_NonExistentFlightNumbers: Non-existent flight numbers return empty array",
+      "status": "PASSED",
+      "durationMs": 7,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 3,
+      "name": "T2_F03_05_NonExistentUserIdWatchlist: Watchlist for unknown user returns empty array",
+      "status": "PASSED",
+      "durationMs": 5,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 4,
+      "name": "T2_F04_01_SseDisconnectCleanup: Client abort does not leak or cause 500 error",
+      "status": "PASSED",
+      "durationMs": 10,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 4,
+      "name": "T2_F04_02_SseContentTypeVerification: Exact content-type text/event-stream verified",
+      "status": "PASSED",
+      "durationMs": 3,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 4,
+      "name": "T2_F04_03_SseStreamHeartbeatPing: Heartbeat or initial frame is non-empty",
+      "status": "PASSED",
+      "durationMs": 3,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 4,
+      "name": "T2_F04_04_SseRapidBurstBroadcast: Multiple rapid simulations do not overwhelm stream",
+      "status": "PASSED",
+      "durationMs": 139,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 4,
+      "name": "T2_F04_05_SseMultiConnectionIsolation: Concurrent SSE streams operate independently",
+      "status": "PASSED",
+      "durationMs": 14,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 5,
+      "name": "T2_F05_01_SpecialCharacterSearch: Special characters in query parameter do not cause 500",
+      "status": "PASSED",
+      "durationMs": 8,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 5,
+      "name": "T2_F05_02_LongSearchString: 300-char query parameter handled safely",
+      "status": "PASSED",
+      "durationMs": 6,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 5,
+      "name": "T2_F05_03_FlightStatusEnumValidation: Every flight status conforms to valid enum set",
+      "status": "PASSED",
+      "durationMs": 6,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 5,
+      "name": "T2_F05_04_CancelledFlightImmutability: Cancelled flight remains CANCELLED",
+      "status": "PASSED",
+      "durationMs": 27,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 5,
+      "name": "T2_F05_05_TerminalGateBoundary: Long gate/terminal names handled safely",
+      "status": "PASSED",
+      "durationMs": 22,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 6,
+      "name": "T2_F06_01_SeatBoundary_25: Flight demand surge applies at high capacity limit",
+      "status": "PASSED",
+      "durationMs": 8,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 6,
+      "name": "T2_F06_02_SeatBoundary_26: Medium flight demand surge applies medium percentage",
+      "status": "PASSED",
+      "durationMs": 15,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 6,
+      "name": "T2_F06_03_NormalDemandSurge: Normal demand applies lower surge than medium",
+      "status": "PASSED",
+      "durationMs": 15,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 6,
+      "name": "T2_F06_04_UnknownDemandFallback: Unknown demand string falls back to AUTO",
+      "status": "PASSED",
+      "durationMs": 8,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 6,
+      "name": "T2_F06_05_ZeroBasePriceFallback: Base price <= 0 falls back to default safely",
+      "status": "PASSED",
+      "durationMs": 8,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 7,
+      "name": "T2_F07_01_BoundaryExactly24h: Departure urgency multiplier is >= 1.0",
+      "status": "PASSED",
+      "durationMs": 9,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 7,
+      "name": "T2_F07_02_ExtremeHighBasePrice: Large base price (100,000) calculates without overflow",
+      "status": "PASSED",
+      "durationMs": 9,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 7,
+      "name": "T2_F07_03_WeekendSeasonalMultiplier: season=WEEKEND applies 1.10 seasonal multiplier",
+      "status": "PASSED",
+      "durationMs": 8,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 7,
+      "name": "T2_F07_04_NegativeBasePriceHandling: Negative base price handled safely without crash",
+      "status": "PASSED",
+      "durationMs": 8,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 7,
+      "name": "T2_F07_05_CombinedSurgeAndUrgency: Compounding surge and seasonal factors verified",
+      "status": "PASSED",
+      "durationMs": 8,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 8,
+      "name": "T2_F08_01_NullItemIdBenchmark: Omitted itemId provides default pricing benchmarks",
+      "status": "PASSED",
+      "durationMs": 9,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 8,
+      "name": "T2_F08_02_DynamicRatioScaling: Competitor prices maintain proportional ratios",
+      "status": "PASSED",
+      "durationMs": 8,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 8,
+      "name": "T2_F08_03_PeakSeasonCompetitorScaling: Competitors scale higher during peak season",
+      "status": "PASSED",
+      "durationMs": 17,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 8,
+      "name": "T2_F08_04_CompetitorKeysIntegrity: Map contains valid non-empty competitor names",
+      "status": "PASSED",
+      "durationMs": 8,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 8,
+      "name": "T2_F08_05_ComparisonDeltaNonNegative: All competitor prices are non-negative",
+      "status": "PASSED",
+      "durationMs": 7,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 9,
+      "name": "T2_F09_01_FreezeNotFound_404: Non-existent freezeId returns 404",
+      "status": "PASSED",
+      "durationMs": 6,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 9,
+      "name": "T2_F09_02_ClampMinHours: hours <= 0 clamps duration to 24 hours",
+      "status": "PASSED",
+      "durationMs": 11,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 9,
+      "name": "T2_F09_03_ClampMaxHours: hours > 48 clamps duration to 48 hours",
+      "status": "PASSED",
+      "durationMs": 9,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 9,
+      "name": "T2_F09_04_NegativeHoursClamp: Negative hours clamps to 24 hours",
+      "status": "PASSED",
+      "durationMs": 9,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 9,
+      "name": "T2_F09_05_DeleteNonExistentFreeze: Deleting non-existent freeze handled cleanly",
+      "status": "PASSED",
+      "durationMs": 4,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 10,
+      "name": "T2_F10_01_InvalidCouponCode_400: Non-existent coupon code returns 400 Bad Request",
+      "status": "PASSED",
+      "durationMs": 9,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 10,
+      "name": "T2_F10_02_EmptyCouponCode_400: Empty coupon code returns 400 Bad Request",
+      "status": "PASSED",
+      "durationMs": 4,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 10,
+      "name": "T2_F10_03_BelowMinAmount_400: Amount below minBookingAmount returns 400 Bad Request",
+      "status": "PASSED",
+      "durationMs": 21,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 10,
+      "name": "T2_F10_04_ExactMinAmountBoundary: Amount exactly equal to minBookingAmount succeeds",
+      "status": "PASSED",
+      "durationMs": 14,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 10,
+      "name": "T2_F10_05_MaxDiscountCap: Percentage discount capped at maxDiscountAmount",
+      "status": "PASSED",
+      "durationMs": 12,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 11,
+      "name": "T2_F11_01_PriceSseDisconnectPruning: Stream disconnect cleans up cleanly",
+      "status": "PASSED",
+      "durationMs": 7,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 11,
+      "name": "T2_F11_02_PriceSseContentTypeHeader: Header conforms strictly to text/event-stream",
+      "status": "PASSED",
+      "durationMs": 2,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 11,
+      "name": "T2_F11_03_PriceSseEmptyClientScheduler: Broadcast endpoint succeeds without clients",
+      "status": "PASSED",
+      "durationMs": 5,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 11,
+      "name": "T2_F11_04_PriceSseMultiClientConcurrent: Multiple concurrent listeners connect cleanly",
+      "status": "PASSED",
+      "durationMs": 12,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 11,
+      "name": "T2_F11_05_PriceSseEmptyPayloadHandling: Broadcast with empty body handled cleanly",
+      "status": "PASSED",
+      "durationMs": 16,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 12,
+      "name": "T2_F12_01_ColdStartHistorySeeding: Price history contains 7 points",
+      "status": "PASSED",
+      "durationMs": 13,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 12,
+      "name": "T2_F12_02_ColdStartCouponSeeding: Offer coupons repository populated",
+      "status": "PASSED",
+      "durationMs": 7,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 12,
+      "name": "T2_F12_03_ChronologicalHistoryOrder: History points are chronological",
+      "status": "PASSED",
+      "durationMs": 14,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 12,
+      "name": "T2_F12_04_UserFreezeIsolation: getUserFreezes isolates records per userId",
+      "status": "PASSED",
+      "durationMs": 24,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 12,
+      "name": "T2_F12_05_UnknownItemTypeFallback: Unknown itemType falls back to FLIGHT pricing rules",
+      "status": "PASSED",
+      "durationMs": 8,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 13,
+      "name": "T2_F13_01_NonExistentUser_404: Non-existent user cancellation returns 400 or 404",
+      "status": "PASSED",
+      "durationMs": 6,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 13,
+      "name": "T2_F13_02_NonExistentBooking_400: Non-existent bookingId cancellation returns 400",
+      "status": "PASSED",
+      "durationMs": 15,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 13,
+      "name": "T2_F13_03_MissingReason_400: Cancellation with missing reason parameter returns 400",
+      "status": "PASSED",
+      "durationMs": 4,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 13,
+      "name": "T2_F13_04_ShortReason_400: Cancellation with very short reason (<3 chars) returns 400",
+      "status": "PASSED",
+      "durationMs": 10,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 13,
+      "name": "T2_F13_05_AlreadyCancelled_400: Cancelling an already cancelled booking returns 400",
+      "status": "PASSED",
+      "durationMs": 16,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 14,
+      "name": "T2_F14_01_PreviewCancelledBooking_400: Calculating refund for cancelled booking returns 400",
+      "status": "PASSED",
+      "durationMs": 16,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 14,
+      "name": "T2_F14_02_NonExistentBookingPreview: Preview on non-existent booking returns 400 or 404",
+      "status": "PASSED",
+      "durationMs": 4,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 14,
+      "name": "T2_F14_03_DecimalRoundingPrecision: Refund amounts are finite numbers",
+      "status": "PASSED",
+      "durationMs": 6,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 14,
+      "name": "T2_F14_04_NegativeBookingAmountGuard: Refund amounts are non-negative",
+      "status": "PASSED",
+      "durationMs": 5,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 14,
+      "name": "T2_F14_05_PolicyTextIntegrity: All existing refunds contain valid status text",
+      "status": "PASSED",
+      "durationMs": 4,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 15,
+      "name": "T2_F15_01_UpdateNonExistentRefund_404: Updating status of non-existent refund returns 404",
+      "status": "PASSED",
+      "durationMs": 4,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 15,
+      "name": "T2_F15_02_TransitionMonotonicity: Step number never exceeds step 3",
+      "status": "PASSED",
+      "durationMs": 5,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 15,
+      "name": "T2_F15_03_UtrPatternValidation: Completed refund generates UTR reference string",
+      "status": "PASSED",
+      "durationMs": 18,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 15,
+      "name": "T2_F15_04_BankRefPatternValidation: Processed refund generates bank reference",
+      "status": "PASSED",
+      "durationMs": 14,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 15,
+      "name": "T2_F15_05_RejectedRefundTerminal: Setting status to REJECTED does not advance currentStep",
+      "status": "PASSED",
+      "durationMs": 11,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 16,
+      "name": "T2_F16_01_RefundStatusNotFound_404: Non-existent refundId returns 404 Not Found",
+      "status": "PASSED",
+      "durationMs": 4,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 16,
+      "name": "T2_F16_02_UserWithZeroRefunds: User with zero refunds returns empty array",
+      "status": "PASSED",
+      "durationMs": 4,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 16,
+      "name": "T2_F16_03_NonExistentUserIdQuery: Non-existent userId returns empty array",
+      "status": "PASSED",
+      "durationMs": 5,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 16,
+      "name": "T2_F16_04_SpecialCharacterRefundId: Special characters in refundId return 404 safely",
+      "status": "PASSED",
+      "durationMs": 6,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 16,
+      "name": "T2_F16_05_TimelineStepsBound: All refunds have step within [0, 3]",
+      "status": "PASSED",
+      "durationMs": 6,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 17,
+      "name": "T2_F17_01_ConcurrentCancellationGuard: Simultaneous cancellation attempts on same booking fail gracefully",
+      "status": "PASSED",
+      "durationMs": 14,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 17,
+      "name": "T2_F17_02_NullBookingsHandling: Cancellation rejects non-existent bookings cleanly",
+      "status": "PASSED",
+      "durationMs": 7,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 17,
+      "name": "T2_F17_03_EpochMsTransitionTracking: Refund timestamps are positive epoch milliseconds",
+      "status": "PASSED",
+      "durationMs": 5,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 17,
+      "name": "T2_F17_04_RefundStreamDisconnectSafety: Disconnecting refund SSE client does not cause server errors",
+      "status": "PASSED",
+      "durationMs": 7,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 17,
+      "name": "T2_F17_05_RefundPersistenceIntegrity: Every refund has bookingId, userId, and refundId",
+      "status": "PASSED",
+      "durationMs": 5,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 18,
+      "name": "T2_F18_01_SeatNotFound_400: Out-of-bounds seat number (99Z) returns 400 Bad Request",
+      "status": "PASSED",
+      "durationMs": 8,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 18,
+      "name": "T2_F18_02_MissingSeatParams_400: Missing seatNo returns 400 Bad Request",
+      "status": "PASSED",
+      "durationMs": 4,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 18,
+      "name": "T2_F18_03_NonExistentFlightSeatmap_AutoGenerate: New flight ID generates default seatmap",
+      "status": "PASSED",
+      "durationMs": 12,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 18,
+      "name": "T2_F18_04_ReleaseAvailableSeat_NoOp: Releasing an available seat returns 200 safely",
+      "status": "PASSED",
+      "durationMs": 15,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 18,
+      "name": "T2_F18_05_InvalidColumnLetter: Column G (outside A-F) returns 400 Bad Request",
+      "status": "PASSED",
+      "durationMs": 9,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 19,
+      "name": "T2_F19_01_NonExistentHotelRooms_EmptyOrFallback: Non-existent hotel returns 200 cleanly",
+      "status": "PASSED",
+      "durationMs": 13,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 19,
+      "name": "T2_F19_02_RoomTiersCountBound: Featured rooms returns 4 distinct tiers",
+      "status": "PASSED",
+      "durationMs": 36,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 19,
+      "name": "T2_F19_03_AddonPriceNonNegative: Upgrade prices are non-negative",
+      "status": "PASSED",
+      "durationMs": 40,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 19,
+      "name": "T2_F19_04_PanoramaUrlPresent: Preview model or panorama URL is non-empty",
+      "status": "PASSED",
+      "durationMs": 34,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 19,
+      "name": "T2_F19_05_SpatialDimensionsPositive: Architectural dimensions are positive numbers",
+      "status": "PASSED",
+      "durationMs": 40,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 20,
+      "name": "T2_F20_01_MissingUserId_400: Saving preferences without userId returns 400",
+      "status": "PASSED",
+      "durationMs": 4,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 20,
+      "name": "T2_F20_02_BlankUserId_400: Saving preferences with whitespace userId returns 400",
+      "status": "PASSED",
+      "durationMs": 5,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 20,
+      "name": "T2_F20_03_UnknownUserIdRetrieval: Unknown userId returns clean default object (200 OK)",
+      "status": "PASSED",
+      "durationMs": 7,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 20,
+      "name": "T2_F20_04_SpecialCharactersInUserId: Hyphenated user IDs handled cleanly",
+      "status": "PASSED",
+      "durationMs": 8,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 20,
+      "name": "T2_F20_05_EmptyPreferencesBody: Preferences with only userId saves successfully",
+      "status": "PASSED",
+      "durationMs": 6,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 21,
+      "name": "T2_F21_01_DoubleLockClash_409: Locking already occupied seat returns 409 Conflict",
+      "status": "PASSED",
+      "durationMs": 14,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 21,
+      "name": "T2_F21_02_ConflictMessageSeatUnavailable: 409 body indicates seat unavailability",
+      "status": "PASSED",
+      "durationMs": 18,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 21,
+      "name": "T2_F21_03_ConcurrentSeatRaceCondition: Concurrent requests result in exactly 1 winner and 1 409",
+      "status": "PASSED",
+      "durationMs": 50,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 21,
+      "name": "T2_F21_04_SimultaneousDifferentSeats: Simultaneous requests for distinct seats both succeed",
+      "status": "PASSED",
+      "durationMs": 55,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 21,
+      "name": "T2_F21_05_LockExpirationOrRelease: Releasing a seat allows new reservation immediately",
+      "status": "PASSED",
+      "durationMs": 36,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 22,
+      "name": "T2_F22_01_SeatStatusEnumIntegrity: Every seat has a valid status string",
+      "status": "PASSED",
+      "durationMs": 8,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 22,
+      "name": "T2_F22_02_PriceAddonBounds: Front row seats have priceAddon > 0",
+      "status": "PASSED",
+      "durationMs": 8,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 22,
+      "name": "T2_F22_03_StreamDisconnectCleanup: Selection SSE stream disconnects cleanly",
+      "status": "PASSED",
+      "durationMs": 40,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 22,
+      "name": "T2_F22_04_SelectionPersistenceAcrossSessions: Reserved seat stays OCCUPIED",
+      "status": "PASSED",
+      "durationMs": 24,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 22,
+      "name": "T2_F22_05_TotalCabinRowsIntegrity: Total rows in cabin is 12",
+      "status": "PASSED",
+      "durationMs": 9,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 23,
+      "name": "T2_F23_01_UnverifiedUser_403Forbidden: Unbooked user review is rejected with 403 Forbidden",
+      "status": "PASSED",
+      "durationMs": 10,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 23,
+      "name": "T2_F23_02_MissingTargetId_400: Review without targetId returns 400 Bad Request",
+      "status": "PASSED",
+      "durationMs": 6,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 23,
+      "name": "T2_F23_03_BlankTargetId_400: Review with whitespace targetId returns 400 Bad Request",
+      "status": "PASSED",
+      "durationMs": 5,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 23,
+      "name": "T2_F23_04_MissingUserId_403: Review without userId returns 403 Forbidden",
+      "status": "PASSED",
+      "durationMs": 6,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 23,
+      "name": "T2_F23_05_UnbookedFlightReviewRejection: Unbooked user reviewing flight returns 403",
+      "status": "PASSED",
+      "durationMs": 8,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 24,
+      "name": "T2_F24_01_RatingBelowOne_400: Rating of 0 returns 400 Bad Request",
+      "status": "PASSED",
+      "durationMs": 9,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 24,
+      "name": "T2_F24_02_RatingAboveFive_400: Rating of 6 returns 400 Bad Request",
+      "status": "PASSED",
+      "durationMs": 11,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 24,
+      "name": "T2_F24_03_TitleLengthExceeded_400: Title > 150 chars returns 400 Bad Request",
+      "status": "PASSED",
+      "durationMs": 12,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 24,
+      "name": "T2_F24_04_EmptyTitle_400: Empty title returns 400 Bad Request",
+      "status": "PASSED",
+      "durationMs": 12,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 24,
+      "name": "T2_F24_05_CommentLengthExceeded_400: Comment > 3000 chars returns 400 Bad Request",
+      "status": "PASSED",
+      "durationMs": 12,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 25,
+      "name": "T2_F25_01_EmptyComment_400: Empty comment returns 400 Bad Request",
+      "status": "PASSED",
+      "durationMs": 11,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 25,
+      "name": "T2_F25_02_HelpfulVoteNonExistentReview_404: Helpful vote on non-existent review returns 404",
+      "status": "PASSED",
+      "durationMs": 7,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 25,
+      "name": "T2_F25_03_HelpfulVoteMissingUserId_400: Helpful vote with blank userId returns 400",
+      "status": "PASSED",
+      "durationMs": 52,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 25,
+      "name": "T2_F25_04_UnsafePhotoUrlSanitization: Non-HTTP photo URLs are excluded from review",
+      "status": "PASSED",
+      "durationMs": 42,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 25,
+      "name": "T2_F25_05_NegativeSentimentScore: Critical review produces negative or low sentiment",
+      "status": "PASSED",
+      "durationMs": 41,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 26,
+      "name": "T2_F26_01_ReplyNonExistentReview_404: Replying to non-existent review returns 404",
+      "status": "PASSED",
+      "durationMs": 5,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 26,
+      "name": "T2_F26_02_EmptyReplyComment_400: Empty reply comment returns 400 Bad Request",
+      "status": "PASSED",
+      "durationMs": 52,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 26,
+      "name": "T2_F26_03_ReplyCommentLengthExceeded_400: Reply > 2000 chars returns 400 Bad Request",
+      "status": "PASSED",
+      "durationMs": 57,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 26,
+      "name": "T2_F26_04_FlagNonExistentReview_404: Flagging non-existent review returns 404",
+      "status": "PASSED",
+      "durationMs": 5,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 26,
+      "name": "T2_F26_05_PublicListingExcludesFlagged: Public listing contains only flagged=false",
+      "status": "PASSED",
+      "durationMs": 45,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 27,
+      "name": "T2_F27_01_ModerationUnknownAction_400: Unknown moderation action returns 400 Bad Request",
+      "status": "PASSED",
+      "durationMs": 47,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 27,
+      "name": "T2_F27_02_ModerationNonExistentReview_404: Moderating non-existent review returns 404",
+      "status": "PASSED",
+      "durationMs": 5,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 27,
+      "name": "T2_F27_03_ModerationDismissAction: Action DISMISS succeeds",
+      "status": "PASSED",
+      "durationMs": 211,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 27,
+      "name": "T2_F27_04_ModerationRemoveAction: Action REMOVE succeeds",
+      "status": "PASSED",
+      "durationMs": 131,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 27,
+      "name": "T2_F27_05_ModerationQueueEmptySafe: Flagged queue returns array safely",
+      "status": "PASSED",
+      "durationMs": 9,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 28,
+      "name": "T2_F28_01_AspectRatingsCalculated: ReviewSummaryDTO contains aspect breakdown",
+      "status": "PASSED",
+      "durationMs": 44,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 28,
+      "name": "T2_F28_02_RatingDistributionBounds: Distribution has all 5 star rating buckets",
+      "status": "PASSED",
+      "durationMs": 40,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 28,
+      "name": "T2_F28_03_TargetTypeNormalization: Lowercase targetType normalized to uppercase",
+      "status": "PASSED",
+      "durationMs": 41,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 28,
+      "name": "T2_F28_04_ReviewStreamDisconnect: Target review stream disconnects cleanly",
+      "status": "PASSED",
+      "durationMs": 48,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 28,
+      "name": "T2_F28_05_ModerationStreamDisconnect: Admin moderation stream disconnects cleanly",
+      "status": "PASSED",
+      "durationMs": 11,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 29,
+      "name": "T2_F29_01_UnknownCategory_FallsBackToAll: Unknown category falls back without 500 error",
+      "status": "PASSED",
+      "durationMs": 18,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 29,
+      "name": "T2_F29_02_NonExistentUser_ColdStart: Unseen userId returns fallback recommendations safely",
+      "status": "PASSED",
+      "durationMs": 22,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 29,
+      "name": "T2_F29_03_SpecialCharactersInUserId: Punctuation in userId handled without crash",
+      "status": "PASSED",
+      "durationMs": 23,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 29,
+      "name": "T2_F29_04_SortOrderMatchScore: Recommendations sorted descending by matchScore",
+      "status": "PASSED",
+      "durationMs": 17,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 29,
+      "name": "T2_F29_05_ActiveFilter: All returned recommendations are active",
+      "status": "PASSED",
+      "durationMs": 17,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 30,
+      "name": "T2_F30_01_MatchScoreWithinBounds: matchScore falls strictly within 60 to 100",
+      "status": "PASSED",
+      "durationMs": 18,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 30,
+      "name": "T2_F30_02_ReasonBreakdownNonEmpty: Reason breakdown has non-empty elements",
+      "status": "PASSED",
+      "durationMs": 18,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 30,
+      "name": "T2_F30_03_CollaborativeFactorNonEmpty: Collaborative factor string is non-empty",
+      "status": "PASSED",
+      "durationMs": 17,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 30,
+      "name": "T2_F30_04_ReasonTitleLength: Reason title is non-empty string",
+      "status": "PASSED",
+      "durationMs": 18,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 30,
+      "name": "T2_F30_05_PopularityScoreNonNegative: Popularity score is positive",
+      "status": "PASSED",
+      "durationMs": 20,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 31,
+      "name": "T2_F31_01_InvalidFeedbackType_400: Feedback type LIKE returns 400 Bad Request",
+      "status": "PASSED",
+      "durationMs": 25,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 31,
+      "name": "T2_F31_02_MissingFeedbackType_400: Feedback without feedbackType returns 400",
+      "status": "PASSED",
+      "durationMs": 28,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 31,
+      "name": "T2_F31_03_NonExistentRecommendationId_404: Feedback on non-existent rec returns 404",
+      "status": "PASSED",
+      "durationMs": 6,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 31,
+      "name": "T2_F31_04_CaseInsensitiveFeedbackType: Lowercase helpful feedback accepted",
+      "status": "PASSED",
+      "durationMs": 31,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 31,
+      "name": "T2_F31_05_LongFeedbackNotes: Notes of 300 characters accepted cleanly",
+      "status": "PASSED",
+      "durationMs": 28,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 32,
+      "name": "T2_F32_01_GuaranteedNonEmptyCatalog: Recommendations catalog is never empty",
+      "status": "PASSED",
+      "durationMs": 17,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 32,
+      "name": "T2_F32_02_AllCoreCategoriesCovered: Catalog contains beach, luxury, and heritage picks",
+      "status": "PASSED",
+      "durationMs": 16,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 32,
+      "name": "T2_F32_03_PriceEstimatePositive: All price estimates are positive values",
+      "status": "PASSED",
+      "durationMs": 17,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 32,
+      "name": "T2_F32_04_RatingPositive: All ratings are within 3.0 to 5.0",
+      "status": "PASSED",
+      "durationMs": 19,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 32,
+      "name": "T2_F32_05_ImageUrlValid: Every destination has non-empty imageUrl",
+      "status": "PASSED",
+      "durationMs": 19,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 33,
+      "name": "T2_F33_01_StreamDisconnectCleanup: Disconnecting SSE reader cleans up safely",
+      "status": "PASSED",
+      "durationMs": 22,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 33,
+      "name": "T2_F33_02_StreamContentTypeHeader: Header starts with text/event-stream",
+      "status": "PASSED",
+      "durationMs": 3,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 33,
+      "name": "T2_F33_03_RapidSeedCalls: Rapid successive seed calls succeed cleanly",
+      "status": "PASSED",
+      "durationMs": 91,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 33,
+      "name": "T2_F33_04_MultiClientStream: Multiple SSE clients connect concurrently",
+      "status": "PASSED",
+      "durationMs": 6,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 33,
+      "name": "T2_F33_05_StreamKeepAliveFrame: Stream stays open without immediate drop",
+      "status": "PASSED",
+      "durationMs": 2002,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 34,
+      "name": "T2_F34_01_GetRecommendationByIdNotFound_404: Non-existent recommendation ID returns 404",
+      "status": "PASSED",
+      "durationMs": 5,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 34,
+      "name": "T2_F34_02_CategoryCaseInsensitive: Lowercase category query filters correctly",
+      "status": "PASSED",
+      "durationMs": 17,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 34,
+      "name": "T2_F34_03_TagsArrayIntegrity: Recommendation tags is array of non-empty strings",
+      "status": "PASSED",
+      "durationMs": 18,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 34,
+      "name": "T2_F34_04_ActionUrlFormat: ActionUrl starts with a forward slash",
+      "status": "PASSED",
+      "durationMs": 20,
+      "error": null
+    },
+    {
+      "tier": 2,
+      "feature": 34,
+      "name": "T2_F34_05_OriginalPriceGteEstimate: originalPrice >= priceEstimate",
+      "status": "PASSED",
+      "durationMs": 21,
+      "error": null
+    },
+    {
+      "tier": 3,
+      "feature": 6,
+      "name": "T3_PAIR_01_FlightStatusAndSurgePricing: Flight status simulation correlates with dynamic pricing queries",
+      "status": "PASSED",
+      "durationMs": 23,
+      "error": null
+    },
+    {
+      "tier": 3,
+      "feature": 7,
+      "name": "T3_PAIR_02_UrgencyMultiplierAndSeatMap: Urgency multiplier query alongside premium seat check",
+      "status": "PASSED",
+      "durationMs": 10,
+      "error": null
+    },
+    {
+      "tier": 3,
+      "feature": 9,
+      "name": "T3_PAIR_03_PriceFreezeAndSeatReservation: Price freeze creation followed by seat reservation",
+      "status": "PASSED",
+      "durationMs": 44,
+      "error": null
+    },
+    {
+      "tier": 3,
+      "feature": 10,
+      "name": "T3_PAIR_04_PromotionalCouponAndDynamicPrice: Applying valid coupon to calculated dynamic price",
+      "status": "PASSED",
+      "durationMs": 29,
+      "error": null
+    },
+    {
+      "tier": 3,
+      "feature": 13,
+      "name": "T3_PAIR_05_FlightCancellationAndInventoryRestore: Cancellation restores flight catalog capacity",
+      "status": "PASSED",
+      "durationMs": 18,
+      "error": null
+    },
+    {
+      "tier": 3,
+      "feature": 14,
+      "name": "T3_PAIR_06_CancellationAndTieredRefundCalculation: Tiered calculation matches refund request details",
+      "status": "PASSED",
+      "durationMs": 7,
+      "error": null
+    },
+    {
+      "tier": 3,
+      "feature": 15,
+      "name": "T3_PAIR_07_RefundTransitionAndTimelineTracking: Admin status progression updates tracking model",
+      "status": "PASSED",
+      "durationMs": 51,
+      "error": null
+    },
+    {
+      "tier": 3,
+      "feature": 18,
+      "name": "T3_PAIR_08_SeatMapLockAndConcurrencyClash: Locking seat and observing 409 Conflict",
+      "status": "PASSED",
+      "durationMs": 39,
+      "error": null
+    },
+    {
+      "tier": 3,
+      "feature": 20,
+      "name": "T3_PAIR_09_UserPreferencesAndSeatPreselection: User travel preferences saved and seatmap retrieved",
+      "status": "PASSED",
+      "durationMs": 18,
+      "error": null
+    },
+    {
+      "tier": 3,
+      "feature": 19,
+      "name": "T3_PAIR_10_HotelShowcaseAndRoomBooking: 3D showcase tier selection followed by hotel booking",
+      "status": "PASSED",
+      "durationMs": 76,
+      "error": null
+    },
+    {
+      "tier": 3,
+      "feature": 23,
+      "name": "T3_PAIR_11_HotelBookingAndVerifiedReviewGate: Confirmed booking allows review creation",
+      "status": "PASSED",
+      "durationMs": 44,
+      "error": null
+    },
+    {
+      "tier": 3,
+      "feature": 24,
+      "name": "T3_PAIR_12_ReviewSubmissionAndSentimentRating: Submitting review computes sentiment category",
+      "status": "PASSED",
+      "durationMs": 42,
+      "error": null
+    },
+    {
+      "tier": 3,
+      "feature": 25,
+      "name": "T3_PAIR_13_ReviewPhotoUploadAndHelpfulVotes: Review with photo URLs receives helpful votes",
+      "status": "PASSED",
+      "durationMs": 43,
+      "error": null
+    },
+    {
+      "tier": 3,
+      "feature": 26,
+      "name": "T3_PAIR_14_ReviewFlaggingAndModerationQueue: Flagged review transitions into moderation queue",
+      "status": "PASSED",
+      "durationMs": 102,
+      "error": null
+    },
+    {
+      "tier": 3,
+      "feature": 27,
+      "name": "T3_PAIR_15_ModerationDismissalAndPublicRestoration: Moderation dismissal restores public listing",
+      "status": "PASSED",
+      "durationMs": 192,
+      "error": null
+    },
+    {
+      "tier": 3,
+      "feature": 27,
+      "name": "T3_PAIR_16_ModerationRemovalAndTargetRatingSync: Moderation removal deletes review from queue",
+      "status": "PASSED",
+      "durationMs": 138,
+      "error": null
+    },
+    {
+      "tier": 3,
+      "feature": 26,
+      "name": "T3_PAIR_17_HotelierReplyAndReviewThread: Hotelier reply updates review replies array",
+      "status": "PASSED",
+      "durationMs": 55,
+      "error": null
+    },
+    {
+      "tier": 3,
+      "feature": 29,
+      "name": "T3_PAIR_18_RecommendationsColdStartAndFallbackCatalog: Cold-start user retrieves curated base catalog",
+      "status": "PASSED",
+      "durationMs": 21,
+      "error": null
+    },
+    {
+      "tier": 3,
+      "feature": 30,
+      "name": "T3_PAIR_19_RecommendationsExplanationAndFeedback: Inspecting algorithmic explanation and submitting feedback",
+      "status": "PASSED",
+      "durationMs": 33,
+      "error": null
+    },
+    {
+      "tier": 3,
+      "feature": 31,
+      "name": "T3_PAIR_20_FeedbackAffinityAndPreferencesUpdate: HELPFUL feedback refines category affinity",
+      "status": "PASSED",
+      "durationMs": 43,
+      "error": null
+    },
+    {
+      "tier": 3,
+      "feature": 33,
+      "name": "T3_PAIR_21_CatalogSeedAndRecommendationSSESync: Catalog seed endpoint triggers stream sync",
+      "status": "PASSED",
+      "durationMs": 4,
+      "error": null
+    },
+    {
+      "tier": 3,
+      "feature": 11,
+      "name": "T3_PAIR_22_PriceStreamBroadcastAndFreeze: Real-time price broadcast and freeze creation",
+      "status": "PASSED",
+      "durationMs": 15,
+      "error": null
+    },
+    {
+      "tier": 3,
+      "feature": 3,
+      "name": "T3_PAIR_23_MultiFlightWatchlistAndSimulation: Watchlist tracked flights match status simulation",
+      "status": "PASSED",
+      "durationMs": 28,
+      "error": null
+    },
+    {
+      "tier": 3,
+      "feature": 4,
+      "name": "T3_PAIR_24_FlightSSEStreamAndSimulation: Simulation broadcasts to active flight SSE stream",
+      "status": "PASSED",
+      "durationMs": 126,
+      "error": null
+    },
+    {
+      "tier": 3,
+      "feature": 16,
+      "name": "T3_PAIR_25_RefundSSEStreamAndAdminTransition: Admin refund update broadcasts to refund stream",
+      "status": "PASSED",
+      "durationMs": 119,
+      "error": null
+    },
+    {
+      "tier": 3,
+      "feature": 28,
+      "name": "T3_PAIR_26_ReviewSSEStreamAndNewReview: Adding review broadcasts event to review stream",
+      "status": "PASSED",
+      "durationMs": 156,
+      "error": null
+    },
+    {
+      "tier": 3,
+      "feature": 21,
+      "name": "T3_PAIR_27_SelectionSSEStreamAndSeatLock: Seat reservation broadcasts to selection stream",
+      "status": "PASSED",
+      "durationMs": 126,
+      "error": null
+    },
+    {
+      "tier": 3,
+      "feature": 10,
+      "name": "T3_PAIR_28_CouponValidationAndPriceFreezeBooking: Coupon validation against frozen price amount",
+      "status": "PASSED",
+      "durationMs": 16,
+      "error": null
+    },
+    {
+      "tier": 3,
+      "feature": 8,
+      "name": "T3_PAIR_29_CompetitorPricingAndSurgeLevel: Competitor simulation reflects surge conditions",
+      "status": "PASSED",
+      "durationMs": 15,
+      "error": null
+    },
+    {
+      "tier": 3,
+      "feature": 15,
+      "name": "T3_PAIR_30_FlightCancellationAndRefundScheduler: Refund requests maintain valid step progression",
+      "status": "PASSED",
+      "durationMs": 5,
+      "error": null
+    },
+    {
+      "tier": 3,
+      "feature": 19,
+      "name": "T3_PAIR_31_RoomInventoryAndCancellationRestoration: Hotel room inventory integrity across queries",
+      "status": "PASSED",
+      "durationMs": 72,
+      "error": null
+    },
+    {
+      "tier": 3,
+      "feature": 29,
+      "name": "T3_PAIR_32_UserPreferencesCategoryAndRecommendations: Preferences align with recommendation category queries",
+      "status": "PASSED",
+      "durationMs": 21,
+      "error": null
+    },
+    {
+      "tier": 3,
+      "feature": 28,
+      "name": "T3_PAIR_33_ReviewAverageRatingAndTargetHotelSync: Target review summary reflects posted rating metrics",
+      "status": "PASSED",
+      "durationMs": 44,
+      "error": null
+    },
+    {
+      "tier": 3,
+      "feature": 18,
+      "name": "T3_PAIR_34_FullDynamicPricingAndSeatAddonSum: Dynamic flight price adds seat addon without error",
+      "status": "PASSED",
+      "durationMs": 23,
+      "error": null
+    },
+    {
+      "tier": 4,
+      "feature": 9,
+      "name": "Scenario 1: Flight Price Freeze to Instant Booking & Seat Lock (F1, F6, F7, F9, F18, F20, F21)",
+      "status": "PASSED",
+      "durationMs": 101,
+      "error": null
+    },
+    {
+      "tier": 4,
+      "feature": 23,
+      "name": "Scenario 2: Hotel Room 3D Showcase to Booking & Review Life Cycle (F19, F20, F23, F24, F25, F26)",
+      "status": "PASSED",
+      "durationMs": 127,
+      "error": null
+    },
+    {
+      "tier": 4,
+      "feature": 13,
+      "name": "Scenario 3: Booking Cancellation, Inventory Restoration & Automated Refund Timeline (F13, F14, F15, F16, F18)",
+      "status": "PASSED",
+      "durationMs": 28,
+      "error": null
+    },
+    {
+      "tier": 4,
+      "feature": 29,
+      "name": "Scenario 4: Personalized Recommendations Cold-Start to Feedback Tuning & Sync (F29, F30, F31, F32, F33)",
+      "status": "PASSED",
+      "durationMs": 115,
+      "error": null
+    },
+    {
+      "tier": 4,
+      "feature": 27,
+      "name": "Scenario 5: Community Review Flagging, Admin Moderation & Real-time Updates (F25, F26, F27, F28)",
+      "status": "PASSED",
+      "durationMs": 205,
+      "error": null
+    },
+    {
+      "tier": 4,
+      "feature": 10,
+      "name": "Scenario 6: Cross-Module Dynamic Travel Package: Surge Flight + Luxury Room + Coupon (F1, F6, F7, F10, F11, F18, F19)",
+      "status": "PASSED",
+      "durationMs": 83,
+      "error": null
+    }
+  ]
+}

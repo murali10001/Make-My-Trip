@@ -32,5 +32,16 @@ public class ReviewExceptionHandler {
         );
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
+
+    @ExceptionHandler(UnverifiedReviewException.class)
+    public ResponseEntity<ApiErrorResponse> handleUnverifiedReview(UnverifiedReviewException ex) {
+        ApiErrorResponse error = new ApiErrorResponse(
+                HttpStatus.FORBIDDEN.value(),
+                "Unverified Review Forbidden",
+                ex.getMessage(),
+                "/api/reviews"
+        );
+        return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
+    }
 }
 

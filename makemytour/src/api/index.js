@@ -393,14 +393,14 @@ export const simulateFlightUpdate = async (payload = {}) => {
   try {
     const res = await apiClient.post(`/api/flight-status/simulate`, payload);
     if (res?.isNetworkError) {
-      throw new Error("Unable to connect to server. Please ensure the backend is running.");
+      console.warn("Backend connection unavailable for flight status simulation.");
+      return null;
     }
     if (isSuccess(res)) return res.data;
-    const errorMsg = extractErrorMessage(res, "Failed to simulate flight update");
-    throw new Error(errorMsg);
+    return null;
   } catch (error) {
-    console.error("Failed to simulate flight update:", error);
-    throw error;
+    console.warn("Failed to simulate flight update:", error);
+    return null;
   }
 };
 
@@ -408,13 +408,14 @@ export const triggerRandomFlightSimulation = async () => {
   try {
     const res = await apiClient.get(`/api/flight-status/simulate-random`);
     if (res?.isNetworkError) {
-      throw new Error("Unable to connect to server. Please ensure the backend is running.");
+      console.warn("Backend connection unavailable for random flight simulation.");
+      return null;
     }
     if (isSuccess(res)) return res.data;
     return null;
   } catch (error) {
-    console.error("Failed to trigger random flight simulation:", error);
-    throw error;
+    console.warn("Failed to trigger random flight simulation:", error);
+    return null;
   }
 };
 
@@ -464,12 +465,21 @@ export const toggleUserTrackFlight = async (userId, flightNumber) => {
 
 
 
+/**
+ * @param {string} [itemId]
+ * @param {string} [itemType]
+ * @param {number} [basePrice]
+ * @param {string} [demand]
+ * @param {string} [season]
+ * @param {number|null} [hoursToDeparture]
+ */
 export const getDynamicPricing = async (
   itemId = "FL-101",
   itemType = "FLIGHT",
   basePrice = 5500,
   demand = "HIGH",
-  season = "HOLIDAY_PEAK"
+  season = "HOLIDAY_PEAK",
+  hoursToDeparture = null
 ) => {
   try {
     const params = new URLSearchParams({
@@ -479,11 +489,27 @@ export const getDynamicPricing = async (
       demand,
       season,
     });
+    if (hoursToDeparture !== null && hoursToDeparture !== undefined) {
+      params.append("hoursToDeparture", hoursToDeparture.toString());
+    }
     const res = await apiClient.get(`/api/pricing/calculate?${params.toString()}`);
     if (isSuccess(res)) return res.data;
     return null;
   } catch (error) {
     console.error("Failed to fetch dynamic price:", error);
+    return null;
+  }
+};
+
+export const getCompetitorComparison = async (itemId = "FL-101", itemType = "FLIGHT", basePrice = 5500) => {
+  try {
+    const res = await apiClient.get(
+      `/api/pricing/competitor-comparison?itemId=${encodeURIComponent(itemId)}&itemType=${encodeURIComponent(itemType)}&basePrice=${basePrice}`
+    );
+    if (isSuccess(res)) return res.data;
+    return null;
+  } catch (error) {
+    console.error("Failed to fetch competitor comparison:", error);
     return null;
   }
 };
@@ -506,6 +532,7 @@ export const freezePrice = async (itemId, itemTitle, currentPrice, hours = 24, u
       itemTitle,
       currentPrice,
       hours,
+      durationHours: hours,
       userId,
     });
     if (res?.isNetworkError) {
@@ -570,7 +597,25 @@ export const applyCouponCode = async (code, amount = 5500) => {
       code,
       amount,
     });
+    if (res?.isNetworkError) {
+      return {
+        success: false,
+        code,
+        discountAmount: 0,
+        finalAmount: amount,
+        message: "Unable to connect to server. Please ensure the backend is running.",
+      };
+    }
     if (res && res.data) {
+      if (res.status === 400 || res.data?.status === 400) {
+        return {
+          success: false,
+          code,
+          discountAmount: 0,
+          finalAmount: amount,
+          message: res.data?.message || res.data?.error || "Invalid coupon code.",
+        };
+      }
       return res.data;
     }
     return {
@@ -696,18 +741,32 @@ export const submitCancellationAndRefund = async (userId, bookingId, reason, com
 
     const res = await apiClient.post(`/refund/cancel-and-request?${params.toString()}`);
     if (res?.isNetworkError) {
-      throw new Error(extractErrorMessage(res, "Unable to connect to server. Please ensure the backend is running."));
+      return {
+        success: false,
+        error: extractErrorMessage(res, "Unable to connect to server. Please ensure the backend is running."),
+        isNetworkError: true,
+      };
     }
-    if (isSuccess(res)) return res.data;
+    if (isSuccess(res)) {
+      return {
+        success: true,
+        ...(typeof res.data === "object" ? res.data : { data: res.data }),
+      };
+    }
     const errorMsg = typeof res.data === "string" ? res.data : (res.data?.message || res.data?.error || "Cancellation failed");
-    throw new Error(errorMsg);
+    return {
+      success: false,
+      error: errorMsg,
+    };
   } catch (error) {
-    console.error("Failed to submit cancellation & refund:", error);
-    if (error.response && error.response.data) {
-      const msg = typeof error.response.data === "string" ? error.response.data : (error.response.data.message || error.response.data.error || "Cancellation failed");
-      throw new Error(msg);
-    }
-    throw error;
+    console.warn("Failed to submit cancellation & refund:", error?.message || error);
+    const msg = error?.response?.data
+      ? (typeof error.response.data === "string" ? error.response.data : (error.response.data.message || error.response.data.error || "Cancellation failed"))
+      : (error?.message || "Cancellation failed");
+    return {
+      success: false,
+      error: msg,
+    };
   }
 };
 

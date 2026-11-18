@@ -8,6 +8,7 @@ import com.makemytrip.makemytrip.models.Hotel;
 import com.makemytrip.makemytrip.models.OfferCoupon;
 import com.makemytrip.makemytrip.models.PriceFreeze;
 import com.makemytrip.makemytrip.models.PriceHistory;
+import com.makemytrip.makemytrip.repositories.DynamicPriceRepository;
 import com.makemytrip.makemytrip.repositories.FlightRepository;
 import com.makemytrip.makemytrip.repositories.HotelRepository;
 import com.makemytrip.makemytrip.repositories.OfferCouponRepository;
@@ -37,6 +38,7 @@ class PricingServiceTest {
     private StubPriceHistoryRepository priceHistoryRepository;
     private StubPriceFreezeRepository priceFreezeRepository;
     private StubOfferCouponRepository offerCouponRepository;
+    private StubDynamicPriceRepository dynamicPriceRepository;
 
     private Flight testFlight;
     private Hotel testHotel;
@@ -51,12 +53,14 @@ class PricingServiceTest {
         priceHistoryRepository = new StubPriceHistoryRepository();
         priceFreezeRepository = new StubPriceFreezeRepository();
         offerCouponRepository = new StubOfferCouponRepository();
+        dynamicPriceRepository = new StubDynamicPriceRepository();
 
         ReflectionTestUtils.setField(pricingService, "flightRepository", flightRepository);
         ReflectionTestUtils.setField(pricingService, "hotelRepository", hotelRepository);
         ReflectionTestUtils.setField(pricingService, "priceHistoryRepository", priceHistoryRepository);
         ReflectionTestUtils.setField(pricingService, "priceFreezeRepository", priceFreezeRepository);
         ReflectionTestUtils.setField(pricingService, "offerCouponRepository", offerCouponRepository);
+        ReflectionTestUtils.setField(pricingService, "dynamicPriceRepository", dynamicPriceRepository);
 
         testFlight = new Flight();
         testFlight.setId("FL-101");
@@ -230,6 +234,114 @@ class PricingServiceTest {
         assertThrows(InvalidCouponException.class, () -> pricingService.applyCoupon("   ", 5000.0));
     }
 
+    @Test
+    @DisplayName("TimeToDeparture Multipliers - Verifies surge multipliers across all urgency tiers")
+    void testCalculateDynamicPrice_TimeToDepartureMultipliers() {
+        // Base 6000, demand NORMAL (0%), season REGULAR (0%)
+        // Tier 1: <24h -> 1.25x (6000 * 1.25 = 7500)
+        DynamicPrice p24 = pricingService.calculateDynamicPrice("FL-101", "FLIGHT", 6000.0, "NORMAL", "REGULAR", 12.0);
+        assertEquals(1.25, p24.getTimeToDepartureMultiplier());
+        assertEquals(7500.0, p24.getFinalPrice());
+
+        // Tier 2: 24-72h -> 1.15x (6000 * 1.15 = 6900)
+        DynamicPrice p72 = pricingService.calculateDynamicPrice("FL-101", "FLIGHT", 6000.0, "NORMAL", "REGULAR", 48.0);
+        assertEquals(1.15, p72.getTimeToDepartureMultiplier());
+        assertEquals(6900.0, p72.getFinalPrice());
+
+        // Tier 3: 3-7d (72-168h) -> 1.05x (6000 * 1.05 = 6300)
+        DynamicPrice p168 = pricingService.calculateDynamicPrice("FL-101", "FLIGHT", 6000.0, "NORMAL", "REGULAR", 100.0);
+        assertEquals(1.05, p168.getTimeToDepartureMultiplier());
+        assertEquals(6300.0, p168.getFinalPrice());
+
+        // Tier 4: >7d (>168h) -> 1.0x (6000 * 1.0 = 6000)
+        DynamicPrice pFar = pricingService.calculateDynamicPrice("FL-101", "FLIGHT", 6000.0, "NORMAL", "REGULAR", 240.0);
+        assertEquals(1.0, pFar.getTimeToDepartureMultiplier());
+        assertEquals(6000.0, pFar.getFinalPrice());
+    }
+
+    @Test
+    @DisplayName("Persistence - Verifies dynamic price entity is saved into DynamicPriceRepository")
+    void testCalculateDynamicPrice_PersistsToDynamicPriceRepository() {
+        int initialCount = dynamicPriceRepository.savedPrices.size();
+        DynamicPrice price = pricingService.calculateDynamicPrice("FL-101", "FLIGHT", 6000.0, "HIGH", "HOLIDAY_PEAK", 10.0);
+
+        assertNotNull(price);
+        assertEquals(initialCount + 1, dynamicPriceRepository.savedPrices.size());
+
+        DynamicPrice saved = dynamicPriceRepository.savedPrices.get(dynamicPriceRepository.savedPrices.size() - 1);
+        assertEquals("FL-101", saved.getItemId());
+        assertEquals(price.getFinalPrice(), saved.getCalculatedPrice());
+        assertEquals(1.25, saved.getTimeToDepartureMultiplier());
+        assertEquals(10.0, saved.getHoursToDeparture());
+        assertNotNull(saved.getCompetitorPrices());
+        assertNotNull(saved.getCalculatedAt());
+    }
+
+    @Test
+    @DisplayName("Competitor Pricing Simulation - Benchmarks competitors within market bounds")
+    void testCalculateDynamicPrice_CompetitorPricingSimulation() {
+        DynamicPrice price = pricingService.calculateDynamicPrice("FL-101", "FLIGHT", 6000.0, "NORMAL", "REGULAR", null);
+
+        Map<String, Double> comp = price.getCompetitorPrices();
+        assertNotNull(comp);
+        assertTrue(comp.containsKey("MakeMyTrip"));
+        assertTrue(comp.containsKey("EaseMyTrip"));
+        assertTrue(comp.containsKey("Yatra"));
+        assertTrue(comp.containsKey("ClearTrip"));
+        assertTrue(comp.containsKey("Goibibo"));
+
+        assertEquals(price.getFinalPrice(), comp.get("MakeMyTrip"));
+        assertTrue(comp.get("EaseMyTrip") > price.getFinalPrice());
+        assertTrue(comp.get("Yatra") > price.getFinalPrice());
+    }
+
+    @Test
+    @DisplayName("Price Freeze Toggles - Correctly supports 24h and 48h freeze duration")
+    void testFreezePrice_24h_vs_48h_Toggles() {
+        PriceFreeze freeze24 = pricingService.freezePrice("FL-101", "Flight AI-101", 6000.0, 24, "USR-101");
+        assertEquals(24, freeze24.getDurationHours());
+        assertTrue(freeze24.getExpiresAt().isAfter(LocalDateTime.now().plusHours(23)));
+
+        PriceFreeze freeze48 = pricingService.freezePrice("FL-101", "Flight AI-101", 6000.0, 48, "USR-101");
+        assertEquals(48, freeze48.getDurationHours());
+        assertTrue(freeze48.getExpiresAt().isAfter(LocalDateTime.now().plusHours(47)));
+    }
+
+    @Test
+    @DisplayName("Cold-Start Coupon Seeder - Populates active coupons if repository is empty")
+    void testColdStartCouponSeeder() {
+        offerCouponRepository.deleteAll();
+        assertEquals(0, offerCouponRepository.count());
+
+        List<OfferCoupon> seeded = pricingService.getAvailableOffers();
+
+        assertNotNull(seeded);
+        assertEquals(5, seeded.size());
+        assertTrue(seeded.stream().anyMatch(c -> "MMTFLY".equals(c.getCode())));
+        assertTrue(seeded.stream().anyMatch(c -> "HDFC10".equals(c.getCode())));
+        assertTrue(seeded.stream().anyMatch(c -> "SBISAVE".equals(c.getCode())));
+    }
+
+    @Test
+    @DisplayName("Competitor Comparison - Returns structured comparative benchmark")
+    void testGetCompetitorComparison_ReturnsBreakdown() {
+        Map<String, Object> comp = pricingService.getCompetitorComparison("FL-101", "FLIGHT", 6000.0);
+
+        assertNotNull(comp);
+        assertEquals("FL-101", comp.get("itemId"));
+        assertEquals("FLIGHT", comp.get("itemType"));
+        assertNotNull(comp.get("ourPrice"));
+        assertNotNull(comp.get("competitorPrices"));
+        assertTrue((Boolean) comp.get("bestPriceGuaranteed"));
+    }
+
+    @Test
+    @DisplayName("Live Rate Broadcast - Handles both Flight and Hotel without error")
+    void testRealTimePriceStream_HotelAndFlightBroadcast() {
+        pricingService.registerSseClient();
+        assertDoesNotThrow(() -> pricingService.autoAdjustAndBroadcastLiveRates());
+    }
+
     static class StubFlightRepository implements FlightRepository {
         Map<String, Flight> db = new HashMap<>();
 
@@ -397,7 +509,16 @@ class PricingServiceTest {
             return Optional.empty();
         }
 
-        @Override public <S extends OfferCoupon> S save(S entity) { db.put(entity.getId(), entity); return entity; }
+        @Override public Optional<OfferCoupon> findByCodeIgnoreCase(String code) {
+            return findByCode(code);
+        }
+
+        @Override public <S extends OfferCoupon> S save(S entity) {
+            String id = entity.getId() != null ? entity.getId() : "CP-" + UUID.randomUUID().toString().substring(0, 8);
+            entity.setId(id);
+            db.put(id, entity);
+            return entity;
+        }
         @Override public Optional<OfferCoupon> findById(String s) { return Optional.ofNullable(db.get(s)); }
         @Override public List<OfferCoupon> findAll() { return new ArrayList<>(db.values()); }
         @Override public boolean existsById(String s) { return db.containsKey(s); }
@@ -420,6 +541,54 @@ class PricingServiceTest {
         @Override public <S extends OfferCoupon, R> R findBy(Example<S> example, Function<FluentQuery.FetchableFluentQuery<S>, R> queryFunction) { return null; }
         @Override public List<OfferCoupon> findAll(Sort sort) { return findAll(); }
         @Override public Page<OfferCoupon> findAll(Pageable pageable) { return null; }
+    }
+
+    static class StubDynamicPriceRepository implements DynamicPriceRepository {
+        List<DynamicPrice> savedPrices = new ArrayList<>();
+
+        @Override
+        public List<DynamicPrice> findByItemId(String itemId) {
+            List<DynamicPrice> res = new ArrayList<>();
+            for (DynamicPrice p : savedPrices) {
+                if (itemId != null && itemId.equals(p.getItemId())) res.add(p);
+            }
+            return res;
+        }
+
+        @Override
+        public Optional<DynamicPrice> findTopByItemIdOrderByCalculatedAtDesc(String itemId) {
+            return savedPrices.stream()
+                    .filter(p -> itemId != null && itemId.equals(p.getItemId()))
+                    .reduce((first, second) -> second);
+        }
+
+        @Override public <S extends DynamicPrice> S save(S entity) {
+            savedPrices.add(entity);
+            return entity;
+        }
+
+        @Override public List<DynamicPrice> findAll() { return new ArrayList<>(savedPrices); }
+        @Override public Optional<DynamicPrice> findById(String s) { return Optional.empty(); }
+        @Override public boolean existsById(String s) { return false; }
+        @Override public long count() { return savedPrices.size(); }
+        @Override public void deleteById(String s) {}
+        @Override public void delete(DynamicPrice entity) { savedPrices.remove(entity); }
+        @Override public void deleteAllById(Iterable<? extends String> ids) {}
+        @Override public void deleteAll(Iterable<? extends DynamicPrice> entities) {}
+        @Override public void deleteAll() { savedPrices.clear(); }
+        @Override public <S extends DynamicPrice> List<S> saveAll(Iterable<S> entities) { entities.forEach(this::save); return (List<S>) entities; }
+        @Override public List<DynamicPrice> findAllById(Iterable<String> ids) { return Collections.emptyList(); }
+        @Override public <S extends DynamicPrice> S insert(S entity) { return save(entity); }
+        @Override public <S extends DynamicPrice> List<S> insert(Iterable<S> entities) { return saveAll(entities); }
+        @Override public <S extends DynamicPrice> Optional<S> findOne(Example<S> example) { return Optional.empty(); }
+        @Override public <S extends DynamicPrice> List<S> findAll(Example<S> example) { return Collections.emptyList(); }
+        @Override public <S extends DynamicPrice> List<S> findAll(Example<S> example, Sort sort) { return Collections.emptyList(); }
+        @Override public <S extends DynamicPrice> Page<S> findAll(Example<S> example, Pageable pageable) { return null; }
+        @Override public <S extends DynamicPrice> long count(Example<S> example) { return 0; }
+        @Override public <S extends DynamicPrice> boolean exists(Example<S> example) { return false; }
+        @Override public <S extends DynamicPrice, R> R findBy(Example<S> example, Function<FluentQuery.FetchableFluentQuery<S>, R> queryFunction) { return null; }
+        @Override public List<DynamicPrice> findAll(Sort sort) { return findAll(); }
+        @Override public Page<DynamicPrice> findAll(Pageable pageable) { return null; }
     }
 }
 

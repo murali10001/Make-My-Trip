@@ -205,6 +205,40 @@ public class SelectionServiceTest {
         assertTrue(deluxe.getRoom3dConfig().getFurniture().stream().anyMatch(f -> "SEATING".equals(f.getCategory())));
         assertTrue(exec.getRoom3dConfig().getFurniture().stream().anyMatch(f -> "BATH".equals(f.getCategory())));
         assertTrue(pres.getRoom3dConfig().getFurniture().stream().anyMatch(f -> "STORAGE".equals(f.getCategory())));
+
+        for (RoomTypeOption r : showcase) {
+            assertNotNull(r.getRoom3dConfig().getSpatialPanoramaUrl(), "Room must have 360 spatial panorama");
+            assertFalse(r.getRoom3dConfig().getRoom3dImages().isEmpty(), "Room must have 3D perspective images");
+            assertNotNull(r.getHotelId(), "HotelId must be dynamically sourced from repository");
+            assertEquals("HT-TEST-1", r.getHotelId(), "HotelId must match the hotel in the repository");
+        }
+    }
+
+    @Test
+    @DisplayName("Showcase 3D Rooms - Unseeded database returns 4 curated fallback showcase rooms")
+    void testGetFeaturedShowcaseRooms_EmptyDatabase_ReturnsCuratedFallbackShowcaseRooms() {
+        hotelRepository.deleteAll();
+        roomTypeOptionRepository.deleteAll();
+
+        List<RoomTypeOption> showcase = selectionService.getFeaturedShowcaseRooms();
+        assertNotNull(showcase);
+        assertEquals(4, showcase.size());
+
+        Set<String> tiers = new HashSet<>();
+        for (RoomTypeOption opt : showcase) {
+            assertNotNull(opt.getRoom3dConfig(), "Fallback room must have 3D config");
+            assertNotNull(opt.getRoom3dConfig().getDimensions());
+            assertFalse(opt.getRoom3dConfig().getFurniture().isEmpty(), "Fallback room must contain furniture");
+            assertFalse(opt.getRoom3dConfig().getHotspots().isEmpty(), "Fallback room must contain hotspots");
+            assertFalse(opt.getImageUrls().isEmpty(), "Fallback room must contain images");
+            assertNotNull(opt.getHotelId());
+            tiers.add(opt.getRoom3dConfig().getRoomModelType());
+        }
+
+        assertTrue(tiers.contains("STANDARD_CLASSIC"));
+        assertTrue(tiers.contains("DELUXE_BALCONY"));
+        assertTrue(tiers.contains("EXECUTIVE_PANORAMIC"));
+        assertTrue(tiers.contains("PRESIDENTIAL_ROYAL"));
     }
 
     @Test
@@ -361,6 +395,11 @@ public class SelectionServiceTest {
         @Override
         public Optional<UserPreferences> findByUserId(String userId) {
             return storage.values().stream().filter(p -> userId.equalsIgnoreCase(p.getUserId())).findFirst();
+        }
+
+        @Override
+        public Optional<UserPreferences> findByUserEmail(String userEmail) {
+            return storage.values().stream().filter(p -> userEmail != null && userEmail.equalsIgnoreCase(p.getUserEmail())).findFirst();
         }
 
         @Override

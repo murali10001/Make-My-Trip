@@ -385,85 +385,155 @@ public class SelectionService {
 
     public List<RoomTypeOption> getFeaturedShowcaseRooms() {
         List<RoomTypeOption> showcase = new ArrayList<>();
+        List<Hotel> allHotels = hotelRepository != null ? hotelRepository.findAll() : Collections.emptyList();
 
-        RoomTypeOption r1 = new RoomTypeOption();
-        r1.setId("SHOWCASE-CLASSIC");
-        r1.setHotelId("HT-SHOWCASE-1");
-        r1.setRoomTypeName("Grand Hyatt Classic Queen");
-        r1.setPriceUpgradeAddon(0.0);
-        r1.setAvailableRooms(6);
-        r1.setBedType("Comfort Queen Bed");
-        r1.setRoomSize("340 sq.ft");
-        r1.setViewType("Courtyard & City View");
-        r1.setAmenities(Arrays.asList("High-Speed Wi-Fi", "Air Conditioning", "En-suite Bathroom", "Smart 43\" LED TV", "Work Desk"));
-        r1.setImageUrls(Arrays.asList(
-            "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
-            "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80"
-        ));
-        r1.setPreview3dModelUrl("room_standard_3d");
-        r1.setDescription("Contemporary classic elegance featuring warm oak textures, ergonomic queen bedding, dedicated work vanity, and high-speed Wi-Fi.");
-        r1.setRoom3dConfig(build3dConfigForRoom(r1.getRoomTypeName(), r1.getBedType(), r1.getRoomSize(), r1.getViewType(), r1.getAmenities()));
-        showcase.add(r1);
+        if (allHotels != null && !allHotels.isEmpty()) {
+            for (Hotel hotel : allHotels) {
+                if (hotel == null || hotel.getId() == null) continue;
+                List<RoomTypeOption> options = getRoomOptionsForHotel(hotel.getId());
+                if (options != null) {
+                    for (RoomTypeOption opt : options) {
+                        boolean alreadyHasTier = showcase.stream().anyMatch(
+                            s -> s.getRoom3dConfig() != null &&
+                                 opt.getRoom3dConfig() != null &&
+                                 s.getRoom3dConfig().getRoomModelType().equals(opt.getRoom3dConfig().getRoomModelType())
+                        );
+                        if (!alreadyHasTier) {
+                            showcase.add(opt);
+                        }
+                        if (showcase.size() >= 4) break;
+                    }
+                }
+                if (showcase.size() >= 4) break;
+            }
+        }
 
-        RoomTypeOption r2 = new RoomTypeOption();
-        r2.setId("SHOWCASE-DELUXE");
-        r2.setHotelId("HT-SHOWCASE-2");
-        r2.setRoomTypeName("The Oberoi Balcony Retreat");
-        r2.setPriceUpgradeAddon(1200.0);
-        r2.setAvailableRooms(4);
-        r2.setBedType("King Size Bed");
-        r2.setRoomSize("480 sq.ft");
-        r2.setViewType("Private Balcony Ocean View");
-        r2.setAmenities(Arrays.asList("Private Balcony", "Plush King Bed", "Teal Velvet Lounge", "Nespresso Machine", "Gourmet Breakfast"));
-        r2.setImageUrls(Arrays.asList(
-            "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=80",
-            "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80"
-        ));
-        r2.setPreview3dModelUrl("room_deluxe_3d");
-        r2.setDescription("Upscale luxury suite with furnished outdoor private balcony, tufted velvet king bed, designer loveseat, and espresso bar.");
-        r2.setPopularUpsell(true);
-        r2.setRoom3dConfig(build3dConfigForRoom(r2.getRoomTypeName(), r2.getBedType(), r2.getRoomSize(), r2.getViewType(), r2.getAmenities()));
-        showcase.add(r2);
+        if (showcase.size() < 4) {
+            List<RoomTypeOption> allStoredRooms = roomTypeOptionRepository != null ? roomTypeOptionRepository.findAll() : Collections.emptyList();
+            for (RoomTypeOption r : allStoredRooms) {
+                if (showcase.stream().noneMatch(s -> s.getId() != null && s.getId().equals(r.getId()))) {
+                    boolean alreadyHasTier = showcase.stream().anyMatch(
+                        s -> s.getRoom3dConfig() != null &&
+                             r.getRoom3dConfig() != null &&
+                             s.getRoom3dConfig().getRoomModelType().equals(r.getRoom3dConfig().getRoomModelType())
+                    );
+                    if (!alreadyHasTier) {
+                        showcase.add(r);
+                    }
+                }
+                if (showcase.size() >= 4) break;
+            }
+        }
 
-        RoomTypeOption r3 = new RoomTypeOption();
-        r3.setId("SHOWCASE-EXECUTIVE");
-        r3.setHotelId("HT-SHOWCASE-3");
-        r3.setRoomTypeName("Taj Palace Panoramic Suite");
-        r3.setPriceUpgradeAddon(2800.0);
-        r3.setAvailableRooms(3);
-        r3.setBedType("California King Bed");
-        r3.setRoomSize("720 sq.ft");
-        r3.setViewType("High-Floor Panoramic Skyline");
-        r3.setAmenities(Arrays.asList("Panoramic Wrap Windows", "Separate Living Lounge", "Soaking Jacuzzi Bath", "Executive Lounge Access", "Evening Cocktails"));
-        r3.setImageUrls(Arrays.asList(
-            "https://images.unsplash.com/photo-1578683010236-d716f9a3f461?auto=format&fit=crop&w=1200&q=80",
-            "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=80"
-        ));
-        r3.setPreview3dModelUrl("room_executive_3d");
-        r3.setDescription("Bespoke multi-zone penthouse suite with wrap-around corner glass, California king bedroom, Italian leather sectional lounge, and freestanding soaking jacuzzi.");
-        r3.setRoom3dConfig(build3dConfigForRoom(r3.getRoomTypeName(), r3.getBedType(), r3.getRoomSize(), r3.getViewType(), r3.getAmenities()));
-        showcase.add(r3);
-
-        RoomTypeOption r4 = new RoomTypeOption();
-        r4.setId("SHOWCASE-PRESIDENTIAL");
-        r4.setHotelId("HT-SHOWCASE-4");
-        r4.setRoomTypeName("The Leela Presidential Penthouse");
-        r4.setPriceUpgradeAddon(5500.0);
-        r4.setAvailableRooms(2);
-        r4.setBedType("Master King Bed + Daybed");
-        r4.setRoomSize("1150 sq.ft");
-        r4.setViewType("360-Degree Penthouse Panoramic View");
-        r4.setAmenities(Arrays.asList("Dedicated 24/7 Butler", "Private Sun Terrace", "Chesterfield Parlor", "Dining Suite", "Carrara Marble Jacuzzi", "Limousine Transfer"));
-        r4.setImageUrls(Arrays.asList(
-            "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=1200&q=80",
-            "https://images.unsplash.com/photo-1578683010236-d716f9a3f461?auto=format&fit=crop&w=1200&q=80"
-        ));
-        r4.setPreview3dModelUrl("room_presidential_3d");
-        r4.setDescription("The pinnacle of luxury hospitality. Opulent Carrara marble flooring, four-poster master canopy bed, private cocktail bar, 4-seater dining salon, and terrace.");
-        r4.setRoom3dConfig(build3dConfigForRoom(r4.getRoomTypeName(), r4.getBedType(), r4.getRoomSize(), r4.getViewType(), r4.getAmenities()));
-        showcase.add(r4);
+        if (showcase.size() < 4) {
+            String defaultHotelId = (allHotels != null && !allHotels.isEmpty() && allHotels.get(0).getId() != null)
+                    ? allHotels.get(0).getId()
+                    : "HT-SHOWCASE-1";
+            List<RoomTypeOption> fallbacks = buildCuratedFallbackShowcaseRooms(defaultHotelId);
+            for (RoomTypeOption fb : fallbacks) {
+                boolean alreadyHasTier = showcase.stream().anyMatch(
+                    s -> s.getRoom3dConfig() != null &&
+                         fb.getRoom3dConfig() != null &&
+                         s.getRoom3dConfig().getRoomModelType().equals(fb.getRoom3dConfig().getRoomModelType())
+                );
+                if (!alreadyHasTier) {
+                    showcase.add(fb);
+                }
+                if (showcase.size() >= 4) break;
+            }
+        }
 
         return showcase;
+    }
+
+    public List<RoomTypeOption> buildCuratedFallbackShowcaseRooms(String hotelId) {
+        List<String> baseImages = Arrays.asList(
+            "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
+            "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=80",
+            "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80"
+        );
+
+        List<RoomTypeOption> fallbacks = new ArrayList<>();
+
+        RoomTypeOption opt1 = new RoomTypeOption();
+        opt1.setId("SHOWCASE-STD-1");
+        opt1.setHotelId(hotelId);
+        opt1.setRoomTypeName("Standard Classic Room");
+        opt1.setPriceUpgradeAddon(0.0);
+        opt1.setAvailableRooms(5);
+        opt1.setBedType("Comfort Queen Bed");
+        opt1.setRoomSize("320 sq.ft");
+        opt1.setViewType("Courtyard / City View");
+        opt1.setAmenities(Arrays.asList("High-Speed Wi-Fi", "Air Conditioning", "En-suite Bathroom", "Smart LED TV", "Daily Housekeeping"));
+        opt1.setImageUrls(baseImages);
+        opt1.setPreview3dModelUrl("room_standard_3d");
+        opt1.setRoom3dConfig(build3dConfigForRoom(opt1.getRoomTypeName(), opt1.getBedType(), opt1.getRoomSize(), opt1.getViewType(), opt1.getAmenities()));
+        opt1.setDescription("Curated classic room featuring modern comforts, cozy queen bedding, and essential travel amenities.");
+        opt1.setPopularUpsell(false);
+        fallbacks.add(opt1);
+
+        RoomTypeOption opt2 = new RoomTypeOption();
+        opt2.setId("SHOWCASE-DLX-2");
+        opt2.setHotelId(hotelId);
+        opt2.setRoomTypeName("Deluxe Balcony Room");
+        opt2.setPriceUpgradeAddon(1200.0);
+        opt2.setAvailableRooms(4);
+        opt2.setBedType("King Size Bed");
+        opt2.setRoomSize("450 sq.ft");
+        opt2.setViewType("Private Balcony Skyline View");
+        opt2.setAmenities(Arrays.asList("Private Balcony", "Plush King Bed", "Complimentary Gourmet Breakfast", "Espresso Machine", "Mini Refrigerator", "Bathrobes & Slippers"));
+        List<String> opt2Images = new ArrayList<>(baseImages);
+        Collections.rotate(opt2Images, 1);
+        opt2.setImageUrls(opt2Images);
+        opt2.setPreview3dModelUrl("room_deluxe_3d");
+        opt2.setRoom3dConfig(build3dConfigForRoom(opt2.getRoomTypeName(), opt2.getBedType(), opt2.getRoomSize(), opt2.getViewType(), opt2.getAmenities()));
+        opt2.setDescription("Spacious upgraded retreat featuring a private furnished balcony, premium king bedding, and complimentary breakfast.");
+        opt2.setPopularUpsell(true);
+        fallbacks.add(opt2);
+
+        RoomTypeOption opt3 = new RoomTypeOption();
+        opt3.setId("SHOWCASE-EXEC-3");
+        opt3.setHotelId(hotelId);
+        opt3.setRoomTypeName("Executive Panoramic Suite");
+        opt3.setPriceUpgradeAddon(2800.0);
+        opt3.setAvailableRooms(3);
+        opt3.setBedType("California King Bed");
+        opt3.setRoomSize("680 sq.ft");
+        opt3.setViewType("High-Floor Ocean / Skyline View");
+        opt3.setAmenities(Arrays.asList("Panoramic Floor-to-Ceiling Windows", "Separate Living Lounge", "Soaking Jacuzzi Bath", "Executive Lounge Access", "Evening Cocktails", "Priority Check-in"));
+        List<String> opt3Images = new ArrayList<>(baseImages);
+        Collections.rotate(opt3Images, 2);
+        opt3.setImageUrls(opt3Images);
+        opt3.setPreview3dModelUrl("room_executive_3d");
+        opt3.setRoom3dConfig(build3dConfigForRoom(opt3.getRoomTypeName(), opt3.getBedType(), opt3.getRoomSize(), opt3.getViewType(), opt3.getAmenities()));
+        opt3.setDescription("Elevated luxury on high floors with separate living lounge, deep soaking jacuzzi tub, and exclusive executive club privileges.");
+        opt3.setPopularUpsell(false);
+        fallbacks.add(opt3);
+
+        RoomTypeOption opt4 = new RoomTypeOption();
+        opt4.setId("SHOWCASE-PRES-4");
+        opt4.setHotelId(hotelId);
+        opt4.setRoomTypeName("Presidential Royal Suite");
+        opt4.setPriceUpgradeAddon(5500.0);
+        opt4.setAvailableRooms(2);
+        opt4.setBedType("Master King Bed + Daybed");
+        opt4.setRoomSize("1050 sq.ft");
+        opt4.setViewType("360-Degree Penthouse Panoramic View");
+        opt4.setAmenities(Arrays.asList("Dedicated 24/7 Butler", "Private Sun Terrace", "In-Suite Dining Setup", "Marble Jacuzzi & Rain Shower", "Limousine Airport Transfer", "Complimentary Premium Bar"));
+        opt4.setImageUrls(baseImages);
+        opt4.setPreview3dModelUrl("room_presidential_3d");
+        opt4.setRoom3dConfig(build3dConfigForRoom(opt4.getRoomTypeName(), opt4.getBedType(), opt4.getRoomSize(), opt4.getViewType(), opt4.getAmenities()));
+        opt4.setDescription("The ultimate in world-class hospitality. Grand penthouse suite with expansive private terrace, private bar, and dedicated personal butler.");
+        opt4.setPopularUpsell(false);
+        fallbacks.add(opt4);
+
+        if (roomTypeOptionRepository != null) {
+            try {
+                roomTypeOptionRepository.saveAll(fallbacks);
+            } catch (Exception ignored) {}
+        }
+
+        return fallbacks;
     }
 
     public Room3dConfig build3dConfigForRoom(String roomTypeName, String bedType, String roomSize, String viewType, List<String> amenities) {
@@ -485,6 +555,17 @@ public class SelectionService {
             config.setWallMaterial("ACOUSTIC_GOLD_SLATS");
             config.setCeilingHeight(3.2);
             config.setViewScene("PENTHOUSE_360");
+            config.setSpatialPanoramaUrl("https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=2400&q=85");
+            Map<String, String> presImages = new HashMap<>();
+            presImages.put("OVERVIEW", "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=1600&q=85");
+            presImages.put("BED", "https://images.unsplash.com/photo-1590490359683-658d3d23f972?auto=format&fit=crop&w=1600&q=85");
+            presImages.put("LOUNGE", "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1600&q=85");
+            presImages.put("BATH", "https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?auto=format&fit=crop&w=1600&q=85");
+            presImages.put("TERRACE", "https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?auto=format&fit=crop&w=1600&q=85");
+            config.setRoom3dImages(presImages);
+            config.setDayLightingImage("https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=1600&q=85");
+            config.setNightLightingImage("https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1600&q=85");
+            config.setFloorPlanUrl("https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=800&q=80");
 
             RoomLightingProfile lighting = new RoomLightingProfile();
             lighting.setAmbientColor("#FFFDF5");
@@ -538,6 +619,17 @@ public class SelectionService {
             config.setWallMaterial("EMERALD_VELVET_DAMASK");
             config.setCeilingHeight(3.0);
             config.setViewScene("HIGH_FLOOR_SKYLINE");
+            config.setSpatialPanoramaUrl("https://images.unsplash.com/photo-1578683010236-d716f9a3f461?auto=format&fit=crop&w=2400&q=85");
+            Map<String, String> execImages = new HashMap<>();
+            execImages.put("OVERVIEW", "https://images.unsplash.com/photo-1578683010236-d716f9a3f461?auto=format&fit=crop&w=1600&q=85");
+            execImages.put("BED", "https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=1600&q=85");
+            execImages.put("LOUNGE", "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1600&q=85");
+            execImages.put("BATH", "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=1600&q=85");
+            execImages.put("VIEW", "https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=1600&q=85");
+            config.setRoom3dImages(execImages);
+            config.setDayLightingImage("https://images.unsplash.com/photo-1578683010236-d716f9a3f461?auto=format&fit=crop&w=1600&q=85");
+            config.setNightLightingImage("https://images.unsplash.com/photo-1595526114035-0d45ed16cfbf?auto=format&fit=crop&w=1600&q=85");
+            config.setFloorPlanUrl("https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=800&q=80");
 
             RoomLightingProfile lighting = new RoomLightingProfile();
             lighting.setAmbientColor("#F8F9FA");
@@ -588,6 +680,16 @@ public class SelectionService {
             config.setWallMaterial("TEAL_ACCENT_PANELING");
             config.setCeilingHeight(2.8);
             config.setViewScene("OCEAN_BALCONY");
+            config.setSpatialPanoramaUrl("https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=2400&q=85");
+            Map<String, String> deluxeImages = new HashMap<>();
+            deluxeImages.put("OVERVIEW", "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1600&q=85");
+            deluxeImages.put("BED", "https://images.unsplash.com/photo-1591088398332-8a7791972843?auto=format&fit=crop&w=1600&q=85");
+            deluxeImages.put("BALCONY", "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=1600&q=85");
+            deluxeImages.put("LOUNGE", "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1600&q=85");
+            config.setRoom3dImages(deluxeImages);
+            config.setDayLightingImage("https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1600&q=85");
+            config.setNightLightingImage("https://images.unsplash.com/photo-1578683010236-d716f9a3f461?auto=format&fit=crop&w=1600&q=85");
+            config.setFloorPlanUrl("https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=800&q=80");
 
             RoomLightingProfile lighting = new RoomLightingProfile();
             lighting.setAmbientColor("#F1F5F9");
@@ -638,6 +740,16 @@ public class SelectionService {
             config.setWallMaterial("WARM_LINEN_PLASTER");
             config.setCeilingHeight(2.7);
             config.setViewScene("CITY_SKYLINE");
+            config.setSpatialPanoramaUrl("https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=2400&q=85");
+            Map<String, String> stdImages = new HashMap<>();
+            stdImages.put("OVERVIEW", "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1600&q=85");
+            stdImages.put("BED", "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1600&q=85");
+            stdImages.put("WINDOW", "https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?auto=format&fit=crop&w=1600&q=85");
+            stdImages.put("WORKSPACE", "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1600&q=85");
+            config.setRoom3dImages(stdImages);
+            config.setDayLightingImage("https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1600&q=85");
+            config.setNightLightingImage("https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1600&q=85");
+            config.setFloorPlanUrl("https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=800&q=80");
 
             RoomLightingProfile lighting = new RoomLightingProfile();
             lighting.setAmbientColor("#F8FAFC");

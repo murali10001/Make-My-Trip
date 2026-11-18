@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
-import { gethotel } from "@/api";
+import { gethotel, createPricingStream } from "@/api";
 import Loader from "@/components/Loader";
 import { SearchSelect } from "@/components/SearchSelect";
 import { Button } from "@/components/ui/button";
@@ -108,6 +108,23 @@ export default function HotelSearchPage() {
     setLocation(initialLocation);
     fetchHotels(initialLocation);
   }, [router.isReady, router.query.location, router.query.query]);
+
+  useEffect(() => {
+    const stream = createPricingStream((update: any) => {
+      if (update && update.itemType === "HOTEL" && update.itemId && update.finalPrice) {
+        setAllHotels((prev) =>
+          prev.map((h: any) =>
+            (h.id === update.itemId || h._id === update.itemId)
+              ? { ...h, pricePerNight: update.finalPrice, liveUpdated: true }
+              : h
+          )
+        );
+      }
+    });
+    return () => {
+      if (stream) stream.close();
+    };
+  }, []);
 
   const fetchHotels = async (queryLocation = location) => {
     const requestId = ++latestRequestIdRef.current;
@@ -473,7 +490,7 @@ export default function HotelSearchPage() {
                   const hotelId = hotel.id || hotel._id;
                   const rawImg = (hotel.imageUrls && hotel.imageUrls.length > 0 && hotel.imageUrls[0]) || hotel.imageUrl;
                   const imageUrl = getDestinationImage(hotel.location, rawImg);
-                  const rating = hotel.rating || hotel.reviewsRating || 4.5;
+                  const rating = hotel.reviewsRating || hotel.rating || 0.0;
                   const price = hotel.pricePerNight || 4500;
                   const originalPrice = hotel.discountedPrice && hotel.discountedPrice > price ? hotel.discountedPrice : Math.round(price * 1.25);
                   const availableRooms = hotel.availableRooms ?? 5;
@@ -517,7 +534,7 @@ export default function HotelSearchPage() {
                           <div className="flex items-center gap-1 text-xs text-slate-200">
                             <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                             <span className="font-bold text-white">{rating.toFixed(1)}</span>
-                            <span className="text-slate-300 font-normal">({hotel.reviewsCount || 128} reviews)</span>
+                            <span className="text-slate-300 font-normal">({hotel.reviewsCount || 0} reviews)</span>
                           </div>
                         </div>
                       </div>

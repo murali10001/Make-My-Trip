@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
-import { getflight } from "@/api";
+import { getflight, createPricingStream } from "@/api";
 import Loader from "@/components/Loader";
 import { SearchSelect } from "@/components/SearchSelect";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ import {
   Sparkles,
   ChevronRight,
   Snowflake,
+  Activity,
 } from "lucide-react";
 
 const AIRPORT_CODES: Record<string, string> = {
@@ -112,6 +113,23 @@ export default function FlightSearchPage() {
 
     fetchFlights(initialFrom, initialTo);
   }, [router.isReady, router.query.from, router.query.to]);
+
+  useEffect(() => {
+    const stream = createPricingStream((update: any) => {
+      if (update && update.itemType === "FLIGHT" && update.itemId && update.finalPrice) {
+        setAllFlights((prev) =>
+          prev.map((f: any) =>
+            (f.id === update.itemId || f._id === update.itemId || f.flightNo === update.itemId)
+              ? { ...f, price: update.finalPrice, liveUpdated: true }
+              : f
+          )
+        );
+      }
+    });
+    return () => {
+      if (stream) stream.close();
+    };
+  }, []);
 
   const fetchFlights = async (queryFrom = from, queryTo = to) => {
     const requestId = ++latestRequestIdRef.current;
@@ -614,6 +632,14 @@ export default function FlightSearchPage() {
                             >
                               <Snowflake className="w-3 h-3 text-cyan-600" />
                               <span>Lock Fare for ₹199</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => router.push(`/flight-status?flightNumber=${flight.flightNo || flight.flightNumber || "AI-101"}`)}
+                              className="w-full text-center text-[11px] font-semibold text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition py-1 flex items-center justify-center gap-1.5 border border-emerald-200"
+                            >
+                              <Activity className="w-3.5 h-3.5 text-emerald-600 animate-pulse" />
+                              <span>Live Radar Status &rarr;</span>
                             </button>
                           </div>
                         </div>

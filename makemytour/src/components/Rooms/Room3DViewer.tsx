@@ -8,37 +8,55 @@ import {
   Moon,
   Bed,
   Eye,
-  Maximize,
+  Tv,
+  Coffee,
   Sparkles,
-  Camera,
   Layers,
-  ChevronLeft,
-  ChevronRight,
+  ShieldCheck,
   Maximize2,
   Minimize2,
-  MapPin,
   Check,
-  ShieldCheck,
-  Coffee,
-  Tv,
+  MapPin,
+  Flame,
+  Info,
+  Maximize,
+  Grid,
   Bath,
   Armchair,
+  CheckCircle2,
 } from "lucide-react";
 
-export interface RoomAngleView {
+export interface FurnitureItem {
   id: string;
-  label: string;
-  imageUrl: string;
-  nightImageUrl?: string;
+  name: string;
+  category: string;
+  x?: number;
+  y?: number;
+  z?: number;
+  width?: number;
+  height?: number;
+  depth?: number;
+  color?: string;
+  secondaryColor?: string;
+  material?: string;
+  details?: string;
+  amenityLinked?: string;
+}
+
+export interface HotspotItem {
+  id: string;
+  title: string;
   description: string;
-  hotspots?: {
-    id: string;
-    title: string;
-    spec: string;
-    x: number;
-    y: number;
-    icon: string;
-  }[];
+  x: number;
+  y: number;
+  z?: number;
+  icon?: string;
+  cameraTarget?: {
+    yaw: number;
+    pitch: number;
+    zoom: number;
+    label?: string;
+  };
 }
 
 export interface Room3DConfigData {
@@ -51,12 +69,37 @@ export interface Room3DConfigData {
   };
   floorMaterial?: string;
   wallMaterial?: string;
+  ceilingHeight?: number;
   viewScene?: string;
-  angles?: RoomAngleView[];
+  spatialPanoramaUrl?: string;
+  room3dImages?: Record<string, string>;
+  dayLightingImage?: string;
+  nightLightingImage?: string;
+  floorPlanUrl?: string;
+  lightingProfile?: {
+    ambientColor?: string;
+    primaryLightColor?: string;
+    dayIntensity?: number;
+    nightIntensity?: number;
+    supportsNightMode?: boolean;
+    ceilingSpotlights?: number;
+    bedsideWarmth?: string;
+  };
+  furniture?: FurnitureItem[];
+  hotspots?: HotspotItem[];
+  cameraPresets?: Record<
+    string,
+    {
+      yaw: number;
+      pitch: number;
+      zoom: number;
+      label: string;
+    }
+  >;
 }
 
 interface Room3DViewerProps {
-  roomConfig?: any;
+  roomConfig?: Room3DConfigData | null;
   roomTypeName?: string;
   bedType?: string;
   roomSize?: string;
@@ -82,197 +125,140 @@ export const Room3DViewer: React.FC<Room3DViewerProps> = ({
   heightClass = "h-[450px] sm:h-[550px]",
   compactMode = false,
 }) => {
-  const tierKey = useMemo(() => {
-    const name = (roomTypeName || "").toLowerCase();
-    if (name.includes("presidential") || name.includes("royal") || name.includes("penthouse")) return "presidential";
-    if (name.includes("executive") || name.includes("suite") || name.includes("panoramic")) return "executive";
-    if (name.includes("deluxe") || name.includes("balcony") || name.includes("premium")) return "deluxe";
-    return "classic";
-  }, [roomTypeName]);
+  const [activeAngleKey, setActiveAngleKey] = useState<string>("OVERVIEW");
+  const [showFloorPlan, setShowFloorPlan] = useState<boolean>(false);
+  const [isNightMode, setIsNightMode] = useState<boolean>(false);
+  const [zoom, setZoom] = useState<number>(1.0);
+  const [panX, setPanX] = useState<number>(0);
+  const [panY, setPanY] = useState<number>(0);
+  const [selectedHotspot, setSelectedHotspot] = useState<HotspotItem | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [imageLoaded, setImageLoaded] = useState<boolean>(false);
 
-  const defaultAngles: Record<string, RoomAngleView[]> = useMemo(() => ({
-    classic: [
-      {
-        id: "classic-overview",
-        label: "Master Bedroom View",
-        imageUrl: "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1920&q=85",
-        nightImageUrl: "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1920&q=85",
-        description: "Elegant classic queen suite featuring natural oak finishes, plush bedding, and dedicated work desk.",
-        hotspots: [
-          { id: "hs-bed", title: "Comfort Queen Bed", spec: "Plush 10\" pocket spring mattress with hypoallergenic pillows", x: 48, y: 58, icon: "bed" },
-          { id: "hs-desk", title: "Ergonomic Work Desk", spec: "Polished oak workstation with dual USB and universal charging ports", x: 80, y: 64, icon: "desk" },
-          { id: "hs-window", title: "Soundproof Skyline Window", spec: "Double-glazed acoustic window overlooking city courtyard", x: 20, y: 40, icon: "eye" },
-        ],
-      },
-      {
-        id: "classic-bed",
-        label: "Bedside & Lighting Focus",
-        imageUrl: "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1920&q=85",
-        description: "Close-up of premium Egyptian cotton linens and ambient warm reading lamps.",
-        hotspots: [
-          { id: "hs-linens", title: "300-Thread Percale Linens", spec: "Silky soft breathable cotton with down duvet", x: 50, y: 65, icon: "bed" },
-          { id: "hs-lamp", title: "Bedside Sconce Lighting", spec: "Warm 2800K dimmable LED reading lamps", x: 25, y: 45, icon: "sparkles" },
-        ],
-      },
-      {
-        id: "classic-bath",
-        label: "En-suite Marble Bathroom",
-        imageUrl: "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=1920&q=85",
-        description: "Modern bathroom equipped with walk-in rain shower and premium herbal bath toiletries.",
-        hotspots: [
-          { id: "hs-shower", title: "Rain Shower & Vanity", spec: "High-pressure rain showerhead with backlit anti-fog mirror", x: 50, y: 45, icon: "bath" },
-        ],
-      },
-    ],
-    deluxe: [
-      {
-        id: "deluxe-balcony",
-        label: "Private Balcony & Bedroom",
-        imageUrl: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1920&q=85",
-        nightImageUrl: "https://images.unsplash.com/photo-1591088398332-8a7791972843?auto=format&fit=crop&w=1920&q=85",
-        description: "Upgraded deluxe retreat with floor-to-ceiling glass sliding doors opening to a private furnished balcony.",
-        hotspots: [
-          { id: "hs-balcony", title: "Private Furnished Balcony", spec: "Outdoor rattan seating with panoramic sunset horizon", x: 78, y: 45, icon: "eye" },
-          { id: "hs-bed", title: "Plush King Bed", spec: "Custom tufted headboard with luxury pillowtop king mattress", x: 38, y: 60, icon: "bed" },
-          { id: "hs-lounge", title: "Velvet Lounge Loveseat", spec: "Sculptural teal loveseat with marble coffee table", x: 72, y: 72, icon: "armchair" },
-        ],
-      },
-      {
-        id: "deluxe-bed",
-        label: "King Suite Detail",
-        imageUrl: "https://images.unsplash.com/photo-1591088398332-8a7791972843?auto=format&fit=crop&w=1920&q=85",
-        description: "Expansive king bedroom suite with tufted headboard, herringbone parquet, and Nespresso station.",
-        hotspots: [
-          { id: "hs-bed-d", title: "Royal King Bedding", spec: "400-thread sateen sheets with goose down topper", x: 50, y: 55, icon: "bed" },
-          { id: "hs-espresso", title: "Gourmet Espresso Bar", spec: "Complimentary Nespresso capsules and refrigerated minibar", x: 85, y: 58, icon: "coffee" },
-        ],
-      },
-      {
-        id: "deluxe-balcony-view",
-        label: "Outdoor Terrace View",
-        imageUrl: "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=1920&q=85",
-        description: "Step out onto your private balcony overlooking tranquil resort landscapes and ocean waters.",
-        hotspots: [
-          { id: "hs-terrace", title: "Glass Balcony Railing", spec: "Soundproof double-pane glazing with unobstructed panoramic vista", x: 50, y: 50, icon: "eye" },
-        ],
-      },
-    ],
-    executive: [
-      {
-        id: "exec-skyline",
-        label: "Panoramic Skyline Living",
-        imageUrl: "https://images.unsplash.com/photo-1578683010236-d716f9a3f461?auto=format&fit=crop&w=1920&q=85",
-        nightImageUrl: "https://images.unsplash.com/photo-1540518614846-7ede433c4ef0?auto=format&fit=crop&w=1920&q=85",
-        description: "Multi-zone high-floor suite with wrap-around corner glass, separate executive lounge, and California king bed.",
-        hotspots: [
-          { id: "hs-corner", title: "Wrap-Around Corner Glazing", spec: "Floor-to-ceiling panoramic glass with automated blackout drapes", x: 75, y: 38, icon: "eye" },
-          { id: "hs-lounge", title: "Italian Leather Sectional", spec: "Designer L-shaped sectional sofa for meetings and lounging", x: 28, y: 70, icon: "armchair" },
-          { id: "hs-bed", title: "California King Suite", spec: "Bespoke emerald velvet headboard with bronze accents", x: 52, y: 52, icon: "bed" },
-        ],
-      },
-      {
-        id: "exec-lounge",
-        label: "Executive Lounge & Salon",
-        imageUrl: "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=1920&q=85",
-        description: "Dedicated living room zone with 65\" OLED TV, executive desk, and complimentary evening club privileges.",
-        hotspots: [
-          { id: "hs-tv", title: "65\" Ultra HD OLED TV", spec: "Cinema soundbar with integrated streaming entertainment", x: 30, y: 40, icon: "tv" },
-          { id: "hs-desk", title: "Executive Work Vanity", spec: "Leather ergonomic swivel chair with high-speed fiber Wi-Fi", x: 80, y: 60, icon: "desk" },
-        ],
-      },
-      {
-        id: "exec-bath",
-        label: "Spa Jacuzzi En-suite",
-        imageUrl: "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=1920&q=85",
-        description: "Freestanding oval soaking jacuzzi tub with gold fixtures and panoramic city views behind fluted glass.",
-        hotspots: [
-          { id: "hs-jacuzzi", title: "Freestanding Jacuzzi Tub", spec: "Deep hydrotherapy soaking bath with organic bath salts", x: 50, y: 55, icon: "bath" },
-        ],
-      },
-    ],
-    presidential: [
-      {
-        id: "pres-parlor",
-        label: "Grand Penthouse Parlor",
-        imageUrl: "https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=1920&q=85",
-        nightImageUrl: "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=1920&q=85",
-        description: "The pinnacle of luxury hospitality. Carrara marble, Chesterfield leather parlor, personal wet bar, and terrace.",
-        hotspots: [
-          { id: "hs-parlor", title: "Chesterfield Grand Parlor", spec: "Deep button-tufted leather suite with gold-leaf salon tables", x: 45, y: 68, icon: "armchair" },
-          { id: "hs-dining", title: "In-Suite Dining Salon", spec: "Formal 4-seater marble dining table with 24/7 private butler service", x: 82, y: 58, icon: "coffee" },
-          { id: "hs-terrace", title: "Sun Terrace Portals", spec: "Private open-air penthouse terrace overlooking 360° skyline", x: 18, y: 45, icon: "eye" },
-        ],
-      },
-      {
-        id: "pres-canopy",
-        label: "Master Four-Poster Canopy Suite",
-        imageUrl: "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=1920&q=85",
-        description: "Master bedroom featuring a handcrafted four-poster canopy bed with Italian silk drapes and walk-in dressing room.",
-        hotspots: [
-          { id: "hs-canopy", title: "Four-Poster Canopy Bed", spec: "Custom California king bed with silk drapes and 600-thread linens", x: 52, y: 54, icon: "bed" },
-          { id: "hs-bar", title: "Cocktail Wet Bar & Wine Vault", spec: "Stocked premium liquor bar and dual-zone wine cooler", x: 85, y: 50, icon: "coffee" },
-        ],
-      },
-      {
-        id: "pres-terrace",
-        label: "Private Sun Terrace & Horizon",
-        imageUrl: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1920&q=85",
-        description: "Expansive private sun terrace with lounge daybeds, outdoor dining, and private jacuzzi plunge.",
-        hotspots: [
-          { id: "hs-plunge", title: "Penthouse Plunge Terrace", spec: "Private rooftop lounging with heated whirlpool jacuzzi", x: 50, y: 55, icon: "bath" },
-        ],
-      },
-    ],
+  const containerRef = useRef<HTMLDivElement>(null);
+  const dragStartRef = useRef<{
+    x: number;
+    y: number;
+    startPanX: number;
+    startPanY: number;
+  }>({ x: 0, y: 0, startPanX: 0, startPanY: 0 });
+
+  const modelType = roomConfig?.roomModelType || (
+    roomTypeName.toLowerCase().includes("presidential") || roomTypeName.toLowerCase().includes("royal") || roomTypeName.toLowerCase().includes("penthouse")
+      ? "PRESIDENTIAL_ROYAL"
+      : roomTypeName.toLowerCase().includes("executive") || roomTypeName.toLowerCase().includes("suite")
+      ? "EXECUTIVE_PANORAMIC"
+      : roomTypeName.toLowerCase().includes("deluxe") || roomTypeName.toLowerCase().includes("balcony")
+      ? "DELUXE_BALCONY"
+      : "STANDARD_CLASSIC"
+  );
+
+  const fallback3dImages: Record<string, Record<string, string>> = useMemo(() => ({
+    PRESIDENTIAL_ROYAL: {
+      OVERVIEW: "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=2400&q=85",
+      BED: "https://images.unsplash.com/photo-1590490359683-658d3d23f972?auto=format&fit=crop&w=2000&q=85",
+      LOUNGE: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=2000&q=85",
+      BATH: "https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?auto=format&fit=crop&w=2000&q=85",
+      TERRACE: "https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?auto=format&fit=crop&w=2000&q=85",
+    },
+    EXECUTIVE_PANORAMIC: {
+      OVERVIEW: "https://images.unsplash.com/photo-1578683010236-d716f9a3f461?auto=format&fit=crop&w=2400&q=85",
+      BED: "https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=2000&q=85",
+      LOUNGE: "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=2000&q=85",
+      BATH: "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=2000&q=85",
+      VIEW: "https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=2000&q=85",
+    },
+    DELUXE_BALCONY: {
+      OVERVIEW: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=2400&q=85",
+      BED: "https://images.unsplash.com/photo-1591088398332-8a7791972843?auto=format&fit=crop&w=2000&q=85",
+      BALCONY: "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=2000&q=85",
+      LOUNGE: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=2000&q=85",
+    },
+    STANDARD_CLASSIC: {
+      OVERVIEW: "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=2400&q=85",
+      BED: "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=2000&q=85",
+      WINDOW: "https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?auto=format&fit=crop&w=2000&q=85",
+      WORKSPACE: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=2000&q=85",
+    },
   }), []);
 
-  const angles = defaultAngles[tierKey] || defaultAngles.deluxe;
-  const [currentAngleIndex, setCurrentAngleIndex] = useState<number>(0);
-  const [isNightMode, setIsNightMode] = useState<boolean>(false);
-  const [zoomLevel, setZoomLevel] = useState<number>(1.0);
-  const [panOffset, setPanOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState<boolean>(false);
-  const [activeHotspot, setActiveHotspot] = useState<any | null>(null);
-  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  const floorPlanImage =
+    roomConfig?.floorPlanUrl ||
+    "https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=1200&q=85";
 
-  const dragStartRef = useRef<{ x: number; y: number; startPanX: number; startPanY: number }>({
-    x: 0,
-    y: 0,
-    startPanX: 0,
-    startPanY: 0,
-  });
+  const angleDictionary = useMemo(() => {
+    const backendImages = roomConfig?.room3dImages;
+    if (backendImages && Object.keys(backendImages).length > 0) {
+      return backendImages;
+    }
+    return fallback3dImages[modelType] || fallback3dImages.STANDARD_CLASSIC;
+  }, [roomConfig, fallback3dImages, modelType]);
 
-  const activeView = angles[currentAngleIndex] || angles[0];
-  const activeImageUrl = isNightMode && activeView.nightImageUrl ? activeView.nightImageUrl : activeView.imageUrl;
+  const currentImageUrl = useMemo(() => {
+    if (showFloorPlan) {
+      return floorPlanImage;
+    }
+    if (isNightMode && roomConfig?.nightLightingImage && activeAngleKey === "OVERVIEW") {
+      return roomConfig.nightLightingImage;
+    }
+    if (!isNightMode && roomConfig?.dayLightingImage && activeAngleKey === "OVERVIEW") {
+      return roomConfig.dayLightingImage;
+    }
+    if (angleDictionary[activeAngleKey]) {
+      return angleDictionary[activeAngleKey];
+    }
+    return (
+      roomConfig?.spatialPanoramaUrl ||
+      angleDictionary.OVERVIEW ||
+      "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=2400&q=85"
+    );
+  }, [showFloorPlan, isNightMode, roomConfig, activeAngleKey, angleDictionary, floorPlanImage]);
 
-  useEffect(() => {
-    setZoomLevel(1.0);
-    setPanOffset({ x: 0, y: 0 });
-    setActiveHotspot(null);
-  }, [currentAngleIndex, tierKey]);
+  const selectAngle = (key: string) => {
+    setShowFloorPlan(false);
+    setActiveAngleKey(key);
+    setPanX(0);
+    setPanY(0);
+    setZoom(1.0);
+    setSelectedHotspot(null);
+    setImageLoaded(false);
+  };
+
+  const toggleFloorPlan = () => {
+    setShowFloorPlan((prev) => !prev);
+    setSelectedHotspot(null);
+    setPanX(0);
+    setPanY(0);
+    setZoom(1.0);
+    setImageLoaded(false);
+  };
 
   const handlePointerDown = (e: React.PointerEvent) => {
+    if (showFloorPlan) return;
     setIsDragging(true);
     dragStartRef.current = {
       x: e.clientX,
       y: e.clientY,
-      startPanX: panOffset.x,
-      startPanY: panOffset.y,
+      startPanX: panX,
+      startPanY: panY,
     };
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
-    if (!isDragging) return;
-    const dx = e.clientX - dragStartRef.current.x;
-    const dy = e.clientY - dragStartRef.current.y;
+    if (!isDragging || showFloorPlan) return;
+    const deltaX = e.clientX - dragStartRef.current.x;
+    const deltaY = e.clientY - dragStartRef.current.y;
 
-    const maxPanX = (zoomLevel - 1) * 200 + 45;
-    const maxPanY = (zoomLevel - 1) * 120 + 30;
+    const maxPanX = 180 * zoom;
+    const maxPanY = 80 * zoom;
 
-    setPanOffset({
-      x: Math.max(-maxPanX, Math.min(maxPanX, dragStartRef.current.startPanX + dx * 0.45)),
-      y: Math.max(-maxPanY, Math.min(maxPanY, dragStartRef.current.startPanY + dy * 0.35)),
-    });
+    const newX = Math.max(-maxPanX, Math.min(maxPanX, dragStartRef.current.startPanX + deltaX * 0.7));
+    const newY = Math.max(-maxPanY, Math.min(maxPanY, dragStartRef.current.startPanY + deltaY * 0.5));
+
+    setPanX(newX);
+    setPanY(newY);
   };
 
   const handlePointerUp = (e: React.PointerEvent) => {
@@ -284,31 +270,148 @@ export const Room3DViewer: React.FC<Room3DViewerProps> = ({
 
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
-    const delta = e.deltaY < 0 ? 0.1 : -0.1;
-    setZoomLevel((prev) => Math.min(1.8, Math.max(1.0, parseFloat((prev + delta).toFixed(2)))));
+    const zoomDelta = e.deltaY < 0 ? 0.08 : -0.08;
+    setZoom((prev) => Math.min(1.75, Math.max(0.75, parseFloat((prev + zoomDelta).toFixed(2)))));
   };
 
   const handleReset = () => {
-    setZoomLevel(1.0);
-    setPanOffset({ x: 0, y: 0 });
-    setActiveHotspot(null);
+    setPanX(0);
+    setPanY(0);
+    setZoom(1.0);
+    setSelectedHotspot(null);
+    if (showFloorPlan) setShowFloorPlan(false);
   };
 
-  const renderHotspotIcon = (icon: string) => {
-    switch (icon) {
-      case "bed": return <Bed className="w-3.5 h-3.5" />;
-      case "eye": return <Eye className="w-3.5 h-3.5" />;
-      case "bath": return <Bath className="w-3.5 h-3.5" />;
-      case "coffee": return <Coffee className="w-3.5 h-3.5" />;
-      case "tv": return <Tv className="w-3.5 h-3.5" />;
-      case "armchair": return <Armchair className="w-3.5 h-3.5" />;
-      default: return <Sparkles className="w-3.5 h-3.5" />;
+  const activeHotspots = useMemo(() => {
+    if (showFloorPlan) return [];
+    if (roomConfig?.hotspots && roomConfig.hotspots.length > 0) {
+      return roomConfig.hotspots;
+    }
+    if (modelType === "PRESIDENTIAL_ROYAL") {
+      return [
+        {
+          id: "hs_bed",
+          title: "Master Four-Poster Canopy Bed",
+          description: "Solid dark walnut frame with brushed brass accents and silk damask linens.",
+          x: 28,
+          y: 52,
+          icon: "Bed",
+        },
+        {
+          id: "hs_jacuzzi",
+          title: "Carrara Marble Hydro Jacuzzi",
+          description: "Freestanding hydrotherapy spa tub with 24k gold fixtures and panoramic views.",
+          x: 75,
+          y: 42,
+          icon: "Bath",
+        },
+        {
+          id: "hs_lounge",
+          title: "Chesterfield Leather Parlor",
+          description: "Deep button-tufted cognac leather Chesterfield sofa with Italian marble table.",
+          x: 52,
+          y: 68,
+          icon: "Armchair",
+        },
+      ];
+    } else if (modelType === "EXECUTIVE_PANORAMIC") {
+      return [
+        {
+          id: "hs_bed",
+          title: "California King Ergonomic Suite",
+          description: "High-loft pocket-spring mattress with custom emerald velvet ribbed headboard.",
+          x: 35,
+          y: 50,
+          icon: "Bed",
+        },
+        {
+          id: "hs_skyline",
+          title: "Wrap-Around Skyline Windows",
+          description: "Floor-to-ceiling acoustic double-glazed glazing with uninterrupted city vistas.",
+          x: 78,
+          y: 35,
+          icon: "Eye",
+        },
+        {
+          id: "hs_jacuzzi",
+          title: "Freestanding Soaking Jacuzzi",
+          description: "Deep soaking acrylic-core jacuzzi bath with brushed bronze taps.",
+          x: 18,
+          y: 65,
+          icon: "Bath",
+        },
+      ];
+    } else if (modelType === "DELUXE_BALCONY") {
+      return [
+        {
+          id: "hs_bed",
+          title: "Plush King Bed Suite",
+          description: "King size pocket-spring mattress with teal tufted velvet headboard.",
+          x: 38,
+          y: 52,
+          icon: "Bed",
+        },
+        {
+          id: "hs_balcony",
+          title: "Private Furnished Balcony",
+          description: "Step out directly to your private terrace overlooking azure ocean waters.",
+          x: 76,
+          y: 40,
+          icon: "Eye",
+        },
+        {
+          id: "hs_espresso",
+          title: "Gourmet Nespresso Bar",
+          description: "Stocked capsule coffee machine and complimentary minibar amenities.",
+          x: 18,
+          y: 58,
+          icon: "Coffee",
+        },
+      ];
+    } else {
+      return [
+        {
+          id: "hs_bed",
+          title: "Comfort Queen Bed",
+          description: "Solid oak platform frame with plush 10-inch pocket-spring mattress.",
+          x: 48,
+          y: 54,
+          icon: "Bed",
+        },
+        {
+          id: "hs_window",
+          title: "Soundproof Courtyard Glazing",
+          description: "Acoustic insulated window framing overlooking landscaped inner court.",
+          x: 80,
+          y: 38,
+          icon: "Eye",
+        },
+      ];
+    }
+  }, [showFloorPlan, roomConfig, modelType]);
+
+  const renderHotspotIcon = (iconName?: string) => {
+    switch (iconName?.toLowerCase()) {
+      case "bed":
+        return <Bed className="w-3.5 h-3.5" />;
+      case "bath":
+        return <Bath className="w-3.5 h-3.5" />;
+      case "armchair":
+      case "sofa":
+        return <Armchair className="w-3.5 h-3.5" />;
+      case "coffee":
+        return <Coffee className="w-3.5 h-3.5" />;
+      case "tv":
+        return <Tv className="w-3.5 h-3.5" />;
+      default:
+        return <Eye className="w-3.5 h-3.5" />;
     }
   };
 
   return (
     <div
-      className={`relative w-full rounded-3xl overflow-hidden shadow-2xl border border-slate-800 bg-slate-950 text-white select-none transition-all ${
+      ref={containerRef}
+      className={`relative w-full rounded-2xl sm:rounded-3xl overflow-hidden select-none bg-slate-950 border border-slate-800 shadow-2xl transition-all ${
         isFullscreen ? "fixed inset-0 z-50 rounded-none h-screen" : heightClass
       }`}
     >
@@ -317,189 +420,229 @@ export const Room3DViewer: React.FC<Room3DViewerProps> = ({
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onWheel={handleWheel}
-        className="w-full h-full relative overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing bg-slate-950"
+        className={`relative w-full h-full overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing ${
+          showFloorPlan ? "cursor-default" : ""
+        }`}
       >
         <div
-          className="absolute inset-0 transition-transform duration-100 ease-out will-change-transform bg-cover bg-center"
+          className="relative w-full h-full transition-transform duration-150 ease-out will-change-transform"
           style={{
-            backgroundImage: `url("${activeImageUrl}")`,
-            transform: `scale(${zoomLevel}) translate3d(${panOffset.x}px, ${panOffset.y}px, 0px)`,
-            filter: isNightMode ? "brightness(0.75) contrast(1.15) saturate(1.1)" : "brightness(1.02) contrast(1.02)",
-            transition: isDragging ? "filter 0.5s ease" : "transform 0.15s ease-out, filter 0.5s ease",
+            transform: `scale(${zoom}) translate3d(${panX}px, ${panY}px, 0px)`,
           }}
-        />
+        >
+          <img
+            src={currentImageUrl}
+            alt={`${roomTypeName} 3D View`}
+            onLoad={() => setImageLoaded(true)}
+            className={`w-full h-full object-cover pointer-events-none transition-all duration-700 ${
+              imageLoaded ? "opacity-100 scale-100" : "opacity-0 scale-105"
+            } ${
+              isNightMode && !showFloorPlan
+                ? "brightness-75 contrast-110 saturate-90 filter hue-rotate-[-5deg]"
+                : "brightness-100 contrast-105"
+            }`}
+          />
 
-        <div
-          className={`absolute inset-0 pointer-events-none transition-opacity duration-700 ${
-            isNightMode
-              ? "bg-gradient-to-t from-slate-950/80 via-indigo-950/30 to-black/60 mix-blend-multiply opacity-70"
-              : "bg-gradient-to-t from-slate-950/60 via-transparent to-transparent opacity-60"
-          }`}
-        />
-
-        <div
-          className={`absolute top-0 right-0 w-96 h-96 rounded-full blur-3xl pointer-events-none transition-opacity duration-700 ${
-            isNightMode ? "bg-amber-500/10 opacity-30" : "bg-amber-100/20 opacity-60"
-          }`}
-        />
-
-        {activeView.hotspots?.map((hs) => {
-          const isSelected = activeHotspot?.id === hs.id;
-
-          return (
+          {isNightMode && !showFloorPlan && (
             <div
-              key={hs.id}
-              onClick={(e) => {
-                e.stopPropagation();
-                setActiveHotspot(isSelected ? null : hs);
-              }}
-              className="absolute z-20 cursor-pointer transition-transform duration-150"
-              style={{
-                left: `${hs.x}%`,
-                top: `${hs.y}%`,
-                transform: `translate(-50%, -50%) scale(${zoomLevel > 1.2 ? 0.9 : 1.0}) translate3d(${panOffset.x * 0.4}px, ${panOffset.y * 0.4}px, 0px)`,
-              }}
-            >
-              <div
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full backdrop-blur-md transition-all shadow-2xl ${
-                  isSelected
-                    ? "bg-amber-400 text-slate-950 ring-4 ring-amber-400/50 scale-110 font-black"
-                    : "bg-slate-950/85 hover:bg-slate-900 text-white border border-white/30 hover:scale-105"
-                }`}
-              >
-                <span className={isSelected ? "text-slate-950" : "text-indigo-400"}>
-                  {renderHotspotIcon(hs.icon)}
-                </span>
-                <span className="text-[11px] font-bold tracking-tight whitespace-nowrap">
-                  {hs.title}
-                </span>
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping ml-0.5" />
+              className="absolute inset-0 pointer-events-none mix-blend-color-burn opacity-40 bg-gradient-to-t from-amber-950/80 via-transparent to-slate-950/70"
+            />
+          )}
+
+          {showFloorPlan && (
+            <div className="absolute inset-0 pointer-events-none bg-indigo-950/20 backdrop-blur-[1px] border-4 border-indigo-500/30">
+              <div className="absolute top-4 left-4 bg-slate-950/90 border border-indigo-500/50 rounded-xl px-3 py-1.5 text-xs font-mono text-indigo-300 shadow-lg flex items-center gap-2">
+                <Grid className="w-3.5 h-3.5 text-indigo-400" />
+                <span>ARCHITECTURAL FLOOR PLAN • SCALE 1:50</span>
               </div>
             </div>
-          );
-        })}
+          )}
 
-        <div className="absolute top-4 inset-x-4 flex items-center justify-between gap-3 pointer-events-none z-30">
-          <div className="bg-slate-950/90 backdrop-blur-md border border-slate-800 rounded-2xl px-4 py-2 pointer-events-auto flex items-center gap-3 shadow-2xl">
-            <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-            <div>
-              <div className="flex items-center gap-2">
-                <h4 className="text-xs sm:text-sm font-extrabold text-white">{roomTypeName}</h4>
-                <span className="text-[10px] bg-indigo-950 text-indigo-300 font-mono font-bold px-2 py-0.5 rounded border border-indigo-500/30">
-                  {roomSize}
-                </span>
-              </div>
-              <p className="text-[10px] text-slate-400 flex items-center gap-1.5">
-                <span>{bedType}</span> • <span>{viewType}</span>
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 pointer-events-auto">
-            <button
-              onClick={() => setIsNightMode((prev) => !prev)}
-              className={`px-3 py-2 rounded-xl border backdrop-blur-md transition-all shadow-lg flex items-center gap-1.5 text-xs font-bold ${
-                isNightMode
-                  ? "bg-amber-500/20 text-amber-300 border-amber-500/40 hover:bg-amber-500/30"
-                  : "bg-sky-500/20 text-sky-200 border-sky-400/40 hover:bg-sky-500/30"
-              }`}
-              title={isNightMode ? "Switch to Natural Daylight" : "Switch to Warm Evening Lighting"}
-            >
-              {isNightMode ? <Moon className="w-4 h-4 text-amber-400" /> : <Sun className="w-4 h-4 text-amber-300" />}
-              <span className="hidden sm:inline">{isNightMode ? "Evening" : "Daylight"}</span>
-            </button>
-
-            <button
-              onClick={handleReset}
-              className="p-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 backdrop-blur-md transition-all shadow-lg"
-              title="Reset Zoom & Pan"
-            >
-              <RotateCw className="w-4 h-4" />
-            </button>
-
-            <button
-              onClick={() => setIsFullscreen((prev) => !prev)}
-              className="p-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 backdrop-blur-md transition-all shadow-lg"
-              title={isFullscreen ? "Exit Fullscreen" : "Fullscreen View"}
-            >
-              {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-            </button>
-          </div>
-        </div>
-
-        <div className="absolute bottom-4 inset-x-4 flex flex-col sm:flex-row items-center justify-between gap-3 pointer-events-none z-30">
-          <div className="flex items-center gap-1.5 bg-slate-950/90 backdrop-blur-md border border-slate-800 p-1.5 rounded-2xl pointer-events-auto shadow-2xl overflow-x-auto max-w-full">
-            <span className="text-[10px] text-slate-400 font-mono px-2 hidden sm:inline flex items-center gap-1 font-bold">
-              <Compass className="w-3.5 h-3.5 text-indigo-400" /> 3D ANGLES:
-            </span>
-            {angles.map((angle, idx) => {
-              const isActive = idx === currentAngleIndex;
+          {!showFloorPlan &&
+            activeHotspots.map((hs, idx) => {
+              const isSelected = selectedHotspot?.id === hs.id;
+              const leftPercent = hs.x;
+              const topPercent = hs.y;
 
               return (
-                <button
-                  key={angle.id}
-                  onClick={() => setCurrentAngleIndex(idx)}
-                  className={`text-[11px] font-extrabold px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap ${
-                    isActive
-                      ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 scale-102"
-                      : "text-slate-400 hover:text-white hover:bg-slate-800/80"
-                  }`}
+                <div
+                  key={hs.id || idx}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedHotspot(hs);
+                  }}
+                  className="absolute z-20 -translate-x-1/2 -translate-y-1/2 group cursor-pointer"
+                  style={{
+                    left: `${leftPercent}%`,
+                    top: `${topPercent}%`,
+                  }}
                 >
-                  <Camera className="w-3 h-3" />
-                  <span>{angle.label}</span>
-                </button>
+                  <span className="absolute -inset-2 rounded-full bg-indigo-500/40 animate-ping group-hover:bg-amber-400/50" />
+
+                  <div
+                    className={`relative flex items-center justify-center w-8 h-8 rounded-full border-2 shadow-2xl backdrop-blur-md transition-all duration-300 transform group-hover:scale-125 ${
+                      isSelected
+                        ? "bg-amber-500 border-white text-slate-950 shadow-amber-500/50 scale-110"
+                        : "bg-slate-950/90 border-indigo-400 text-indigo-300 group-hover:border-amber-400 group-hover:text-amber-300"
+                    }`}
+                  >
+                    {renderHotspotIcon(hs.icon)}
+                  </div>
+
+                  <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap">
+                    <div className="bg-slate-950/95 border border-indigo-500/40 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg shadow-xl flex items-center gap-1.5">
+                      <Sparkles className="w-3 h-3 text-amber-400" />
+                      <span>{hs.title}</span>
+                    </div>
+                  </div>
+                </div>
               );
             })}
+        </div>
+
+        {!imageLoaded && (
+          <div className="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center gap-3 z-10">
+            <Compass className="w-8 h-8 text-indigo-400 animate-spin" />
+            <span className="text-xs font-mono text-slate-400 tracking-wider">
+              Rendering 3D Spatial Environment...
+            </span>
           </div>
+        )}
+      </div>
 
-          <div className="flex items-center gap-2 bg-slate-950/90 backdrop-blur-md border border-slate-800 px-3 py-1.5 rounded-2xl pointer-events-auto shadow-2xl">
-            <button
-              onClick={() => setZoomLevel((z) => Math.max(1.0, parseFloat((z - 0.2).toFixed(2))))}
-              className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white"
-              title="Zoom Out"
-            >
-              <ZoomOut className="w-4 h-4" />
-            </button>
-
-            <span className="text-[11px] font-mono text-slate-200 w-12 text-center font-bold">
-              {Math.round(zoomLevel * 100)}%
-            </span>
-
-            <button
-              onClick={() => setZoomLevel((z) => Math.min(1.8, parseFloat((z + 0.2).toFixed(2))))}
-              className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white"
-              title="Zoom In"
-            >
-              <ZoomIn className="w-4 h-4" />
-            </button>
-
-            <div className="h-4 w-px bg-slate-800 mx-1" />
-
-            <span className="text-[10px] font-mono text-slate-400 hidden sm:inline">
-              Drag to Pan 360°
-            </span>
+      <div className="absolute top-3 sm:top-4 inset-x-3 sm:inset-x-4 flex items-center justify-between gap-3 pointer-events-none z-30">
+        <div className="bg-slate-950/85 backdrop-blur-md border border-slate-800 rounded-2xl px-3.5 py-2 pointer-events-auto flex items-center gap-3 shadow-xl max-w-[70%] sm:max-w-none">
+          <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
+          <div className="truncate">
+            <div className="flex items-center gap-2">
+              <h4 className="text-xs sm:text-sm font-extrabold text-white truncate">{roomTypeName}</h4>
+              <span className="hidden sm:inline-block text-[10px] bg-indigo-900/80 text-indigo-300 font-mono px-2 py-0.5 rounded border border-indigo-500/30">
+                {roomSize}
+              </span>
+            </div>
+            <p className="text-[10px] text-slate-400 truncate flex items-center gap-2 mt-0.5">
+              <span>{bedType}</span> • <span className="hidden xs:inline">{viewType}</span>
+            </p>
           </div>
         </div>
 
-        <div className="absolute top-1/2 left-4 -translate-y-1/2 text-[10px] font-mono text-slate-400/80 pointer-events-none hidden md:flex flex-col gap-1 items-center bg-slate-950/60 backdrop-blur-xs px-2 py-3 rounded-xl border border-white/10">
-          <Compass className="w-4 h-4 text-indigo-400 animate-spin-slow" />
-          <span>360° SPATIAL</span>
-          <span>DRAG PAN</span>
+        <div className="flex items-center gap-1.5 sm:gap-2 pointer-events-auto">
+          <button
+            onClick={toggleFloorPlan}
+            className={`p-2 sm:p-2.5 rounded-xl border backdrop-blur-md transition-all shadow-lg flex items-center gap-1.5 text-xs font-bold ${
+              showFloorPlan
+                ? "bg-indigo-600 text-white border-indigo-400 shadow-indigo-500/25"
+                : "bg-slate-900/90 text-slate-300 border-slate-800 hover:text-white hover:bg-slate-800"
+            }`}
+            title="Inspect Architectural Floor Plan"
+          >
+            <Grid className="w-4 h-4 text-indigo-400" />
+            <span className="hidden md:inline">Floor Plan</span>
+          </button>
+
+          <button
+            onClick={() => setIsNightMode((prev) => !prev)}
+            className={`p-2 sm:p-2.5 rounded-xl border backdrop-blur-md transition-all shadow-lg flex items-center gap-1.5 text-xs font-bold ${
+              isNightMode
+                ? "bg-amber-500/20 text-amber-300 border-amber-500/40 hover:bg-amber-500/30"
+                : "bg-sky-500/20 text-sky-200 border-sky-400/40 hover:bg-sky-500/30"
+            }`}
+            title={isNightMode ? "Switch to Natural Daylight" : "Switch to Evening Warm Ambiance"}
+          >
+            {isNightMode ? <Moon className="w-4 h-4 text-amber-400" /> : <Sun className="w-4 h-4 text-amber-300" />}
+            <span className="hidden md:inline">{isNightMode ? "Warm Night" : "Daylight"}</span>
+          </button>
+
+          <button
+            onClick={handleReset}
+            className="p-2 sm:p-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 backdrop-blur-md transition-all shadow-lg"
+            title="Reset Pan & Zoom"
+          >
+            <RotateCw className="w-4 h-4" />
+          </button>
+
+          <button
+            onClick={() => setIsFullscreen((prev) => !prev)}
+            className="p-2 sm:p-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 backdrop-blur-md transition-all shadow-lg"
+            title={isFullscreen ? "Exit Fullscreen" : "Fullscreen 3D"}
+          >
+            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+          </button>
         </div>
       </div>
 
-      {activeHotspot && (
+      <div className="absolute bottom-3 sm:bottom-4 inset-x-3 sm:inset-x-4 flex flex-col sm:flex-row items-center justify-between gap-3 pointer-events-none z-30">
+        <div className="flex items-center gap-1 sm:gap-1.5 bg-slate-950/85 backdrop-blur-md border border-slate-800 p-1.5 rounded-2xl pointer-events-auto shadow-xl overflow-x-auto max-w-full scrollbar-none">
+          <span className="text-[10px] text-slate-400 font-mono px-2 hidden lg:inline flex items-center gap-1">
+            <Compass className="w-3 h-3 text-indigo-400" /> PERSPECTIVE:
+          </span>
+          {Object.keys(angleDictionary).map((angleKey) => {
+            const isActive = !showFloorPlan && activeAngleKey === angleKey;
+            const labelMap: Record<string, string> = {
+              OVERVIEW: "360° Tour",
+              BED: "Master Bed",
+              LOUNGE: "Parlor Lounge",
+              BATH: "Spa Bath",
+              BALCONY: "Balcony Vista",
+              VIEW: "Skyline View",
+              WINDOW: "Window Suite",
+              TERRACE: "Sun Terrace",
+              WORKSPACE: "Work Suite",
+            };
+
+            return (
+              <button
+                key={angleKey}
+                onClick={() => selectAngle(angleKey)}
+                className={`text-[11px] font-bold px-3 py-1.5 rounded-xl transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                  isActive
+                    ? "bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-md shadow-indigo-500/25 scale-[1.02]"
+                    : "text-slate-400 hover:text-white hover:bg-slate-800/80"
+                }`}
+              >
+                <span>{labelMap[angleKey] || angleKey}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="hidden sm:flex items-center gap-2 bg-slate-950/85 backdrop-blur-md border border-slate-800 px-3 py-1.5 rounded-2xl pointer-events-auto shadow-xl">
+          <button
+            onClick={() => setZoom((z) => Math.max(0.75, parseFloat((z - 0.15).toFixed(2))))}
+            className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white"
+            title="Zoom Out"
+          >
+            <ZoomOut className="w-3.5 h-3.5" />
+          </button>
+
+          <span className="text-[11px] font-mono text-slate-300 w-12 text-center">
+            {Math.round(zoom * 100)}%
+          </span>
+
+          <button
+            onClick={() => setZoom((z) => Math.min(1.75, parseFloat((z + 0.15).toFixed(2))))}
+            className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white"
+            title="Zoom In"
+          >
+            <ZoomIn className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+
+      {selectedHotspot && (
         <div className="absolute bottom-20 left-4 sm:left-6 max-w-sm bg-slate-900/95 backdrop-blur-xl border border-indigo-500/40 rounded-2xl p-4 shadow-2xl text-white z-40 animate-in fade-in slide-in-from-bottom-4 duration-200">
           <div className="flex items-start justify-between gap-3">
             <div>
               <div className="flex items-center gap-1.5 text-indigo-400 text-[10px] font-bold uppercase tracking-wider">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Verified Architectural Feature</span>
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <span>Architectural Detail</span>
               </div>
-              <h5 className="font-black text-sm text-white mt-0.5">{activeHotspot.title}</h5>
+              <h5 className="font-extrabold text-sm text-white mt-0.5">
+                {selectedHotspot.title}
+              </h5>
             </div>
             <button
-              onClick={() => setActiveHotspot(null)}
+              onClick={() => setSelectedHotspot(null)}
               className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"
             >
               ✕
@@ -507,13 +650,13 @@ export const Room3DViewer: React.FC<Room3DViewerProps> = ({
           </div>
 
           <p className="text-xs text-slate-300 mt-2 leading-relaxed">
-            {activeHotspot.spec}
+            {selectedHotspot.description}
           </p>
 
           <div className="mt-3 pt-2.5 border-t border-slate-800 flex items-center justify-between text-[11px]">
-            <span className="text-slate-400">Status:</span>
-            <span className="bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded font-bold border border-emerald-500/30 flex items-center gap-1">
-              <Check className="w-3 h-3" /> Included in Room
+            <span className="text-slate-400">Verified Finish:</span>
+            <span className="bg-indigo-950 text-indigo-300 px-2 py-0.5 rounded font-bold border border-indigo-500/30">
+              ✓ 5-Star Luxury Grade
             </span>
           </div>
         </div>
@@ -523,9 +666,9 @@ export const Room3DViewer: React.FC<Room3DViewerProps> = ({
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 pointer-events-auto z-30">
           <button
             onClick={onBookNow}
-            className="bg-gradient-to-r from-indigo-600 via-indigo-500 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-extrabold text-xs sm:text-sm px-6 py-2.5 rounded-2xl shadow-xl flex items-center gap-2 border border-white/20 transition-all hover:scale-105 active:scale-95"
+            className="bg-gradient-to-r from-indigo-600 via-indigo-500 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-black text-xs sm:text-sm px-6 py-2.5 rounded-2xl shadow-xl flex items-center gap-2 border border-white/20 transition-all hover:scale-105 active:scale-95"
           >
-            <span>Book {roomTypeName}</span>
+            <span>Reserve {roomTypeName}</span>
             {priceUpgradeAddon > 0 ? (
               <span className="bg-white/20 px-2 py-0.5 rounded-lg text-xs font-mono">
                 +₹{priceUpgradeAddon.toLocaleString("en-IN")}/nt

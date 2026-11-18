@@ -2,10 +2,12 @@ package com.makemytrip.makemytrip.services;
 
 import com.makemytrip.makemytrip.exceptions.InvalidReviewException;
 import com.makemytrip.makemytrip.exceptions.ReviewNotFoundException;
+import com.makemytrip.makemytrip.exceptions.UnverifiedReviewException;
 import com.makemytrip.makemytrip.models.Flight;
 import com.makemytrip.makemytrip.models.Hotel;
 import com.makemytrip.makemytrip.models.Review;
 import com.makemytrip.makemytrip.models.ReviewSummaryDTO;
+import com.makemytrip.makemytrip.repositories.BookingRepository;
 import com.makemytrip.makemytrip.repositories.FlightRepository;
 import com.makemytrip.makemytrip.repositories.HotelRepository;
 import com.makemytrip.makemytrip.repositories.ReviewRepository;
@@ -40,6 +42,12 @@ public class ReviewService {
 
     @Autowired
     private FlightRepository flightRepository;
+
+    @Autowired(required = false)
+    private BookingRepository bookingRepository;
+
+    @Autowired(required = false)
+    private ReviewSentimentAnalyzer reviewSentimentAnalyzer;
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a");
     private static final Path UPLOAD_DIR = Paths.get("uploads", "reviews").toAbsolutePath().normalize();
@@ -132,12 +140,82 @@ public class ReviewService {
                 break;
         }
 
-        return new ReviewSummaryDTO(filtered, totalCount, averageRating, distribution, photoCount);
+        Map<String, Double> aspectBreakdown = new LinkedHashMap<>();
+        Map<String, Double> aspectSums = new LinkedHashMap<>();
+        Map<String, Integer> aspectCounts = new LinkedHashMap<>();
+        for (String aspect : List.of("cleanliness", "service", "location", "value")) {
+            aspectSums.put(aspect, 0.0);
+            aspectCounts.put(aspect, 0);
+        }
+
+        double totalSentimentSum = 0.0;
+        int sentimentCount = 0;
+        Map<String, Integer> sentimentCounts = new LinkedHashMap<>();
+        sentimentCounts.put("POSITIVE", 0);
+        sentimentCounts.put("NEUTRAL", 0);
+        sentimentCounts.put("NEGATIVE", 0);
+
+        for (Review r : validReviews) {
+            if (r.getAspectRatings() != null) {
+                for (Map.Entry<String, Double> entry : r.getAspectRatings().entrySet()) {
+                    String aspect = entry.getKey().toLowerCase();
+                    if (aspectSums.containsKey(aspect) && entry.getValue() != null) {
+                        aspectSums.put(aspect, aspectSums.get(aspect) + entry.getValue());
+                        aspectCounts.put(aspect, aspectCounts.get(aspect) + 1);
+                    }
+                }
+            }
+            if (r.getSentimentScore() != null) {
+                totalSentimentSum += r.getSentimentScore();
+                sentimentCount++;
+            }
+            if (r.getSentimentCategory() != null) {
+                String cat = r.getSentimentCategory().toUpperCase();
+                if (sentimentCounts.containsKey(cat)) {
+                    sentimentCounts.put(cat, sentimentCounts.get(cat) + 1);
+                }
+            }
+        }
+
+        for (String aspect : aspectSums.keySet()) {
+            int count = aspectCounts.get(aspect);
+            double avg = count > 0 ? Math.round((aspectSums.get(aspect) / count) * 10.0) / 10.0 : 0.0;
+            aspectBreakdown.put(aspect, avg);
+        }
+
+        Double averageSentimentScore = sentimentCount > 0
+                ? Math.round((totalSentimentSum / sentimentCount) * 100.0) / 100.0
+                : (totalCount > 0 ? Math.round(((averageRating - 1.0) / 4.0) * 100.0) / 100.0 : 0.0);
+
+        String overallSentiment = "NEUTRAL";
+        if (totalCount > 0 && averageSentimentScore != null) {
+            if (averageSentimentScore >= 0.65) {
+                overallSentiment = "POSITIVE";
+            } else if (averageSentimentScore <= 0.40) {
+                overallSentiment = "NEGATIVE";
+            } else {
+                overallSentiment = "NEUTRAL";
+            }
+        }
+
+        return new ReviewSummaryDTO(filtered, totalCount, averageRating, distribution, photoCount,
+                aspectBreakdown, averageSentimentScore, overallSentiment, sentimentCounts);
     }
 
     public Review addReview(Review review) {
         if (review.getTargetId() == null || review.getTargetId().trim().isEmpty()) {
             throw new InvalidReviewException("Target booking identifier is required.");
+        }
+        if (review.getUserId() == null || review.getUserId().trim().isEmpty()) {
+            throw new UnverifiedReviewException("Reviews and ratings are restricted to verified customers with confirmed bookings.");
+        }
+        boolean hasConfirmedBooking = bookingRepository != null && bookingRepository.existsByUserIdAndTargetIdAndStatusIn(
+                review.getUserId().trim(),
+                review.getTargetId().trim(),
+                List.of("CONFIRMED", "COMPLETED", "PAID", "ACTIVE")
+        );
+        if (!hasConfirmedBooking) {
+            throw new UnverifiedReviewException("Reviews and ratings are restricted to verified customers with confirmed bookings.");
         }
         if (review.getRating() < 1 || review.getRating() > 5) {
             throw new InvalidReviewException("Rating must be between 1 and 5 stars.");
@@ -162,11 +240,22 @@ public class ReviewService {
         if (review.getUserName() == null || review.getUserName().trim().isEmpty()) {
             review.setUserName("Verified Traveler");
         }
+        review.setVerifiedBooking(true);
+        review.setVerifiedStay(true);
         review.setHelpfulCount(0);
         review.setHelpfulUserIds(new ArrayList<>());
         review.setFlagged(false);
         review.setFlagReason(null);
         review.setFlaggedByUserId(null);
+
+        if (reviewSentimentAnalyzer == null) {
+            reviewSentimentAnalyzer = new ReviewSentimentAnalyzer();
+        }
+        ReviewSentimentAnalyzer.SentimentAnalysisResult sentimentResult =
+                reviewSentimentAnalyzer.analyze(review.getTitle(), review.getComment(), review.getRating());
+        review.setSentimentScore(sentimentResult.getScore());
+        review.setSentimentCategory(sentimentResult.getCategory());
+        review.setAspectRatings(sentimentResult.getAspectRatings());
 
         List<String> sanitizedPhotos = new ArrayList<>();
         if (review.getPhotoUrls() != null) {
@@ -457,10 +546,11 @@ public class ReviewService {
         for (Review r : validReviews) {
             sum += r.getRating();
         }
-        double avg = count > 0 ? Math.round((sum / count) * 10.0) / 10.0 : 4.0;
+        double avg = count > 0 ? Math.round((sum / count) * 10.0) / 10.0 : 0.0;
 
         String reviewText;
-        if (avg >= 4.5) reviewText = "Excellent";
+        if (count == 0) reviewText = "No reviews yet";
+        else if (avg >= 4.5) reviewText = "Excellent";
         else if (avg >= 4.0) reviewText = "Very Good";
         else if (avg >= 3.0) reviewText = "Good";
         else if (avg >= 2.0) reviewText = "Fair";
@@ -472,7 +562,9 @@ public class ReviewService {
                 Hotel hotel = hotelOpt.get();
                 hotel.setReviewsCount(count);
                 hotel.setReviewsRating(avg);
-                hotel.setRating(avg);
+                if (count > 0) {
+                    hotel.setRating(avg);
+                }
                 hotel.setReviewsText(reviewText);
                 hotelRepository.save(hotel);
             }
@@ -482,7 +574,9 @@ public class ReviewService {
                 Flight flight = flightOpt.get();
                 flight.setReviewsCount(count);
                 flight.setReviewsRating(avg);
-                flight.setRating(avg);
+                if (count > 0) {
+                    flight.setRating(avg);
+                }
                 flight.setReviewsText(reviewText);
                 flightRepository.save(flight);
             }
