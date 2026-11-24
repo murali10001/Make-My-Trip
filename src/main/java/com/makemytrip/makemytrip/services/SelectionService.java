@@ -817,7 +817,7 @@ public class SelectionService {
     public synchronized RoomTypeOption releaseRoomOption(String hotelId, String roomTypeName, int count) {
         if (hotelId == null || roomTypeName == null) return null;
 
-        List<RoomTypeOption> options = roomTypeOptionRepository.findByHotelId(hotelId.trim());
+        List<RoomTypeOption> options = getRoomOptionsForHotel(hotelId.trim());
         for (RoomTypeOption opt : options) {
             if (opt.getRoomTypeName().equalsIgnoreCase(roomTypeName.trim())) {
                 int newCount = opt.getAvailableRooms() + Math.max(1, count);

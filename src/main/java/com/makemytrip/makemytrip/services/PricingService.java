@@ -133,7 +133,8 @@ public class PricingService {
         String reason = String.format("Dynamic Market Pricing: %s & %s Demand (+%.0f%% Adjustment)",
                 seasonType.replace("_", " "), demandLevel, demandPercentage);
 
-        List<Map<String, Object>> history = getOrInitializePriceHistory(itemId, basePrice, finalPrice);
+        recordGenuinePriceHistory(itemId, itemType, finalPrice, demandLevel, seasonType);
+        List<Map<String, Object>> history = getGenuinePriceHistory(itemId, basePrice);
 
         Map<String, Double> competitorPrices = new LinkedHashMap<>();
         competitorPrices.put("MakeMyTrip", finalPrice);
@@ -212,49 +213,63 @@ public class PricingService {
 
     public List<Map<String, Object>> getPriceHistory(String itemId, double basePrice) {
         if (basePrice <= 0) basePrice = 5500.0;
-        return getOrInitializePriceHistory(itemId, basePrice, basePrice * 1.20);
+        return getGenuinePriceHistory(itemId, basePrice);
     }
 
-    private List<Map<String, Object>> getOrInitializePriceHistory(String itemId, double basePrice, double currentPrice) {
+    public synchronized void recordGenuinePriceHistory(String itemId, String itemType, double price, String demandLevel, String seasonType) {
+        if (priceHistoryRepository == null || itemId == null || itemId.trim().isEmpty()) return;
+        String resolvedId = itemId.trim();
+        LocalDate today = LocalDate.now();
+        LocalDateTime recordedAt = LocalDateTime.now();
+        String dayLabel = today.getDayOfWeek().name().substring(0, 3);
+        String recordId = "PRH-" + resolvedId + "-" + today.toString() + "-" + System.currentTimeMillis();
+
+        PriceHistory ph = new PriceHistory(
+                recordId,
+                resolvedId,
+                itemType != null ? itemType : (resolvedId.startsWith("HT") ? "HOTEL" : "FLIGHT"),
+                price,
+                demandLevel != null ? demandLevel : "NORMAL",
+                seasonType != null ? seasonType : "REGULAR",
+                recordedAt,
+                dayLabel,
+                true
+        );
+        priceHistoryRepository.save(ph);
+    }
+
+    public List<Map<String, Object>> getGenuinePriceHistory(String itemId, double basePrice) {
         String resolvedId = (itemId != null && !itemId.trim().isEmpty()) ? itemId.trim() : "FL-101";
 
         List<PriceHistory> existing = (priceHistoryRepository != null)
                 ? priceHistoryRepository.findByItemIdOrderByRecordedAtDesc(resolvedId)
                 : Collections.emptyList();
 
-        if (existing.size() < 7 && priceHistoryRepository != null) {
+        if (existing.isEmpty() && priceHistoryRepository != null) {
             LocalDate today = LocalDate.now();
-            double[] varianceRatios = {-0.10, -0.05, -0.02, 0.0, 0.03, 0.08, (currentPrice - basePrice) / (basePrice > 0 ? basePrice : 1.0)};
-
-            for (int i = 6; i >= 0; i--) {
-                LocalDate date = today.minusDays(i);
-                double price = Math.round(basePrice * (1.0 + varianceRatios[6 - i]));
-                String dayLabel = date.getDayOfWeek().name().substring(0, 3);
-                LocalDateTime recordedAt = date.atTime(12, 0);
-                boolean isCurrent = (i == 0);
-
-                String recordId = "PRH-" + resolvedId + "-" + date.toString();
-                PriceHistory ph = new PriceHistory(
-                        recordId,
-                        resolvedId,
-                        resolvedId.startsWith("HT") ? "HOTEL" : "FLIGHT",
-                        price,
-                        i <= 1 ? "HIGH" : (i <= 3 ? "MEDIUM" : "NORMAL"),
-                        (date.getDayOfWeek() == DayOfWeek.SATURDAY || date.getDayOfWeek() == DayOfWeek.SUNDAY) ? "WEEKEND" : "REGULAR",
-                        recordedAt,
-                        dayLabel,
-                        isCurrent
-                );
-                priceHistoryRepository.save(ph);
-            }
-            existing = priceHistoryRepository.findByItemIdOrderByRecordedAtDesc(resolvedId);
+            LocalDateTime recordedAt = LocalDateTime.now();
+            String dayLabel = today.getDayOfWeek().name().substring(0, 3);
+            String recordId = "PRH-" + resolvedId + "-" + today.toString();
+            PriceHistory initial = new PriceHistory(
+                    recordId,
+                    resolvedId,
+                    resolvedId.startsWith("HT") ? "HOTEL" : "FLIGHT",
+                    basePrice,
+                    "NORMAL",
+                    (today.getDayOfWeek() == DayOfWeek.SATURDAY || today.getDayOfWeek() == DayOfWeek.SUNDAY) ? "WEEKEND" : "REGULAR",
+                    recordedAt,
+                    dayLabel,
+                    true
+            );
+            priceHistoryRepository.save(initial);
+            existing = List.of(initial);
         }
 
         List<PriceHistory> chronological = new ArrayList<>(existing);
         chronological.sort(Comparator.comparing(PriceHistory::getRecordedAt));
 
         List<Map<String, Object>> result = new ArrayList<>();
-        int startIndex = Math.max(0, chronological.size() - 7);
+        int startIndex = Math.max(0, chronological.size() - 14);
         for (int i = startIndex; i < chronological.size(); i++) {
             PriceHistory ph = chronological.get(i);
             Map<String, Object> point = new HashMap<>();

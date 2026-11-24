@@ -67,6 +67,64 @@ public class NotificationController {
         return ResponseEntity.ok(res);
     }
 
+    @GetMapping("/vapid-public-key")
+    public ResponseEntity<Map<String, String>> getVapidPublicKey() {
+        Map<String, String> res = new HashMap<>();
+        res.put("publicKey", com.makemytrip.makemytrip.services.NotificationService.VAPID_PUBLIC_KEY);
+        return ResponseEntity.ok(res);
+    }
+
+    @PostMapping("/push-subscribe")
+    public ResponseEntity<com.makemytrip.makemytrip.models.PushSubscription> subscribePush(@RequestBody Map<String, Object> payload) {
+        String userId = (String) payload.getOrDefault("userId", "ALL");
+        String endpoint = (String) payload.get("endpoint");
+        String p256dh = null;
+        String auth = null;
+        if (payload.get("keys") instanceof Map) {
+            Map<?, ?> keys = (Map<?, ?>) payload.get("keys");
+            p256dh = (String) keys.get("p256dh");
+            auth = (String) keys.get("auth");
+        } else {
+            p256dh = (String) payload.get("p256dh");
+            auth = (String) payload.get("auth");
+        }
+        String userAgent = (String) payload.getOrDefault("userAgent", "Web Browser");
+        com.makemytrip.makemytrip.models.PushSubscription sub = notificationService.savePushSubscription(userId, endpoint, p256dh, auth, userAgent);
+        return ResponseEntity.ok(sub);
+    }
+
+    @PostMapping("/push-unsubscribe")
+    public ResponseEntity<Map<String, String>> unsubscribePush(@RequestBody Map<String, String> payload) {
+        String endpoint = payload.get("endpoint");
+        notificationService.removePushSubscription(endpoint);
+        Map<String, String> res = new HashMap<>();
+        res.put("message", "Push subscription removed successfully");
+        return ResponseEntity.ok(res);
+    }
+
+    @GetMapping("/push-subscriptions")
+    public ResponseEntity<List<com.makemytrip.makemytrip.models.PushSubscription>> getPushSubscriptions(
+            @RequestParam(required = false) String userId) {
+        return ResponseEntity.ok(notificationService.getPushSubscriptions(userId));
+    }
+
+    @PostMapping("/send-push")
+    public ResponseEntity<Map<String, Object>> sendPush(@RequestBody Map<String, String> payload) {
+        String userId = payload.getOrDefault("userId", "ALL");
+        String title = payload.getOrDefault("title", "Flight Radar Alert");
+        String desc = payload.getOrDefault("desc", "Live flight radar notification update.");
+        String type = payload.getOrDefault("type", "flight");
+
+        Notification notif = notificationService.createNotification(userId, title, desc, type);
+        int sentCount = notificationService.dispatchWebPushToSubscribers(notif);
+
+        Map<String, Object> res = new HashMap<>();
+        res.put("status", "SUCCESS");
+        res.put("notification", notif);
+        res.put("subscribersNotified", sentCount);
+        return ResponseEntity.ok(res);
+    }
+
     @PostMapping
     public ResponseEntity<Notification> createNotification(@RequestBody Map<String, String> payload) {
         String userId = payload.getOrDefault("userId", "ALL");

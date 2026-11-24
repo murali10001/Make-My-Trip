@@ -19,7 +19,7 @@ import {
   Layers,
   Compass,
 } from "lucide-react";
-import { getHotelRoomOptions, saveUserPreferences, getUserPreferences, createSelectionStream } from "@/api";
+import { getHotelRoomOptions, reserveRoomOption, releaseRoomOption, saveUserPreferences, getUserPreferences, createSelectionStream } from "@/api";
 import {
   Dialog,
   DialogContent,
@@ -149,9 +149,35 @@ export const HotelRoomPicker: React.FC<HotelRoomPickerProps> = ({
   const handleSelectRoom = async (room: any) => {
     const isCurrentlySelected = activeRoom?.roomTypeName === room.roomTypeName || selectedRoomType === room.roomTypeName;
     if (isCurrentlySelected) {
+      try {
+        await releaseRoomOption(hotelId, room.roomTypeName, 1);
+      } catch (e) {
+        console.warn("Failed to release room option on backend:", e);
+      }
       setActiveRoom(null);
       onRoomSelect(null);
       return;
+    }
+
+    // Release previously selected room if changing selection
+    if (activeRoom && activeRoom.roomTypeName !== room.roomTypeName) {
+      try {
+        await releaseRoomOption(hotelId, activeRoom.roomTypeName, 1);
+      } catch (e) {
+        console.warn("Failed to release previous room option:", e);
+      }
+    }
+
+    // Explicitly invoke backend reservation operation to reserve room inventory in MongoDB
+    try {
+      const updated = await reserveRoomOption(hotelId, room.roomTypeName, 1);
+      if (updated) {
+        setRoomOptions((prev) =>
+          prev.map((r) => (r.roomTypeName === updated.roomTypeName ? { ...r, availableRooms: updated.availableRooms } : r))
+        );
+      }
+    } catch (e) {
+      console.warn("Failed to reserve room inventory on backend:", e);
     }
 
     setActiveRoom(room);

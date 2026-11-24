@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Plane, Check, Sparkles, Shield, BookmarkCheck, AlertCircle, Radio } from "lucide-react";
-import { getSeatMap, reserveSeat, saveUserPreferences, getUserPreferences, createSelectionStream } from "@/api";
+import { getSeatMap, reserveSeat, releaseSeat, saveUserPreferences, getUserPreferences, createSelectionStream } from "@/api";
 import { Button } from "./ui/button";
 
 interface FlightSeatPickerProps {
@@ -91,6 +91,25 @@ export const FlightSeatPicker: React.FC<FlightSeatPickerProps> = ({
 
   const handleSelectSeat = async (seat: any) => {
     if (seat.status === "OCCUPIED") return;
+
+    // Release previously selected seat on backend if changing seat selection
+    if (activeSeat && activeSeat.seatNo !== seat.seatNo) {
+      try {
+        await releaseSeat(flightId, activeSeat.seatNo);
+      } catch (e) {
+        console.warn("Failed to release previously selected seat:", e);
+      }
+    }
+
+    // Explicitly invoke backend reservation operation to lock seat in MongoDB
+    try {
+      const updatedMap = await reserveSeat(flightId, seat.seatNo, userId || "");
+      if (updatedMap) {
+        setSeatMap(updatedMap);
+      }
+    } catch (err: any) {
+      console.error("Backend seat reservation failed:", err);
+    }
 
     setActiveSeat(seat);
     onSeatSelect({ seatNo: seat.seatNo, tier: seat.tier, priceAddon: seat.priceAddon });

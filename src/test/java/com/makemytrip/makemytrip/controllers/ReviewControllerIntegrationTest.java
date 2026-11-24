@@ -203,12 +203,25 @@ class ReviewControllerIntegrationTest {
         Review created = reviewService.addReview(r);
         reviewService.flagReview(created.getId(), "rep-1", "Misleading");
 
+        // Verify unauthenticated request without moderator authorization receives 403 Forbidden
         mockMvc.perform(get("/api/reviews/moderation/flagged"))
+                .andExpect(status().isForbidden());
+
+        // Verify authorized request with Moderator role succeeds with 200 OK
+        mockMvc.perform(get("/api/reviews/moderation/flagged")
+                        .header("X-User-Role", "MODERATOR"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$[0].id").value(created.getId()));
 
+        // Verify unauthenticated action receives 403 Forbidden
         mockMvc.perform(post("/api/reviews/moderation/" + created.getId() + "/action")
+                        .param("action", "DISMISS"))
+                .andExpect(status().isForbidden());
+
+        // Verify authorized moderator action succeeds with 200 OK
+        mockMvc.perform(post("/api/reviews/moderation/" + created.getId() + "/action")
+                        .header("X-User-Role", "MODERATOR")
                         .param("action", "DISMISS"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("SUCCESS"))
@@ -216,6 +229,7 @@ class ReviewControllerIntegrationTest {
 
         reviewService.flagReview(created.getId(), "rep-2", "Spam");
         mockMvc.perform(post("/api/reviews/moderation/" + created.getId() + "/action")
+                        .header("X-User-Role", "MODERATOR")
                         .param("action", "REMOVE"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.action").value("REMOVED"));

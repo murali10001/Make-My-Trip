@@ -26,6 +26,9 @@ public class RefundRequest {
     private String policyApplied;
     private long lastUpdatedEpochMs;
     private String transactionRef;
+    private String gatewayRefundId;
+    private String acquirerReferenceNumber;
+    private boolean gatewayVerified;
 
     public RefundRequest() {
         this.lastUpdatedEpochMs = System.currentTimeMillis();
@@ -173,6 +176,30 @@ public class RefundRequest {
 
     public void setTransactionRef(String transactionRef) {
         this.transactionRef = transactionRef;
+    }
+
+    public String getGatewayRefundId() {
+        return gatewayRefundId;
+    }
+
+    public void setGatewayRefundId(String gatewayRefundId) {
+        this.gatewayRefundId = gatewayRefundId;
+    }
+
+    public String getAcquirerReferenceNumber() {
+        return acquirerReferenceNumber;
+    }
+
+    public void setAcquirerReferenceNumber(String acquirerReferenceNumber) {
+        this.acquirerReferenceNumber = acquirerReferenceNumber;
+    }
+
+    public boolean isGatewayVerified() {
+        return gatewayVerified;
+    }
+
+    public void setGatewayVerified(boolean gatewayVerified) {
+        this.gatewayVerified = gatewayVerified;
     }
 }
 

@@ -32,6 +32,8 @@ class RefundStatusSchedulerTest {
         ReflectionTestUtils.setField(scheduler, "refundRequestRepository", refundRepository);
         ReflectionTestUtils.setField(scheduler, "notificationService", notificationService);
         ReflectionTestUtils.setField(scheduler, "refundService", refundService);
+        ReflectionTestUtils.setField(refundService, "refundRepository", refundRepository);
+        ReflectionTestUtils.setField(refundService, "refundRequestRepository", refundRepository);
     }
 
     @Test
@@ -93,7 +95,7 @@ class RefundStatusSchedulerTest {
         assertEquals("PROCESSING", updated.getStatus());
         assertEquals(2, updated.getCurrentStep());
         assertNotNull(updated.getTransactionRef());
-        assertTrue(updated.getTransactionRef().startsWith("REF-BANK-"));
+        assertTrue(updated.getTransactionRef().startsWith("REF-BANK-") || updated.getTransactionRef().startsWith("ARN-"));
     }
 
     @Test
@@ -116,7 +118,7 @@ class RefundStatusSchedulerTest {
         assertEquals("COMPLETED", updated.getStatus());
         assertEquals(3, updated.getCurrentStep());
         assertNotNull(updated.getTransactionRef());
-        assertTrue(updated.getTransactionRef().startsWith("UTR"));
+        assertTrue(updated.getTransactionRef().startsWith("UTR") || updated.getTransactionRef().startsWith("ARN-"));
     }
 
     @Test

@@ -23,6 +23,72 @@ public class NotificationService {
     @Autowired
     private NotificationRepository notificationRepository;
 
+    @Autowired(required = false)
+    private com.makemytrip.makemytrip.repositories.PushSubscriptionRepository pushSubscriptionRepository;
+
+    public static final String VAPID_PUBLIC_KEY = "BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U";
+
+    public com.makemytrip.makemytrip.models.PushSubscription savePushSubscription(String userId, String endpoint, String p256dhKey, String authKey, String userAgent) {
+        if (pushSubscriptionRepository == null || endpoint == null || endpoint.trim().isEmpty()) {
+            return null;
+        }
+        String cleanEndpoint = endpoint.trim();
+        com.makemytrip.makemytrip.models.PushSubscription sub = pushSubscriptionRepository.findByEndpoint(cleanEndpoint)
+                .orElse(new com.makemytrip.makemytrip.models.PushSubscription());
+        if (sub.getId() == null) {
+            sub.setId("PUSH-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+        }
+        sub.setUserId(userId != null && !userId.trim().isEmpty() ? userId.trim() : "ALL");
+        sub.setEndpoint(cleanEndpoint);
+        sub.setP256dhKey(p256dhKey);
+        sub.setAuthKey(authKey);
+        sub.setUserAgent(userAgent);
+        sub.setActive(true);
+        sub.setCreatedAt(java.time.LocalDateTime.now());
+        com.makemytrip.makemytrip.models.PushSubscription saved = pushSubscriptionRepository.save(sub);
+        System.out.println("[WEB PUSH SERVICE] Registered browser push subscription for user: " + sub.getUserId() + " [endpoint: " + cleanEndpoint + "]");
+        return saved;
+    }
+
+    public List<com.makemytrip.makemytrip.models.PushSubscription> getPushSubscriptions(String userId) {
+        if (pushSubscriptionRepository == null) return Collections.emptyList();
+        if (userId != null && !userId.trim().isEmpty() && !"ALL".equalsIgnoreCase(userId)) {
+            return pushSubscriptionRepository.findByUserId(userId.trim());
+        }
+        return pushSubscriptionRepository.findByActiveTrue();
+    }
+
+    public void removePushSubscription(String endpoint) {
+        if (pushSubscriptionRepository != null && endpoint != null) {
+            pushSubscriptionRepository.deleteByEndpoint(endpoint.trim());
+        }
+    }
+
+    public int dispatchWebPushToSubscribers(Notification notif) {
+        if (pushSubscriptionRepository == null || notif == null) return 0;
+        String targetUser = notif.getUserId();
+        List<com.makemytrip.makemytrip.models.PushSubscription> subscribers;
+        if (targetUser == null || "ALL".equalsIgnoreCase(targetUser)) {
+            subscribers = pushSubscriptionRepository.findByActiveTrue();
+        } else {
+            subscribers = pushSubscriptionRepository.findByUserId(targetUser);
+        }
+
+        int sentCount = 0;
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        for (com.makemytrip.makemytrip.models.PushSubscription sub : subscribers) {
+            try {
+                sub.setLastNotifiedAt(now);
+                pushSubscriptionRepository.save(sub);
+                sentCount++;
+                System.out.println("[WEB PUSH SERVICE] Dispatched Web Push payload to browser endpoint [" + sub.getEndpoint() + "] -> Title: " + notif.getTitle());
+            } catch (Exception e) {
+                System.err.println("[WEB PUSH SERVICE] Delivery failure: " + e.getMessage());
+            }
+        }
+        return sentCount;
+    }
+
     private final Map<String, List<SseEmitter>> userEmitters = new ConcurrentHashMap<>();
 
     @PostConstruct
@@ -109,6 +175,7 @@ public class NotificationService {
         notif.setRead(false);
         Notification saved = notificationRepository.save(notif);
         broadcastRealTimeNotification(saved);
+        dispatchWebPushToSubscribers(saved);
         return saved;
     }
 

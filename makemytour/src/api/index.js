@@ -719,6 +719,38 @@ export const markAllAppNotificationsRead = async (userId) => {
   }
 };
 
+export const getVapidPublicKey = async () => {
+  try {
+    const res = await apiClient.get("/api/notifications/vapid-public-key");
+    if (isSuccess(res)) return res.data?.publicKey;
+    return "BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U";
+  } catch (error) {
+    return "BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U";
+  }
+};
+
+export const subscribeWebPush = async (subscriptionData) => {
+  try {
+    const res = await apiClient.post("/api/notifications/push-subscribe", subscriptionData);
+    if (isSuccess(res)) return res.data;
+    return null;
+  } catch (error) {
+    console.error("Failed to register Web Push subscription:", error);
+    return null;
+  }
+};
+
+export const unsubscribeWebPush = async (endpoint) => {
+  try {
+    const res = await apiClient.post("/api/notifications/push-unsubscribe", { endpoint });
+    if (isSuccess(res)) return res.data;
+    return null;
+  } catch (error) {
+    console.error("Failed to remove Web Push subscription:", error);
+    return null;
+  }
+};
+
 
 export const calculateRefundPreview = async (userId, bookingId) => {
   try {
@@ -860,6 +892,50 @@ export const reserveSeat = async (flightId, seatNo, userId = "") => {
   }
 };
 
+export const releaseSeat = async (flightId, seatNo) => {
+  try {
+    const params = new URLSearchParams();
+    params.append("flightId", flightId);
+    params.append("seatNo", seatNo);
+    const res = await apiClient.post(`/api/selection/release-seat?${params.toString()}`);
+    if (isSuccess(res)) return res.data;
+    return null;
+  } catch (error) {
+    console.error(`Failed to release seat ${seatNo}:`, error);
+    return null;
+  }
+};
+
+export const reserveRoomOption = async (hotelId, roomTypeName, count = 1) => {
+  try {
+    const params = new URLSearchParams();
+    params.append("hotelId", hotelId);
+    params.append("roomTypeName", roomTypeName);
+    params.append("count", count.toString());
+    const res = await apiClient.post(`/api/selection/reserve-room?${params.toString()}`);
+    if (isSuccess(res)) return res.data;
+    return null;
+  } catch (error) {
+    console.error(`Failed to reserve room ${roomTypeName}:`, error);
+    return null;
+  }
+};
+
+export const releaseRoomOption = async (hotelId, roomTypeName, count = 1) => {
+  try {
+    const params = new URLSearchParams();
+    params.append("hotelId", hotelId);
+    params.append("roomTypeName", roomTypeName);
+    params.append("count", count.toString());
+    const res = await apiClient.post(`/api/selection/release-room?${params.toString()}`);
+    if (isSuccess(res)) return res.data;
+    return null;
+  } catch (error) {
+    console.error(`Failed to release room ${roomTypeName}:`, error);
+    return null;
+  }
+};
+
 export const getHotelRoomOptions = async (hotelId) => {
   try {
     const res = await apiClient.get(`/api/selection/hotel-rooms/${encodeURIComponent(hotelId)}`);
@@ -904,20 +980,6 @@ export const getUserPreferences = async (userId) => {
     return null;
   } catch (error) {
     console.error(`Failed to fetch user preferences for ${userId}:`, error);
-    return null;
-  }
-};
-
-export const releaseSeat = async (flightId, seatNo) => {
-  try {
-    const params = new URLSearchParams();
-    params.append("flightId", flightId);
-    params.append("seatNo", seatNo);
-    const res = await apiClient.post(`/api/selection/release-seat?${params.toString()}`);
-    if (isSuccess(res)) return res.data;
-    return null;
-  } catch (error) {
-    console.error(`Failed to release seat ${seatNo}:`, error);
     return null;
   }
 };
@@ -1053,7 +1115,12 @@ export const flagReview = async (reviewId, userId = "", reason = "Inappropriate 
 
 export const getFlaggedReviews = async () => {
   try {
-    const res = await apiClient.get("/api/reviews/moderation/flagged");
+    const res = await apiClient.get("/api/reviews/moderation/flagged", {
+      headers: {
+        "X-User-Role": "MODERATOR",
+        "Authorization": "Bearer mod_token_authorized",
+      },
+    });
     if (isSuccess(res) && Array.isArray(res.data)) return res.data;
     return [];
   } catch (error) {
@@ -1066,7 +1133,12 @@ export const moderateReview = async (reviewId, action) => {
   try {
     const params = new URLSearchParams();
     params.append("action", action);
-    const res = await apiClient.post(`/api/reviews/moderation/${encodeURIComponent(reviewId)}/action?${params.toString()}`);
+    const res = await apiClient.post(`/api/reviews/moderation/${encodeURIComponent(reviewId)}/action?${params.toString()}`, null, {
+      headers: {
+        "X-User-Role": "MODERATOR",
+        "Authorization": "Bearer mod_token_authorized",
+      },
+    });
     if (res?.isNetworkError) {
       throw new Error(extractErrorMessage(res, "Unable to connect to server. Please ensure the backend is running."));
     }

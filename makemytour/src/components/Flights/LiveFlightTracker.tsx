@@ -9,6 +9,8 @@ import {
   validateFlightStatusDb,
   getUserTrackedFlights,
   toggleUserTrackFlight,
+  subscribeWebPush,
+  getVapidPublicKey,
   BACKEND_URL,
 } from "@/api";
 import {
@@ -322,11 +324,60 @@ const LiveFlightTracker: React.FC = () => {
     return () => clearInterval(clockTimer);
   }, []);
 
+  const urlBase64ToUint8Array = (base64String: string) => {
+    const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/\-/g, "+").replace(/_/g, "/");
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  };
+
+  const registerServiceWorkerAndSubscribe = async () => {
+    if (typeof window === "undefined" || !("serviceWorker" in navigator) || !("PushManager" in window)) {
+      return null;
+    }
+    try {
+      const registration = await navigator.serviceWorker.register("/sw.js");
+      await navigator.serviceWorker.ready;
+
+      const vapidKey = await getVapidPublicKey();
+      const convertedVapidKey = urlBase64ToUint8Array(vapidKey);
+
+      let subscription = await registration.pushManager.getSubscription();
+      if (!subscription) {
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: convertedVapidKey,
+        });
+      }
+
+      if (subscription) {
+        const subJson = subscription.toJSON();
+        await subscribeWebPush({
+          userId: user?.id || "ALL",
+          endpoint: subscription.endpoint,
+          keys: subJson.keys || {},
+          userAgent: navigator.userAgent,
+        });
+      }
+      return subscription;
+    } catch (err) {
+      console.warn("ServiceWorker push subscription status:", err);
+      return null;
+    }
+  };
+
   useEffect(() => {
     if (typeof window !== "undefined" && "Notification" in window) {
       setWebPushPermission(Notification.permission);
+      if (Notification.permission === "granted") {
+        registerServiceWorkerAndSubscribe();
+      }
     }
-  }, []);
+  }, [user]);
 
   const requestWebPushPermission = async () => {
     if (typeof window !== "undefined" && "Notification" in window) {
@@ -334,6 +385,7 @@ const LiveFlightTracker: React.FC = () => {
         const perm = await Notification.requestPermission();
         setWebPushPermission(perm);
         if (perm === "granted") {
+          await registerServiceWorkerAndSubscribe();
           new window.Notification("Live Flight Push Notifications Enabled!", {
             body: "You will now receive instant desktop and mobile updates for tracked flights.",
           });

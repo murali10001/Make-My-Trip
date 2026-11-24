@@ -44,6 +44,24 @@ public class SelectionController {
         return ResponseEntity.ok(updatedMap);
     }
 
+    @PostMapping("/reserve-room")
+    public ResponseEntity<RoomTypeOption> reserveRoomOption(
+            @RequestParam String hotelId,
+            @RequestParam String roomTypeName,
+            @RequestParam(required = false, defaultValue = "1") int count) {
+        RoomTypeOption option = selectionService.reserveRoomOption(hotelId, roomTypeName, count);
+        return ResponseEntity.ok(option);
+    }
+
+    @PostMapping("/release-room")
+    public ResponseEntity<RoomTypeOption> releaseRoomOption(
+            @RequestParam String hotelId,
+            @RequestParam String roomTypeName,
+            @RequestParam(required = false, defaultValue = "1") int count) {
+        RoomTypeOption option = selectionService.releaseRoomOption(hotelId, roomTypeName, count);
+        return ResponseEntity.ok(option);
+    }
+
     @GetMapping({"/hotel-rooms/{hotelId}", "/rooms/{hotelId}"})
     public ResponseEntity<List<RoomTypeOption>> getHotelRoomOptions(@PathVariable String hotelId) {
         List<RoomTypeOption> options = selectionService.getRoomOptionsForHotel(hotelId);

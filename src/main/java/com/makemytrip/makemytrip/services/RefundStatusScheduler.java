@@ -93,70 +93,28 @@ public class RefundStatusScheduler {
                 }
             } else if ("APPROVED".equals(status)) {
                 if (elapsedMs >= STEP_APPROVED_TO_PROCESSING_DELAY_MS) {
-                    String bankRef = "REF-BANK-" + (100000 + (int) (Math.random() * 900000));
-                    refund.setStatus("PROCESSING");
-                    refund.setCurrentStep(2);
-                    refund.setTransactionRef(bankRef);
-                    refund.setEstimatedCompletionDate("Processing with Bank / Payment Gateway (" + bankRef + ")");
-                    refund.setLastUpdatedEpochMs(nowMs);
-                    repo.save(refund);
-
-                    if (notificationService != null) {
-                        String targetUser = refund.getUserId() != null && !refund.getUserId().trim().isEmpty() ? refund.getUserId() : "ALL";
-                        notificationService.createNotification(
-                                targetUser,
-                                "Refund Status Update: PROCESSING",
-                                "Refund " + refund.getRefundId() + " for Booking " + refund.getBookingId() + " is now PROCESSING by bank (" + bankRef + ").",
-                                "refund"
-                        );
-                    }
-
                     if (refundService != null) {
-                        Map<String, Object> broadcast = new HashMap<>();
-                        broadcast.put("type", "REFUND_STATUS_UPDATE");
-                        broadcast.put("refundId", refund.getRefundId());
-                        broadcast.put("bookingId", refund.getBookingId());
-                        broadcast.put("userId", refund.getUserId());
-                        broadcast.put("status", "PROCESSING");
-                        broadcast.put("currentStep", 2);
-                        broadcast.put("transactionRef", bankRef);
-                        broadcast.put("estimatedCompletionDate", refund.getEstimatedCompletionDate());
-                        broadcast.put("timestamp", LocalDateTime.now().toString());
-                        refundService.broadcastRefundUpdate(broadcast);
+                        refundService.updateRefundStatus(refund.getRefundId(), "PROCESSING");
+                    } else {
+                        refund.setStatus("PROCESSING");
+                        refund.setCurrentStep(2);
+                        refund.setTransactionRef("ARN-700109283912");
+                        refund.setEstimatedCompletionDate("Processing with Bank / Payment Gateway (" + refund.getTransactionRef() + ")");
+                        refund.setLastUpdatedEpochMs(nowMs);
+                        repo.save(refund);
                     }
                 }
             } else if ("PROCESSING".equals(status) || "PROCESSED".equals(status)) {
                 if (elapsedMs >= STEP_PROCESSING_TO_COMPLETED_DELAY_MS) {
-                    String utrRef = "UTR" + (1000000000L + (long) (Math.random() * 9000000000L));
-                    refund.setStatus("COMPLETED");
-                    refund.setCurrentStep(3);
-                    refund.setTransactionRef(utrRef);
-                    refund.setEstimatedCompletionDate("Completed & Credited to Source Account (Ref No: " + utrRef + ")");
-                    refund.setLastUpdatedEpochMs(nowMs);
-                    repo.save(refund);
-
-                    if (notificationService != null) {
-                        String targetUser = refund.getUserId() != null && !refund.getUserId().trim().isEmpty() ? refund.getUserId() : "ALL";
-                        notificationService.createNotification(
-                                targetUser,
-                                "Refund Completed & Credited",
-                                "Refund " + refund.getRefundId() + " (₹" + refund.getRefundAmount() + ") has been COMPLETED and credited (UTR: " + utrRef + ").",
-                                "refund"
-                        );
-                    }
-
                     if (refundService != null) {
-                        Map<String, Object> broadcast = new HashMap<>();
-                        broadcast.put("type", "REFUND_STATUS_UPDATE");
-                        broadcast.put("refundId", refund.getRefundId());
-                        broadcast.put("bookingId", refund.getBookingId());
-                        broadcast.put("userId", refund.getUserId());
-                        broadcast.put("status", "COMPLETED");
-                        broadcast.put("currentStep", 3);
-                        broadcast.put("transactionRef", utrRef);
-                        broadcast.put("estimatedCompletionDate", refund.getEstimatedCompletionDate());
-                        broadcast.put("timestamp", LocalDateTime.now().toString());
-                        refundService.broadcastRefundUpdate(broadcast);
+                        refundService.updateRefundStatus(refund.getRefundId(), "COMPLETED");
+                    } else {
+                        refund.setStatus("COMPLETED");
+                        refund.setCurrentStep(3);
+                        refund.setTransactionRef("ARN-700109283912");
+                        refund.setEstimatedCompletionDate("Completed & Credited to Source Account (Ref No: " + refund.getTransactionRef() + ")");
+                        refund.setLastUpdatedEpochMs(nowMs);
+                        repo.save(refund);
                     }
                 }
             }

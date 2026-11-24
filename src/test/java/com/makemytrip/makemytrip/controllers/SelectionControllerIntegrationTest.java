@@ -98,6 +98,28 @@ class SelectionControllerIntegrationTest {
     }
 
     @Test
+    @DisplayName("POST /api/selection/reserve-room - Returns 200 with updated room option")
+    void testReserveRoomOptionEndpoint() throws Exception {
+        mockMvc.perform(post("/api/selection/reserve-room")
+                        .param("hotelId", "HT-101")
+                        .param("roomTypeName", "Deluxe Balcony Room")
+                        .param("count", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.roomTypeName").value("Deluxe Balcony Room"));
+    }
+
+    @Test
+    @DisplayName("POST /api/selection/release-room - Returns 200 with restored room option")
+    void testReleaseRoomOptionEndpoint() throws Exception {
+        mockMvc.perform(post("/api/selection/release-room")
+                        .param("hotelId", "HT-101")
+                        .param("roomTypeName", "Deluxe Balcony Room")
+                        .param("count", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.roomTypeName").value("Deluxe Balcony Room"));
+    }
+
+    @Test
     @DisplayName("POST /api/selection/preferences - Returns 201 Created")
     void testSaveUserPreferencesEndpoint() throws Exception {
         UserPreferences prefs = new UserPreferences();

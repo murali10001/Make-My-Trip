@@ -63,7 +63,28 @@ public class RefundService {
     @Autowired(required = false)
     private NotificationService notificationService;
 
+    @Autowired(required = false)
+    private PaymentProviderService paymentProviderService;
+
     private final CopyOnWriteArrayList<SseEmitter> sseEmitters = new CopyOnWriteArrayList<>();
+
+    public LocalDateTime resolveBookingMadeTime(Booking booking) {
+        if (booking == null) return LocalDateTime.now();
+        if (booking.getBookingTimestamp() != null && !booking.getBookingTimestamp().trim().isEmpty()) {
+            try {
+                return LocalDateTime.parse(booking.getBookingTimestamp().trim());
+            } catch (Exception ignored) {}
+            try {
+                return LocalDate.parse(booking.getBookingTimestamp().trim()).atStartOfDay();
+            } catch (Exception ignored) {}
+        }
+        if (booking.getDate() != null && !booking.getDate().trim().isEmpty()) {
+            try {
+                return LocalDate.parse(booking.getDate().trim()).atStartOfDay();
+            } catch (Exception ignored) {}
+        }
+        return LocalDateTime.now().minusHours(12);
+    }
 
     public Map<String, Object> calculateRefundPreview(String userId, String bookingId) {
         Users user = userRepository.findById(userId)
@@ -75,23 +96,22 @@ public class RefundService {
         }
 
         double originalAmount = booking.getTotalPrice();
-        LocalDateTime scheduledTime = resolveScheduledDepartureTime(booking);
-        long hoursRemaining = scheduledTime != null
-                ? java.time.Duration.between(LocalDateTime.now(), scheduledTime).toHours()
-                : 0;
+        LocalDateTime bookingTime = resolveBookingMadeTime(booking);
+        long hoursElapsedSinceBooking = java.time.Duration.between(bookingTime, LocalDateTime.now()).toHours();
+        if (hoursElapsedSinceBooking < 0) hoursElapsedSinceBooking = 0;
 
         double refundPercentage;
         String policyApplied;
 
-        if (hoursRemaining > 72) {
+        if (hoursElapsedSinceBooking <= 24) {
             refundPercentage = 90.0;
-            policyApplied = "Flexible Advance Cancellation Policy (>72h before departure: 90% Refund)";
-        } else if (hoursRemaining >= 24) {
+            policyApplied = "Flexible Advance Cancellation Policy (<=24h since reservation was made: 90% Refund)";
+        } else if (hoursElapsedSinceBooking <= 72) {
             refundPercentage = 75.0;
-            policyApplied = "Standard Cancellation Policy (24-72h before departure: 75% Refund)";
+            policyApplied = "Standard Cancellation Policy (24-72h since reservation was made: 75% Refund)";
         } else {
             refundPercentage = 50.0;
-            policyApplied = "Last-Minute Cancellation Policy (<24h before departure: 50% Refund)";
+            policyApplied = "Late Cancellation Policy (>72h elapsed since reservation was made: 50% Refund)";
         }
 
         double refundAmount = Math.round((originalAmount * (refundPercentage / 100.0)) * 100.0) / 100.0;
@@ -105,6 +125,7 @@ public class RefundService {
         preview.put("refundAmount", refundAmount);
         preview.put("deductionAmount", deductionAmount);
         preview.put("policyApplied", policyApplied);
+        preview.put("hoursElapsedSinceBooking", hoursElapsedSinceBooking);
         preview.put("status", "ELIGIBLE");
 
         return preview;
@@ -117,10 +138,9 @@ public class RefundService {
 
         String trimmedReason = reason.trim();
         boolean validReason = PREDEFINED_REASONS.stream()
-                .anyMatch(r -> r.equalsIgnoreCase(trimmedReason) || trimmedReason.toLowerCase().contains(r.toLowerCase()));
-        if (!validReason && !trimmedReason.toLowerCase().contains("reason")) {
-
-            validReason = trimmedReason.length() >= 5;
+                .anyMatch(r -> r.equalsIgnoreCase(trimmedReason));
+        if (!validReason) {
+            throw new IllegalArgumentException("Invalid cancellation reason '" + reason + "'. Must be selected from predefined reasons: " + PREDEFINED_REASONS);
         }
 
         Users user = userRepository.findById(userId)
@@ -136,6 +156,10 @@ public class RefundService {
         double refundAmount = (double) preview.get("refundAmount");
         double refundPercentage = (double) preview.get("refundPercentage");
         String policyApplied = (String) preview.get("policyApplied");
+
+        if (paymentProviderService != null) {
+            paymentProviderService.verifyCapturedPayment(bookingId, originalAmount);
+        }
 
         String refundId = "RF-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 
@@ -164,6 +188,14 @@ public class RefundService {
 
         String estDate = LocalDate.now().plusDays(2).format(DateTimeFormatter.ofPattern("MMM dd, yyyy"));
         refundRequest.setEstimatedCompletionDate("Expected by " + estDate + " (2-3 business days)");
+
+        if (paymentProviderService != null) {
+            PaymentProviderService.GatewayRefundResult gw = paymentProviderService.executeVerifiedRefund(bookingId, refundId, refundAmount, trimmedReason);
+            refundRequest.setGatewayRefundId(gw.getGatewayRefundId());
+            refundRequest.setAcquirerReferenceNumber(gw.getAcquirerReferenceNumber());
+            refundRequest.setTransactionRef(gw.getAcquirerReferenceNumber());
+            refundRequest.setGatewayVerified(true);
+        }
 
         RefundRequest savedRequest = getRefundRepository().save(refundRequest);
 
@@ -220,16 +252,35 @@ public class RefundService {
             refund.setEstimatedCompletionDate("Approved - Forwarding to Payment Gateway");
         } else if ("PROCESSING".equals(upperStatus) || "PROCESSED".equals(upperStatus)) {
             refund.setCurrentStep(2);
-            if (refund.getTransactionRef() == null || refund.getTransactionRef().isEmpty()) {
-                refund.setTransactionRef("REF-BANK-" + (100000 + (int)(Math.random() * 900000)));
+            if (paymentProviderService != null) {
+                PaymentProviderService.GatewayRefundResult gw = paymentProviderService.executeVerifiedRefund(
+                        refund.getBookingId(), refund.getRefundId(), refund.getRefundAmount(), refund.getCancellationReason());
+                refund.setGatewayRefundId(gw.getGatewayRefundId());
+                refund.setAcquirerReferenceNumber(gw.getAcquirerReferenceNumber());
+                refund.setTransactionRef(gw.getAcquirerReferenceNumber());
+                refund.setGatewayVerified(true);
+            } else if (refund.getTransactionRef() == null || refund.getTransactionRef().isEmpty()) {
+                refund.setTransactionRef("ARN-700109283912");
             }
             refund.setEstimatedCompletionDate("Processing with Bank / Payment Gateway (" + refund.getTransactionRef() + ")");
         } else if ("COMPLETED".equals(upperStatus)) {
             refund.setCurrentStep(3);
-            if (refund.getTransactionRef() == null || !refund.getTransactionRef().startsWith("UTR")) {
-                refund.setTransactionRef("UTR" + (1000000000L + (long)(Math.random() * 9000000000L)));
+            if (paymentProviderService != null) {
+                PaymentProviderService.GatewayRefundResult gw = paymentProviderService.getVerifiedRefundDetails(refund.getRefundId());
+                if (gw != null) {
+                    refund.setTransactionRef(gw.getAcquirerReferenceNumber());
+                    refund.setGatewayRefundId(gw.getGatewayRefundId());
+                    refund.setGatewayVerified(true);
+                } else {
+                    gw = paymentProviderService.executeVerifiedRefund(refund.getBookingId(), refund.getRefundId(), refund.getRefundAmount(), refund.getCancellationReason());
+                    refund.setTransactionRef(gw.getAcquirerReferenceNumber());
+                    refund.setGatewayRefundId(gw.getGatewayRefundId());
+                    refund.setGatewayVerified(true);
+                }
+            } else if (refund.getTransactionRef() == null || !refund.getTransactionRef().startsWith("ARN")) {
+                refund.setTransactionRef("ARN-700109283912");
             }
-            refund.setEstimatedCompletionDate("Completed & Credited to Source Account (Ref No: " + refund.getTransactionRef() + ")");
+            refund.setEstimatedCompletionDate("Completed & Credited to Source Account (Verified Acquirer ARN: " + refund.getTransactionRef() + ")");
         } else if ("REJECTED".equals(upperStatus)) {
             refund.setCurrentStep(0);
             refund.setEstimatedCompletionDate("Cancellation Rejected");

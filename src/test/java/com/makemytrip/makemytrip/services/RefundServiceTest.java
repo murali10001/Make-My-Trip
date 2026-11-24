@@ -78,7 +78,7 @@ class RefundServiceTest {
         hotelBooking.setBookingId("BK-HT-67890");
         hotelBooking.setType("Hotel");
         hotelBooking.setDate(LocalDate.now().plusDays(2).toString());
-        hotelBooking.setBookingTimestamp(LocalDateTime.now().minusHours(72).toString());
+        hotelBooking.setBookingTimestamp(LocalDateTime.now().minusHours(48).toString());
         hotelBooking.setQuantity(1);
         hotelBooking.setTotalPrice(6000.0);
         hotelBooking.setTargetId("HT-202");
@@ -88,6 +88,7 @@ class RefundServiceTest {
         urgentBooking.setBookingId("BK-FL-URGENT");
         urgentBooking.setType("Flight");
         urgentBooking.setDate(LocalDate.now().toString());
+        urgentBooking.setBookingTimestamp(LocalDateTime.now().minusHours(96).toString());
         urgentBooking.setQuantity(1);
         urgentBooking.setTotalPrice(4000.0);
         urgentBooking.setTargetId("FL-101");
@@ -204,6 +205,14 @@ class RefundServiceTest {
     void testProcessCancellation_BlankReason_ThrowsException() {
         assertThrows(IllegalArgumentException.class, () ->
                 refundService.processCancellationAndRequestRefund("USR-001", "BK-FL-12345", "   ", "")
+        );
+    }
+
+    @Test
+    @DisplayName("Process Cancellation - Arbitrary Reason Not in Predefined List Throws IllegalArgumentException")
+    void testProcessCancellation_ArbitraryReason_ThrowsException() {
+        assertThrows(IllegalArgumentException.class, () ->
+                refundService.processCancellationAndRequestRefund("USR-001", "BK-FL-12345", "Random non-predefined reason text", "")
         );
     }
 
